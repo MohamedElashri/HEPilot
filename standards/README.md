@@ -1,4 +1,4 @@
-## HEP ilot RAG Adapter Framework Specification
+## HEPilot RAG Adapter Framework Specification
 **Version 1.0** — Initial Personal Release
 
 **Last-modified** 14 July 2025 · Next-review January 2026
