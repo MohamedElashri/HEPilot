@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MohamedElashri/HEPilot/standards/schemas/catalog.schema.json",
+  "title": "Processing Catalog",
+  "type": "object",
+  "required": [
+    "creation_timestamp",
+    "adapter_version",
+    "total_documents",
+    "total_chunks",
+    "documents"
+  ],
+  "properties": {
+    "creation_timestamp": { "type": "string", "format": "date-time" },
+    "adapter_version":    { "type": "string" },
+    "total_documents":    { "type": "integer" },
+    "total_chunks":       { "type": "integer" },
+    "source_distribution": {
+      "type": "object",
+      "properties": {
+        "arxiv":          { "type": "integer" },
+        "indico":         { "type": "integer" },
+        "internal_notes": { "type": "integer" },
+        "twiki":          { "type": "integer" },
+        "other":          { "type": "integer" }
+      },
+      "additionalProperties": false
+    },
+    "documents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "document_id",
+          "source_type",
+          "title",
+          "chunk_count",
+          "file_path"
+        ],
+        "properties": {
+          "document_id": { "type": "string", "format": "uuid" },
+          "source_type": { "type": "string" },
+          "title":       { "type": "string" },
+          "chunk_count": { "type": "integer" },
+          "file_path":   { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
