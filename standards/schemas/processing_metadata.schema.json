@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MohamedElashri/HEPilot/standards/schemas/processing_metadata.schema.json",
+  "title": "Processing Metadata",
+  "type": "object",
+  "required": [
+    "processor_used",
+    "processing_timestamp",
+    "processing_duration"
+  ],
+  "properties": {
+    "processor_used":      { "type": "string" },
+    "processing_timestamp":{ "type": "string", "format": "date-time" },
+    "processing_duration": { "type": "number" },
+    "conversion_warnings": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": false
+}
