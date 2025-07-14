@@ -44,6 +44,7 @@ class AdapterConfig:
     preserve_equations: bool = True
     preserve_inline_equations: bool = True
     profile: str = "core"
+    tokenizer_model: str = "BAAI/bge-large-en-v1.5"
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to specification-compliant dictionary."""
@@ -554,7 +555,7 @@ class ChunkingEngine:
     def __init__(self, config: AdapterConfig):
         self.config = config
         self.logger = logging.getLogger(__name__)
-        self.tokenizer = SentenceTransformer("BAAI/bge-large-en-v1.5").tokenizer
+        self.tokenizer = SentenceTransformer(self.config.tokenizer_model).tokenizer
     
     def chunk_document(self, document_id: str, content: str) -> Iterator[Chunk]:
         """Chunk document content into LLM-sized pieces."""

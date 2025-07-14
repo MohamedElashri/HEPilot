@@ -55,6 +55,7 @@ You can control several parameters, such as the number of documents to process a
 *   `--output-dir`: The directory where the processed files will be saved.
 *   `--chunk-size`: The target size of each text chunk in tokens.
 *   `--chunk-overlap`: The percentage of overlap between consecutive chunks.
+*   `--tokenizer-model`: The tokenizer model to use (default: "BAAI/bge-large-en-v1.5").
 
 **Example with Arguments:**
 

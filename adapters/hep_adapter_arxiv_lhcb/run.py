@@ -29,6 +29,7 @@ def main():
     parser.add_argument("--preserve-tables", action="store_true", default=True, help="Preserve tables in the output.")
     parser.add_argument("--preserve-equations", action="store_true", default=True, help="Preserve equations in the output.")
     parser.add_argument("--preserve-inline-equations", action="store_true", default=True, help="Preserve inline equations in the output.")
+    parser.add_argument("--tokenizer-model", type=str, default="BAAI/bge-large-en-v1.5", help="The tokenizer model to use.")
 
     args = parser.parse_args()
 
@@ -42,7 +43,8 @@ def main():
         chunk_overlap=args.chunk_overlap,
         preserve_tables=args.preserve_tables,
         preserve_equations=args.preserve_equations,
-        preserve_inline_equations=args.preserve_inline_equations
+        preserve_inline_equations=args.preserve_inline_equations,
+        tokenizer_model=args.tokenizer_model
     )
 
     # Output directory
