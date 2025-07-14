@@ -50,8 +50,8 @@ def setup_logging():
         def format(self, record):
             log_fmt = self.FORMATS.get(record.levelno)
             formatter = logging.Formatter(log_fmt)
-            return formatter.format(record)                             
-   sc]'' 
+            return formatter.format(record)
+    
     handler.setFormatter(ColoredFormatter())
     logger.addHandler(handler)
     

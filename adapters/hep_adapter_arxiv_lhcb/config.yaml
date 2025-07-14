@@ -15,6 +15,7 @@ chunk_overlap: 0.1
 preserve_tables: true
 preserve_equations: true
 preserve_inline_equations: true
+include_authors: false  # When false, authors will be removed from documents and chunks
 
 # Tokenizer settings
 tokenizer_model: "BAAI/bge-large-en-v1.5"
@@ -25,7 +26,7 @@ cache_dir: "./hepilot_output/cache"
 state_file: "./hepilot_output/state.json"
 
 # Documents
-max_documents: 25
+max_documents: 5
 
 # Caching behavior
 skip_processed: true

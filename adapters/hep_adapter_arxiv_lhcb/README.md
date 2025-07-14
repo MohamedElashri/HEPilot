@@ -58,6 +58,7 @@ You can control several parameters, such as the number of documents to process a
 *   `--chunk-size`: The target size of each text chunk in tokens.
 *   `--chunk-overlap`: The percentage of overlap between consecutive chunks.
 *   `--tokenizer-model`: The tokenizer model to use (default: "BAAI/bge-large-en-v1.5").
+*   `--include-authors`: Whether to include author information in documents and chunks (default: `false`).
 
 **Example with Arguments:**
 

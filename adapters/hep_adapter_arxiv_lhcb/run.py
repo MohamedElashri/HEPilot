@@ -33,6 +33,7 @@ def main():
     parser.add_argument("--preserve-tables", action="store_true", help="Preserve tables in the output.")
     parser.add_argument("--preserve-equations", action="store_true", help="Preserve equations in the output.")
     parser.add_argument("--preserve-inline-equations", action="store_true", help="Preserve inline equations in the output.")
+    parser.add_argument("--include-authors", action="store_true", help="Include author information in documents and chunks (default: False).")
     parser.add_argument("--tokenizer-model", type=str, help="The tokenizer model to use.")
     parser.add_argument("--cache-dir", type=str, help="Directory to store cache files.")
     parser.add_argument("--state-file", type=str, help="File to store the processing state.")
@@ -58,6 +59,7 @@ def main():
         preserve_tables=args.preserve_tables or config_from_file.get("preserve_tables", True),
         preserve_equations=args.preserve_equations or config_from_file.get("preserve_equations", True),
         preserve_inline_equations=args.preserve_inline_equations or config_from_file.get("preserve_inline_equations", True),
+        include_authors=args.include_authors or config_from_file.get("include_authors", False),
         tokenizer_model=args.tokenizer_model or config_from_file.get("tokenizer_model", "BAAI/bge-large-en-v1.5"),
         cache_dir=args.cache_dir or config_from_file.get("cache_dir", "./hepilot_output/cache"),
         state_file=args.state_file or config_from_file.get("state_file", "./hepilot_output/state.json")

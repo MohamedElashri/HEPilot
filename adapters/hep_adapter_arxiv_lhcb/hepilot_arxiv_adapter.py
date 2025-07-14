@@ -47,6 +47,7 @@ class AdapterConfig:
     preserve_tables: bool = True
     preserve_equations: bool = True
     preserve_inline_equations: bool = True
+    include_authors: bool = False  # When false, authors will be removed from documents and chunks
     profile: str = "core"
     tokenizer_model: str = "BAAI/bge-large-en-v1.5"
     cache_dir: str = "./hepilot_output/cache"
@@ -327,17 +328,22 @@ class ArxivDiscovery:
     
     def _doc_to_dict(self, doc: DocumentInfo) -> Dict[str, Any]:
         """Convert DocumentInfo to specification-compliant dictionary."""
-        return {
+        doc_dict = {
             "document_id": doc.document_id,
             "source_type": doc.source_type,
             "source_url": doc.source_url,
             "title": doc.title,
-            "authors": doc.authors,
             "discovery_timestamp": doc.discovery_timestamp,
             "estimated_size": doc.estimated_size,
             "content_type": doc.content_type,
             "priority_score": doc.priority_score
         }
+        
+        # Only include authors if configured to do so
+        if self.config.include_authors:
+            doc_dict["authors"] = doc.authors
+            
+        return doc_dict
 
 
 class DocumentAcquisition:
@@ -894,8 +900,8 @@ class HEPilotArxivAdapter:
             raise
     
     def _save_document_outputs(self, acquired_doc: AcquiredDocument, markdown_content: str, 
-                              chunks: List[Chunk], processing_metadata: Dict[str, Any],
-                              original_metadata: Dict[str, Any] = None) -> Path:
+                               chunks: List[Chunk], processing_metadata: Dict[str, Any],
+                               original_metadata: Dict[str, Any] = None) -> Path:
         """Save all document outputs according to specification."""
         if original_metadata is None:
             original_metadata = {}
@@ -918,22 +924,22 @@ class HEPilotArxivAdapter:
         # Extract authors from original metadata
         authors = original_metadata.get("authors", [])
         
-        # Get original URL
-        original_url = original_metadata.get("source_url", "unknown")
-        
-        # Save document metadata
+        # Save document metadata, respecting include_authors config
         document_metadata = {
             "document_id": acquired_doc.document_id,
             "source_type": "arxiv",
-            "original_url": original_url,
+            "original_url": original_metadata.get("source_url", ""),
             "local_path": acquired_doc.local_path,
             "title": title,
-            "authors": authors,
             "file_hash": acquired_doc.file_hash_sha256,
             "file_size": acquired_doc.file_size,
             "processing_timestamp": datetime.now(timezone.utc).isoformat(),
             "adapter_version": self.config.version
         }
+        
+        # Only include authors if configured to do so
+        if self.config.include_authors and authors:
+            document_metadata["authors"] = authors
         
         with open(doc_dir / "document_metadata.json", 'w') as f:
             json.dump(document_metadata, f, indent=2)
@@ -944,6 +950,24 @@ class HEPilotArxivAdapter:
             chunk_file = chunks_dir / f"chunk_{chunk.chunk_index:04d}.md"
             with open(chunk_file, 'w', encoding='utf-8') as f:
                 f.write(chunk.content)
+            
+            # Save chunk metadata
+            chunk_metadata = {
+                "chunk_id": chunk.chunk_id,
+                "document_id": chunk.document_id,
+                "chunk_index": chunk.chunk_index,
+                "total_chunks": chunk.total_chunks,
+                "token_count": chunk.token_count,
+                "character_count": len(chunk.content),
+                "chunk_type": chunk.chunk_type,
+                "contains_equations": chunk.content_features["equation_count"] > 0,
+                "contains_tables": chunk.content_features["table_count"] > 0,
+                "overlap_info": {
+                    "has_previous_overlap": chunk.has_overlap_previous,
+                    "has_next_overlap": chunk.has_overlap_next,
+                    "overlap_token_count": int(self.config.chunk_size * self.config.chunk_overlap)
+                }
+            }
             
             # Save chunk metadata
             chunk_metadata = {
