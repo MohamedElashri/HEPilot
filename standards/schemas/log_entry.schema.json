@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MohamedElashri/HEPilot/standards/schemas/log_entry.schema.json",
+  "title": "Processing Log Entry",
+  "type": "object",
+  "required": [
+    "timestamp",
+    "trace_id",
+    "level",
+    "component",
+    "message"
+  ],
+  "properties": {
+    "timestamp":  { "type": "string", "format": "date-time" },
+    "trace_id":   { "type": "string", "format": "uuid" },
+    "level":      { "enum": ["debug", "info", "warning", "error", "critical"] },
+    "component":  { "type": "string" },
+    "document_id":{ "type": "string", "format": "uuid" },
+    "message":    { "type": "string" },
+    "error_code": { "type": "string" },
+    "recovery_action": { "type": "string" },
+    "context":    { "type": "object" }
+  },
+  "additionalProperties": false
+}
