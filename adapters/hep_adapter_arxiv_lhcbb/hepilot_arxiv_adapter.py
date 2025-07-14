@@ -640,6 +640,9 @@ class HEPilotArxivAdapter:
                 self.logger.warning("No documents discovered")
                 return {"status": "completed", "documents_processed": 0}
             
+            # Create a mapping from document_id to original discovery data
+            discovery_metadata = {doc["document_id"]: doc for doc in discovered_docs}
+            
             # Acquisition phase
             self.logger.info("Starting acquisition phase")
             async with DocumentAcquisition(self.config, self.output_dir / "documents") as acquisition:
@@ -659,6 +662,9 @@ class HEPilotArxivAdapter:
                 acquired_doc = AcquiredDocument(**acquired_doc_dict)
                 
                 try:
+                    # Get original discovery metadata
+                    original_metadata = discovery_metadata.get(acquired_doc.document_id, {})
+                    
                     # Process document
                     self.logger.info(f"Processing document {acquired_doc.document_id}")
                     markdown_content, processing_metadata = processor.process_document(acquired_doc)
@@ -666,16 +672,19 @@ class HEPilotArxivAdapter:
                     # Chunk document
                     chunks = list(chunker.chunk_document(acquired_doc.document_id, markdown_content))
                     
-                    # Save outputs
+                    # Save outputs with original metadata
                     doc_output_dir = self._save_document_outputs(
-                        acquired_doc, markdown_content, chunks, processing_metadata
+                        acquired_doc, markdown_content, chunks, processing_metadata, original_metadata
                     )
+                    
+                    # Extract title (prefer original, then from content)
+                    title = original_metadata.get("title", self._extract_title_from_content(markdown_content))
                     
                     # Add to catalog
                     catalog_entries.append({
                         "document_id": acquired_doc.document_id,
                         "source_type": "arxiv",
-                        "title": self._extract_title_from_content(markdown_content),
+                        "title": title,
                         "chunk_count": len(chunks),
                         "file_path": str(doc_output_dir.relative_to(self.output_dir))
                     })
@@ -721,8 +730,12 @@ class HEPilotArxivAdapter:
             raise
     
     def _save_document_outputs(self, acquired_doc: AcquiredDocument, markdown_content: str, 
-                              chunks: List[Chunk], processing_metadata: Dict[str, Any]) -> Path:
+                              chunks: List[Chunk], processing_metadata: Dict[str, Any],
+                              original_metadata: Dict[str, Any] = None) -> Path:
         """Save all document outputs according to specification."""
+        if original_metadata is None:
+            original_metadata = {}
+            
         doc_dir = Path(acquired_doc.local_path).parent
         chunks_dir = doc_dir / "chunks"
         chunks_dir.mkdir(exist_ok=True)
@@ -735,14 +748,23 @@ class HEPilotArxivAdapter:
         with open(doc_dir / "processing_metadata.json", 'w') as f:
             json.dump(processing_metadata, f, indent=2)
         
+        # Extract title (prefer original, then from content)
+        title = original_metadata.get("title", self._extract_title_from_content(markdown_content))
+        
+        # Extract authors from original metadata
+        authors = original_metadata.get("authors", [])
+        
+        # Get original URL
+        original_url = original_metadata.get("source_url", "unknown")
+        
         # Save document metadata
         document_metadata = {
             "document_id": acquired_doc.document_id,
             "source_type": "arxiv",
-            "original_url": "unknown",  # Would need to track from discovery
+            "original_url": original_url,
             "local_path": acquired_doc.local_path,
-            "title": self._extract_title_from_content(markdown_content),
-            "authors": [],  # Would need to extract from content
+            "title": title,
+            "authors": authors,
             "file_hash": acquired_doc.file_hash_sha256,
             "file_size": acquired_doc.file_size,
             "processing_timestamp": datetime.now(timezone.utc).isoformat(),
@@ -786,9 +808,34 @@ class HEPilotArxivAdapter:
     def _extract_title_from_content(self, content: str) -> str:
         """Extract title from markdown content."""
         lines = content.split('\n')
-        for line in lines[:10]:  # Check first 10 lines
-            if line.startswith('# '):
+        
+        # Try different patterns to find the title
+        for line in lines[:20]:  # Check first 20 lines
+            line = line.strip()
+            
+            # Standard markdown header
+            if line.startswith('# ') and len(line) > 2:
                 return line[2:].strip()
+            
+            # Alternative markdown headers
+            if line.startswith('## ') and len(line) > 3:
+                return line[3:].strip()
+            
+            # Look for lines that look like titles (all caps, or title case)
+            if len(line) > 10 and len(line) < 200:
+                # Check if it looks like a title (no lowercase words at start)
+                words = line.split()
+                if len(words) >= 2 and all(word[0].isupper() or word.lower() in ['a', 'an', 'the', 'of', 'in', 'on', 'at', 'to', 'for', 'with'] for word in words):
+                    # Skip lines that look like headers or metadata
+                    if not any(skip_word in line.lower() for skip_word in ['abstract', 'author', 'page', 'doi', 'arxiv', 'submitted', 'published']):
+                        return line
+        
+        # Fallback: try to find any substantial line that's not too short or too long
+        for line in lines[:30]:
+            line = line.strip()
+            if 20 <= len(line) <= 150 and not line.startswith(('http', 'www', 'doi:', 'arxiv:')):
+                return line
+        
         return "Unknown Title"
 
 
