@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MohamedElashri/HEPilot/standards/schemas/adapter_config.schema.json",
+  "title": "Adapter Configuration",
+  "type": "object",
+  "required": ["adapter_config"],
+  "properties": {
+    "adapter_config": {
+      "type": "object",
+      "required": [
+        "name",
+        "version",
+        "source_type",
+        "processing_config",
+        "config_hash"
+      ],
+      "properties": {
+        "name":    { "type": "string" },
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "source_type": {
+          "description": "Document class handled by this adapter",
+          "enum": ["arxiv", "indico", "internal_notes", "twiki", "other"]
+        },
+        "processing_config": {
+          "type": "object",
+          "required": [
+            "chunk_size",
+            "chunk_overlap",
+            "preserve_tables",
+            "preserve_equations"
+          ],
+          "properties": {
+            "chunk_size": {
+              "type": "integer",
+              "minimum": 512,
+              "maximum": 4096
+            },
+            "chunk_overlap": {
+              "type": "number",
+              "minimum": 0.0,
+              "exclusiveMaximum": 1.0,
+              "default": 0.1
+            },
+            "preserve_tables":    { "type": "boolean", "default": true },
+            "preserve_equations": { "type": "boolean", "default": true }
+          },
+          "additionalProperties": false
+        },
+        "profile": {
+          "type": "string",
+          "description": "Feature profile (e.g. \"core+figures\")"
+        },
+        "config_hash": {
+          "type": "string",
+          "pattern": "^[A-Fa-f0-9]{64}$",
+          "description": "SHA-256 of the canonicalised configuration JSON"
+        },
+        "x_extension": {
+          "type": "object",
+          "description": "Forward-compatible extensions",
+          "additionalProperties": true
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}
