@@ -42,6 +42,7 @@ class AdapterConfig:
     chunk_overlap: float = 0.1
     preserve_tables: bool = True
     preserve_equations: bool = True
+    preserve_inline_equations: bool = True
     profile: str = "core"
     
     def to_dict(self) -> Dict[str, Any]:
@@ -55,7 +56,8 @@ class AdapterConfig:
                     "chunk_size": self.chunk_size,
                     "chunk_overlap": self.chunk_overlap,
                     "preserve_tables": self.preserve_tables,
-                    "preserve_equations": self.preserve_equations
+                    "preserve_equations": self.preserve_equations,
+                    "preserve_inline_equations": self.preserve_inline_equations
                 },
                 "profile": self.profile,
                 "config_hash": self._compute_hash()
@@ -439,6 +441,9 @@ class DocumentProcessor:
             # Post-process markdown
             if self.config.preserve_equations:
                 markdown_content = self._preserve_equations(markdown_content)
+
+            if self.config.preserve_inline_equations:
+                markdown_content = self._preserve_inline_equations(markdown_content)
             
             if self.config.preserve_tables:
                 markdown_content = self._enhance_tables(markdown_content)
@@ -472,10 +477,18 @@ class DocumentProcessor:
             return fallback_content, processing_metadata
     
     def _preserve_equations(self, content: str) -> str:
-        """Enhance equation preservation in markdown."""
-        # docling should handle this, but we can add post-processing
+        """Wraps block equations in markdown code blocks."""
+        # Process block equations $...$
+        content = re.sub(r'(\$.*?\$\$)', r'\n```\n\1\n```\n', content, flags=re.DOTALL)
+        # Process block equations \[...\]
+        content = re.sub(r'(\\[.*?\\])', r'\n```\n\1\n```\n', content, flags=re.DOTALL)
         return content
-    
+
+    def _preserve_inline_equations(self, content: str) -> str:
+        """Wraps inline equations in markdown backticks."""
+        # Process inline equations that are not block equations
+        return re.sub(r'(?<!\$)\$([^\$]+?)\$(?!\$)', r'`$\1`', content)
+
     def _enhance_tables(self, content: str) -> str:
         """Enhance table formatting in markdown."""
         # docling should handle this, but we can add post-processing
@@ -485,6 +498,7 @@ class DocumentProcessor:
         """Extract references from docling result."""
         # Implementation depends on docling's reference extraction capabilities
         return None
+
 
 
 class ChunkingEngine:
@@ -846,7 +860,8 @@ async def main():
         chunk_size=1024,
         chunk_overlap=0.1,
         preserve_tables=True,
-        preserve_equations=True
+        preserve_equations=True,
+        preserve_inline_equations=True
     )
     
     # Output directory
