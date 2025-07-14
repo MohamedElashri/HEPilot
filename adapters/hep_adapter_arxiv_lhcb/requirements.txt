@@ -1,5 +1,5 @@
-docling>=0.1.0
-feedparser
 aiohttp
-pydantic
-sentence-transformers
+feedparser
+docling
+sentence_transformers
+PyYAML

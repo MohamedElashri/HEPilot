@@ -64,3 +64,11 @@ To process the 5 most recent documents and save the output to a directory named 
 ```bash
 python run.py --max-documents 5 --output-dir my_arxiv_output
 ```
+
+## ToDo 
+
+
+1. Handle withdrawn papers (because current code doesn't handle this case and gives error)
+2. Improve and simplfy the caching strategy
+3. Add batch processing for documents
+4. Add `--enrich-formula` option to `docling` to improve formula understanding

@@ -1,0 +1,28 @@
+# Default configuration for the HEPilot arXiv LHCb adapter.
+#
+# This file provides the default settings for the adapter. These values can be
+# overridden by command-line arguments.
+
+# Adapter settings
+name: "hepilot-arxiv-lhcb"
+version: "1.0.0"
+source_type: "arxiv"
+profile: "core"
+
+# Processing settings
+chunk_size: 1024
+chunk_overlap: 0.1
+preserve_tables: true
+preserve_equations: true
+preserve_inline_equations: true
+
+# Tokenizer settings
+tokenizer_model: "BAAI/bge-large-en-v1.5"
+
+# Paths
+output_dir: "./hepilot_output"
+cache_dir: "./hepilot_output/cache"
+state_file: "./hepilot_output/state.json"
+
+# Documents
+max_documents: 20

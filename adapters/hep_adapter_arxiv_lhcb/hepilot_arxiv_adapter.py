@@ -18,10 +18,15 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional, Iterator, Tuple
 from urllib.parse import urljoin
 import xml.etree.ElementTree as ET
+from colorama import Fore, Style, init
+from tqdm import tqdm
 
 import aiohttp
 import feedparser
 from docling.document_converter import DocumentConverter
+from cache_utils import FileCache
+from state_manager import StateManager
+
 try:
     from docling.datamodel.base_models import InputFormat
     from docling.datamodel.pipeline_options import PdfPipelineOptions
@@ -45,6 +50,8 @@ class AdapterConfig:
     preserve_inline_equations: bool = True
     profile: str = "core"
     tokenizer_model: str = "BAAI/bge-large-en-v1.5"
+    cache_dir: str = "./hepilot_output/cache"
+    state_file: str = "./hepilot_output/state.json"
     
     def to_dict(self) -> Dict[str, Any]:
         """Convert to specification-compliant dictionary."""
@@ -132,10 +139,11 @@ class Chunk:
 class ArxivDiscovery:
     """Discovery module for arXiv papers containing LHCb."""
     
-    def __init__(self, config: AdapterConfig):
+    def __init__(self, config: AdapterConfig, output_dir: Path):
         self.config = config
         self.logger = logging.getLogger(__name__)
         self.session: Optional[aiohttp.ClientSession] = None
+        self.cache = FileCache(cache_dir=Path(self.config.cache_dir))
         
     async def __aenter__(self):
         self.session = aiohttp.ClientSession()
@@ -179,8 +187,15 @@ class ArxivDiscovery:
         query = 'abs:"lhcb" OR ti:"lhcb" OR abs:"LHCb" OR ti:"LHCb"'
         url = f"http://export.arxiv.org/api/query?search_query={query}&max_results={max_results}&sortBy=submittedDate&sortOrder=descending"
         
-        async with self.session.get(url) as response:
-            content = await response.text()
+        # Check cache first
+        cached_content = self.cache.get(url)
+        if cached_content:
+            self.logger.info(f"Using cached content for {url}")
+            content = cached_content
+        else:
+            async with self.session.get(url) as response:
+                content = await response.text()
+                self.cache.set(url, content)
             
         # Parse XML response
         root = ET.fromstring(content)
@@ -198,10 +213,21 @@ class ArxivDiscovery:
         """Search arXiv OAI-PMH for LHCb papers."""
         url = f"http://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=oai_dc&set=physics:hep-ex&max_results={max_results}"
         
-        try:
-            async with self.session.get(url) as response:
-                content = await response.text()
+        # Check cache first
+        cached_content = self.cache.get(url)
+        if cached_content:
+            self.logger.info(f"Using cached content for {url}")
+            content = cached_content
+        else:
+            try:
+                async with self.session.get(url) as response:
+                    content = await response.text()
+                    self.cache.set(url, content)
+            except Exception as e:
+                self.logger.warning(f"OAI-PMH search failed: {e}")
+                return []
 
+        try:
             root = ET.fromstring(content)
             ns = {'oai': 'http://www.openarchives.org/OAI/2.0/', 'dc': 'http://purl.org/dc/elements/1.1/'}
             
@@ -226,8 +252,11 @@ class ArxivDiscovery:
                 
                 authors = [creator.text for creator in dc_metadata.findall('dc:creator', ns)]
                 
+                # Generate a deterministic document ID from the arXiv ID
+                document_id = str(uuid.uuid5(uuid.NAMESPACE_URL, arxiv_id))
+
                 doc = DocumentInfo(
-                    document_id=str(uuid.uuid4()),
+                    document_id=document_id,
                     source_type="arxiv",
                     source_url=pdf_url,
                     title=title,
@@ -272,8 +301,11 @@ class ArxivDiscovery:
             if not pdf_url:
                 return None
             
+            # Generate a deterministic document ID from the arXiv ID
+            document_id = str(uuid.uuid5(uuid.NAMESPACE_URL, arxiv_id))
+
             return DocumentInfo(
-                document_id=str(uuid.uuid4()),
+                document_id=document_id,
                 source_type="arxiv",
                 source_url=pdf_url,
                 title=title,
@@ -657,28 +689,53 @@ class ChunkingEngine:
 class HEPilotArxivAdapter:
     """Main adapter class orchestrating the entire pipeline."""
     
-    def __init__(self, config: AdapterConfig, output_dir: Path):
+    def __init__(self, config: AdapterConfig, output_dir: Path, skip_processed: bool = False):
         self.config = config
         self.output_dir = output_dir
         self.logger = self._setup_logging()
+        self.state_manager = StateManager(Path(self.config.state_file))
+        self.skip_processed = skip_processed
         
         # Create output directory structure
         self.output_dir.mkdir(parents=True, exist_ok=True)
         (self.output_dir / "documents").mkdir(exist_ok=True)
         
     def _setup_logging(self) -> logging.Logger:
-        """Setup logging configuration."""
+        """Setup logging configuration with colored output for different log levels."""
+        # Initialize colorama
+        init(autoreset=True)
+        
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.INFO)
         
-        if not logger.handlers:
-            handler = logging.StreamHandler()
-            formatter = logging.Formatter(
-                '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-            )
-            handler.setFormatter(formatter)
-            logger.addHandler(handler)
-            
+        # Prevent propagation to avoid duplicate logs
+        logger.propagate = False
+        
+        # Remove any existing handlers to avoid duplicates
+        for handler in logger.handlers[:]:  # Use a copy to safely modify during iteration
+            logger.removeHandler(handler)
+        
+        # Create new handler with colored formatting
+        handler = logging.StreamHandler()
+        
+        # Custom formatter with colors
+        class ColoredFormatter(logging.Formatter):
+            FORMATS = {
+                logging.DEBUG: '%(asctime)s - %(name)s - ' + Fore.CYAN + '%(levelname)s' + Style.RESET_ALL + ' - %(message)s',
+                logging.INFO: '%(asctime)s - %(name)s - ' + Fore.GREEN + '%(levelname)s' + Style.RESET_ALL + ' - %(message)s',
+                logging.WARNING: '%(asctime)s - %(name)s - ' + Fore.YELLOW + '%(levelname)s' + Style.RESET_ALL + ' - %(message)s',
+                logging.ERROR: '%(asctime)s - %(name)s - ' + Fore.RED + '%(levelname)s' + Style.RESET_ALL + ' - %(message)s',
+                logging.CRITICAL: '%(asctime)s - %(name)s - ' + Fore.RED + Style.BRIGHT + '%(levelname)s' + Style.RESET_ALL + ' - %(message)s'
+            }
+
+            def format(self, record):
+                log_fmt = self.FORMATS.get(record.levelno)
+                formatter = logging.Formatter(log_fmt)
+                return formatter.format(record)
+        
+        handler.setFormatter(ColoredFormatter())
+        logger.addHandler(handler)
+        
         return logger
     
     async def run_pipeline(self, max_documents: int = 10) -> Dict[str, Any]:
@@ -693,7 +750,7 @@ class HEPilotArxivAdapter:
             
             # Discovery phase
             self.logger.info("Starting discovery phase")
-            async with ArxivDiscovery(self.config) as discovery:
+            async with ArxivDiscovery(self.config, self.output_dir) as discovery:
                 discovery_result = await discovery.discover_documents(max_documents)
             
             discovered_docs = discovery_result["discovered_documents"]
@@ -702,14 +759,28 @@ class HEPilotArxivAdapter:
             if not discovered_docs:
                 self.logger.warning("No documents discovered")
                 return {"status": "completed", "documents_processed": 0}
-            
+
+            # Partition documents into those that need processing and those that are already processed
+            docs_to_process = []
+            docs_already_processed = []
+            if self.skip_processed:
+                for doc in discovered_docs:
+                    if self.state_manager.is_processed(doc["document_id"]):
+                        docs_already_processed.append(doc)
+                    else:
+                        docs_to_process.append(doc)
+                self.logger.info(f"Found {len(docs_already_processed)} already processed documents.")
+                self.logger.info(f"Found {len(docs_to_process)} new or failed documents to process.")
+            else:
+                docs_to_process = discovered_docs
+
             # Create a mapping from document_id to original discovery data
             discovery_metadata = {doc["document_id"]: doc for doc in discovered_docs}
             
-            # Acquisition phase
-            self.logger.info("Starting acquisition phase")
+            # Acquisition phase for documents that need processing
+            self.logger.info(f"Starting acquisition phase for {len(docs_to_process)} documents")
             async with DocumentAcquisition(self.config, self.output_dir / "documents") as acquisition:
-                acquisition_result = await acquisition.acquire_documents(discovered_docs)
+                acquisition_result = await acquisition.acquire_documents(docs_to_process)
             
             acquired_docs = acquisition_result["acquired_documents"]
             self.logger.info(f"Acquired {len(acquired_docs)} documents")
@@ -720,8 +791,22 @@ class HEPilotArxivAdapter:
             
             catalog_entries = []
             total_chunks = 0
-            
-            for acquired_doc_dict in acquired_docs:
+
+            # Add already processed documents to the catalog from state
+            for doc in docs_already_processed:
+                doc_metadata = self.state_manager.get_document_metadata(doc["document_id"])
+                if doc_metadata:
+                    catalog_entries.append({
+                        "document_id": doc["document_id"],
+                        "source_type": "arxiv",
+                        "title": doc_metadata.get("title", "Unknown Title"),
+                        "chunk_count": doc_metadata.get("chunk_count", 0),
+                        "file_path": doc_metadata.get("file_path", "")
+                    })
+                    total_chunks += doc_metadata.get("chunk_count", 0)
+
+            # Process newly acquired documents with progress bar
+            for acquired_doc_dict in tqdm(acquired_docs, desc="Processing papers", unit="paper"):
                 acquired_doc = AcquiredDocument(**acquired_doc_dict)
                 
                 try:
@@ -755,8 +840,21 @@ class HEPilotArxivAdapter:
                     total_chunks += len(chunks)
                     self.logger.info(f"Created {len(chunks)} chunks for document {acquired_doc.document_id}")
                     
+                    # Update document state
+                    self.state_manager.set_document_state(
+                        acquired_doc.document_id, 
+                        "processed", 
+                        metadata={
+                            "file_hash_sha256": acquired_doc.file_hash_sha256,
+                            "title": title,
+                            "chunk_count": len(chunks),
+                            "file_path": str(doc_output_dir.relative_to(self.output_dir))
+                        }
+                    )
+                    
                 except Exception as e:
                     self.logger.error(f"Failed to process document {acquired_doc.document_id}: {e}")
+                    self.state_manager.set_document_state(acquired_doc.document_id, "failed", metadata={"error": str(e)})
             
             # Create catalog
             catalog = {
