@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MohamedElashri/HEPilot/standards/schemas/document_metadata.schema.json",
+  "title": "Document Metadata",
+  "type": "object",
+  "required": [
+    "document_id",
+    "source_type",
+    "original_url",
+    "title",
+    "file_hash",
+    "file_size",
+    "processing_timestamp",
+    "adapter_version"
+  ],
+  "properties": {
+    "document_id":        { "type": "string", "format": "uuid" },
+    "source_type":        { "type": "string" },
+    "original_url":       { "type": "string", "format": "uri" },
+    "local_path":         { "type": "string" },
+    "title":              { "type": "string" },
+    "authors":            { "type": "array", "items": { "type": "string" } },
+    "publication_date":   { "type": "string", "format": "date" },
+    "subject_categories": { "type": "array", "items": { "type": "string" } },
+    "language":           { "type": "string" },
+    "file_hash":          { "type": "string" },
+    "file_size":          { "type": "integer" },
+    "processing_timestamp":{ "type": "string", "format": "date-time" },
+    "adapter_version":    { "type": "string" },
+    "experiment_tags":    { "type": "array", "items": { "type": "string" } },
+    "collaboration":      { "type": "string" },
+    "license":            { "type": "string" }
+  },
+  "additionalProperties": false
+}
