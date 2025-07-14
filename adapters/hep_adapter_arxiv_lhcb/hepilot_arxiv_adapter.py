@@ -546,12 +546,15 @@ class DocumentProcessor:
 
 
 
+from sentence_transformers import SentenceTransformer
+
 class ChunkingEngine:
     """Chunking engine for segmenting documents."""
     
     def __init__(self, config: AdapterConfig):
         self.config = config
         self.logger = logging.getLogger(__name__)
+        self.tokenizer = SentenceTransformer("BAAI/bge-large-en-v1.5").tokenizer
     
     def chunk_document(self, document_id: str, content: str) -> Iterator[Chunk]:
         """Chunk document content into LLM-sized pieces."""
@@ -559,14 +562,14 @@ class ChunkingEngine:
         sentences = self._split_sentences(content)
         
         chunk_index = 0
-        total_tokens = sum(len(s.split()) for s in sentences)
+        total_tokens = len(self.tokenizer.encode(content))
         total_chunks = self._estimate_chunk_count(total_tokens)
         
         current_chunk = []
         current_tokens = 0
         
         for i, sentence in enumerate(sentences):
-            sentence_tokens = len(sentence.split())
+            sentence_tokens = len(self.tokenizer.encode(sentence))
             
             # Check if adding this sentence exceeds chunk size
             if current_tokens + sentence_tokens > self.config.chunk_size and current_chunk:
@@ -583,7 +586,7 @@ class ChunkingEngine:
                 
                 # Start new chunk with overlap
                 current_chunk = overlap_sentences + [sentence]
-                current_tokens = sum(len(s.split()) for s in current_chunk)
+                current_tokens = sum(len(self.tokenizer.encode(s)) for s in current_chunk)
                 chunk_index += 1
             else:
                 current_chunk.append(sentence)
@@ -616,7 +619,7 @@ class ChunkingEngine:
         tokens_count = 0
         
         for sentence in reversed(sentences):
-            sentence_tokens = len(sentence.split())
+            sentence_tokens = len(self.tokenizer.encode(sentence))
             if tokens_count + sentence_tokens <= overlap_tokens:
                 overlap_sentences.insert(0, sentence)
                 tokens_count += sentence_tokens
