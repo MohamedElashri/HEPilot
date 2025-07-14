@@ -26,6 +26,7 @@ def main():
     parser.add_argument("--max-documents", type=int, help="Maximum number of documents to process.")
     parser.add_argument("--output-dir", type=str, help="Directory to store the output.")
     parser.add_argument("--skip-processed", action="store_true", help="Skip documents that have already been processed.")
+    parser.add_argument("--all", action="store_true", help="Fetch all available papers before filtering/processing.")
     
     # Adapter configuration
     parser.add_argument("--chunk-size", type=int, help="Chunk size for document processing.")
@@ -83,9 +84,15 @@ def main():
 
     # Run the pipeline
     max_docs = args.max_documents or config_from_file.get("max_documents", 10)
+    fetch_all = args.all or config_from_file.get("fetch_all", False)
     try:
-        result = asyncio.run(adapter.run_pipeline(max_documents=max_docs))
+        result = asyncio.run(adapter.run_pipeline(max_documents=max_docs, fetch_all=fetch_all))
         logger.info(f"Pipeline completed successfully: {result}")
+        if fetch_all:
+            logger.info("Successfully processed papers after fetching all available metadata.")
+        else:
+            logger.info(f"Successfully processed papers with limit of {max_docs}.")
+        logger.info("To fetch all available papers, run with --all flag.")
     except Exception as e:
         logger.error(f"Pipeline failed: {e}", exc_info=True)
 
