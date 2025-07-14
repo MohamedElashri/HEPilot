@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MohamedElashri/HEPilot/standards/schemas/rate_limit_status.schema.json",
+  "title": "Rate-Limit Status",
+  "type": "object",
+  "required": ["limit", "remaining", "reset_timestamp"],
+  "properties": {
+    "limit":           { "type": "integer", "minimum": 0 },
+    "remaining":       { "type": "integer", "minimum": 0 },
+    "reset_timestamp": { "type": "string", "format": "date-time" }
+  },
+  "additionalProperties": false
+}
