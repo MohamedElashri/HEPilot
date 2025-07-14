@@ -16,8 +16,49 @@ import logging
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Tuple, Set
+from colorama import Fore, Style, init
 
-logger = logging.getLogger(__name__)
+# Initialize colorama
+init(autoreset=True)
+
+# Setup colored logging
+def setup_logging():
+    """Setup logging configuration with colored output for different log levels."""
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.INFO)
+    
+    # Prevent propagation to avoid duplicate logs
+    logger.propagate = False
+    
+    # Remove any existing handlers to avoid duplicates
+    for handler in logger.handlers[:]:
+        logger.removeHandler(handler)
+    
+    # Create new handler with colored formatting
+    handler = logging.StreamHandler()
+    
+    # Custom formatter with colors
+    class ColoredFormatter(logging.Formatter):
+        FORMATS = {
+            logging.DEBUG: '%(asctime)s - %(name)s - ' + Fore.CYAN + '%(levelname)s' + Style.RESET_ALL + ' - %(message)s',
+            logging.INFO: '%(asctime)s - %(name)s - ' + Fore.GREEN + '%(levelname)s' + Style.RESET_ALL + ' - %(message)s',
+            logging.WARNING: '%(asctime)s - %(name)s - ' + Fore.YELLOW + '%(levelname)s' + Style.RESET_ALL + ' - %(message)s',
+            logging.ERROR: '%(asctime)s - %(name)s - ' + Fore.RED + '%(levelname)s' + Style.RESET_ALL + ' - %(message)s',
+            logging.CRITICAL: '%(asctime)s - %(name)s - ' + Fore.RED + Style.BRIGHT + '%(levelname)s' + Style.RESET_ALL + ' - %(message)s'
+        }
+        
+        def format(self, record):
+            log_fmt = self.FORMATS.get(record.levelno)
+            formatter = logging.Formatter(log_fmt)
+            return formatter.format(record)                             
+   sc]'' 
+    handler.setFormatter(ColoredFormatter())
+    logger.addHandler(handler)
+    
+    return logger
+
+# Get configured logger
+logger = setup_logging()
 
 class UnifiedCache:
     """
