@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MohamedElashri/HEPilot/standards/schemas/acquisition_output.schema.json",
+  "title": "Acquisition Output",
+  "type": "object",
+  "required": ["acquired_documents"],
+  "properties": {
+    "acquired_documents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "document_id",
+          "local_path",
+          "file_hash_sha256",
+          "file_hash_sha512",
+          "file_size",
+          "download_timestamp",
+          "download_status",
+          "validation_status"
+        ],
+        "properties": {
+          "document_id":        { "type": "string", "format": "uuid" },
+          "local_path":         { "type": "string" },
+          "file_hash_sha256":   { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" },
+          "file_hash_sha512":   { "type": "string", "pattern": "^[A-Fa-f0-9]{128}$" },
+          "file_size":          { "type": "integer" },
+          "download_timestamp": { "type": "string", "format": "date-time" },
+          "download_status":    { "enum": ["success", "failed", "partial", "abandoned"] },
+          "retry_count":        { "type": "integer", "minimum": 0 },
+          "validation_status":  { "enum": ["passed", "failed", "warning"] }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
