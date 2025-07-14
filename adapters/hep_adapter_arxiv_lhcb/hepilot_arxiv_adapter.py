@@ -1195,8 +1195,24 @@ class HEPilotArxivAdapter:
 
 async def main():
     """Example usage of the HEPilot arXiv adapter."""
-    # Configuration
+    # Parse command line arguments
+    import argparse
+    parser = argparse.ArgumentParser(description='HEPilot arXiv LHCb Adapter')
+    parser.add_argument('-m', '--max-documents', type=int, default=5,
+                        help='Maximum number of documents to process')
+    parser.add_argument('-a', '--all', action='store_true',
+                        help='Fetch all available papers before filtering/processing')
+    parser.add_argument('-o', '--output-dir', type=str, default='./hepilot_output',
+                        help='Output directory path')
+    parser.add_argument('-s', '--skip-processed', action='store_true',
+                        help='Skip already processed documents')
+    args = parser.parse_args()
+    
+    # Configure adapter
     config = AdapterConfig(
+        name="hepilot-arxiv-lhcb",
+        version="1.0.0",
+        source_type="arxiv",
         chunk_size=512,
         chunk_overlap=0.1,
         preserve_tables=True,
@@ -1205,13 +1221,20 @@ async def main():
     )
     
     # Output directory
-    output_dir = Path("./hepilot_output")
+    output_dir = Path(args.output_dir)
     
     # Create and run adapter
-    adapter = HEPilotArxivAdapter(config, output_dir)
-    result = await adapter.run_pipeline(max_documents=5)
+    adapter = HEPilotArxivAdapter(config, output_dir, skip_processed=args.skip_processed)
+    result = await adapter.run_pipeline(max_documents=args.max_documents, fetch_all=args.all)
     
     print(f"Pipeline result: {result}")
+    
+    if args.all:
+        print(f"Successfully processed papers after fetching all available metadata.")
+    else:
+        print(f"Successfully processed papers with limit of {args.max_documents}.")
+    print(f"To process all available papers, run with --all flag.")
+    print(f"Example: python hepilot_arxiv_adapter.py --all --max-documents 10")
 
 
 if __name__ == "__main__":
