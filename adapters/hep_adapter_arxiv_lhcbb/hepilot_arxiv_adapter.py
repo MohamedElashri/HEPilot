@@ -195,19 +195,51 @@ class ArxivDiscovery:
     
     async def _search_oai_pmh(self, max_results: int) -> List[DocumentInfo]:
         """Search arXiv OAI-PMH for LHCb papers."""
-        # Simplified OAI-PMH implementation
-        url = "https://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=arXiv&set=physics:hep-ex"
+        url = f"http://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=oai_dc&set=physics:hep-ex&max_results={max_results}"
         
         try:
             async with self.session.get(url) as response:
                 content = await response.text()
-                
-            # Parse and filter for LHCb (simplified)
-            documents = []
-            # Implementation would parse OAI-PMH XML and filter for LHCb papers
-            # For brevity, returning empty list
-            return documents
+
+            root = ET.fromstring(content)
+            ns = {'oai': 'http://www.openarchives.org/OAI/2.0/', 'dc': 'http://purl.org/dc/elements/1.1/'}
             
+            documents = []
+            for record in root.findall('.//oai:record', ns):
+                header = record.find('oai:header', ns)
+                if header.get('status') == 'deleted':
+                    continue
+
+                metadata = record.find('oai:metadata', ns)
+                dc_metadata = metadata.find('dc:dc', ns)
+                
+                title = dc_metadata.find('dc:title', ns).text.strip()
+                abstract = dc_metadata.find('dc:description', ns).text.strip()
+
+                if not self._contains_lhcb(title, abstract):
+                    continue
+
+                identifier = dc_metadata.find('dc:identifier', ns).text
+                arxiv_id = identifier.split('/')[-1]
+                pdf_url = f"https://arxiv.org/pdf/{arxiv_id}.pdf"
+                
+                authors = [creator.text for creator in dc_metadata.findall('dc:creator', ns)]
+                
+                doc = DocumentInfo(
+                    document_id=str(uuid.uuid4()),
+                    source_type="arxiv",
+                    source_url=pdf_url,
+                    title=title,
+                    authors=authors,
+                    discovery_timestamp=datetime.now(timezone.utc).isoformat(),
+                    estimated_size=1024*1024,  # Estimate 1MB
+                    abstract=abstract,
+                    arxiv_id=arxiv_id
+                )
+                documents.append(doc)
+            
+            return documents
+
         except Exception as e:
             self.logger.warning(f"OAI-PMH search failed: {e}")
             return []
@@ -491,13 +523,26 @@ class DocumentProcessor:
 
     def _enhance_tables(self, content: str) -> str:
         """Enhance table formatting in markdown."""
-        # docling should handle this, but we can add post-processing
         return content
     
     def _extract_references(self, result) -> Optional[List[Dict[str, Any]]]:
-        """Extract references from docling result."""
-        # Implementation depends on docling's reference extraction capabilities
-        return None
+        """Extract and format references from the docling result."""
+        if not hasattr(result, 'document') or not hasattr(result.document, 'references'):
+            return None
+
+        extracted_references = []
+        # Assuming result.document.references is a list of reference objects
+        for i, ref_obj in enumerate(result.document.references):
+            # This is a speculative implementation based on a potential docling output.
+            # We assume the reference object can be converted to a string.
+            ref_text = str(ref_obj)
+            
+            extracted_references.append({
+                "id": f"ref_{i+1}",
+                "text": ref_text
+            })
+
+        return extracted_references
 
 
 
