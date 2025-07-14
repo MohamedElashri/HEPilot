@@ -10,7 +10,7 @@ source_type: "arxiv"
 profile: "core"
 
 # Processing settings
-chunk_size: 1024
+chunk_size: 512
 chunk_overlap: 0.1
 preserve_tables: true
 preserve_equations: true

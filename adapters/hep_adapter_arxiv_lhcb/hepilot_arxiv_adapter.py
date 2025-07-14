@@ -262,7 +262,7 @@ class ArxivDiscovery:
                     title=title,
                     authors=authors,
                     discovery_timestamp=datetime.now(timezone.utc).isoformat(),
-                    estimated_size=1024*1024,  # Estimate 1MB
+                    estimated_size=512*1024,  # Estimate 1MB
                     abstract=abstract,
                     arxiv_id=arxiv_id
                 )
@@ -1004,7 +1004,7 @@ async def main():
     """Example usage of the HEPilot arXiv adapter."""
     # Configuration
     config = AdapterConfig(
-        chunk_size=1024,
+        chunk_size=512,
         chunk_overlap=0.1,
         preserve_tables=True,
         preserve_equations=True,
