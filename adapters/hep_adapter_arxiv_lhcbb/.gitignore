@@ -1,0 +1,12 @@
+## Python
+__pycache__
+venv
+
+## Docling
+downloads
+
+## Documents 
+**.pdf
+**.html
+**example**
+**test**
