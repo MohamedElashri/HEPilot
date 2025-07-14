@@ -24,8 +24,7 @@ from tqdm import tqdm
 import aiohttp
 import feedparser
 from docling.document_converter import DocumentConverter
-from cache_utils import FileCache
-from state_manager import StateManager
+from unified_cache import UnifiedCache
 
 try:
     from docling.datamodel.base_models import InputFormat
@@ -139,11 +138,12 @@ class Chunk:
 class ArxivDiscovery:
     """Discovery module for arXiv papers containing LHCb."""
     
-    def __init__(self, config: AdapterConfig, output_dir: Path):
+    def __init__(self, config: AdapterConfig, output_dir: Path, cache: UnifiedCache = None):
         self.config = config
+        self.output_dir = output_dir
         self.logger = logging.getLogger(__name__)
         self.session: Optional[aiohttp.ClientSession] = None
-        self.cache = FileCache(cache_dir=Path(self.config.cache_dir))
+        self.cache = cache or UnifiedCache(output_dir, Path(self.config.cache_dir))
         
     async def __aenter__(self):
         self.session = aiohttp.ClientSession()
@@ -188,14 +188,14 @@ class ArxivDiscovery:
         url = f"http://export.arxiv.org/api/query?search_query={query}&max_results={max_results}&sortBy=submittedDate&sortOrder=descending"
         
         # Check cache first
-        cached_content = self.cache.get(url)
+        cached_content = self.cache.get_api_response(url)
         if cached_content:
             self.logger.info(f"Using cached content for {url}")
             content = cached_content
         else:
             async with self.session.get(url) as response:
                 content = await response.text()
-                self.cache.set(url, content)
+                self.cache.set_api_response(url, content)
             
         # Parse XML response
         root = ET.fromstring(content)
@@ -214,7 +214,7 @@ class ArxivDiscovery:
         url = f"http://export.arxiv.org/oai2?verb=ListRecords&metadataPrefix=oai_dc&set=physics:hep-ex&max_results={max_results}"
         
         # Check cache first
-        cached_content = self.cache.get(url)
+        cached_content = self.cache.get_api_response(url)
         if cached_content:
             self.logger.info(f"Using cached content for {url}")
             content = cached_content
@@ -222,7 +222,7 @@ class ArxivDiscovery:
             try:
                 async with self.session.get(url) as response:
                     content = await response.text()
-                    self.cache.set(url, content)
+                    self.cache.set_api_response(url, content)
             except Exception as e:
                 self.logger.warning(f"OAI-PMH search failed: {e}")
                 return []
@@ -693,7 +693,11 @@ class HEPilotArxivAdapter:
         self.config = config
         self.output_dir = output_dir
         self.logger = self._setup_logging()
-        self.state_manager = StateManager(Path(self.config.state_file))
+        self.unified_cache = UnifiedCache(
+            output_dir, 
+            Path(self.config.cache_dir), 
+            Path(self.config.state_file)
+        )
         self.skip_processed = skip_processed
         
         # Create output directory structure
@@ -750,7 +754,7 @@ class HEPilotArxivAdapter:
             
             # Discovery phase
             self.logger.info("Starting discovery phase")
-            async with ArxivDiscovery(self.config, self.output_dir) as discovery:
+            async with ArxivDiscovery(self.config, self.output_dir, self.unified_cache) as discovery:
                 discovery_result = await discovery.discover_documents(max_documents)
             
             discovered_docs = discovery_result["discovered_documents"]
@@ -765,7 +769,7 @@ class HEPilotArxivAdapter:
             docs_already_processed = []
             if self.skip_processed:
                 for doc in discovered_docs:
-                    if self.state_manager.is_processed(doc["document_id"]):
+                    if self.unified_cache.is_document_processed(doc["document_id"]):
                         docs_already_processed.append(doc)
                     else:
                         docs_to_process.append(doc)
@@ -792,9 +796,9 @@ class HEPilotArxivAdapter:
             catalog_entries = []
             total_chunks = 0
 
-            # Add already processed documents to the catalog from state
+            # Add already processed documents to the catalog from unified cache
             for doc in docs_already_processed:
-                doc_metadata = self.state_manager.get_document_metadata(doc["document_id"])
+                doc_metadata = self.unified_cache.get_document_metadata(doc["document_id"])
                 if doc_metadata:
                     catalog_entries.append({
                         "document_id": doc["document_id"],
@@ -840,12 +844,11 @@ class HEPilotArxivAdapter:
                     total_chunks += len(chunks)
                     self.logger.info(f"Created {len(chunks)} chunks for document {acquired_doc.document_id}")
                     
-                    # Update document state
-                    self.state_manager.set_document_state(
-                        acquired_doc.document_id, 
-                        "processed", 
+                    # Update document state in unified cache
+                    self.unified_cache.set_document_processed(
+                        acquired_doc.document_id,
+                        acquired_doc.file_hash_sha256,
                         metadata={
-                            "file_hash_sha256": acquired_doc.file_hash_sha256,
                             "title": title,
                             "chunk_count": len(chunks),
                             "file_path": str(doc_output_dir.relative_to(self.output_dir))
@@ -854,7 +857,7 @@ class HEPilotArxivAdapter:
                     
                 except Exception as e:
                     self.logger.error(f"Failed to process document {acquired_doc.document_id}: {e}")
-                    self.state_manager.set_document_state(acquired_doc.document_id, "failed", metadata={"error": str(e)})
+                    self.unified_cache.set_document_failed(acquired_doc.document_id, str(e))
             
             # Create catalog
             catalog = {

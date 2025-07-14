@@ -25,4 +25,7 @@ cache_dir: "./hepilot_output/cache"
 state_file: "./hepilot_output/state.json"
 
 # Documents
-max_documents: 20
+max_documents: 25
+
+# Caching behavior
+skip_processed: true

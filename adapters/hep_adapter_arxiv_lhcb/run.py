@@ -70,8 +70,12 @@ def main():
     # Output directory
     output_dir = Path(args.output_dir or config_from_file.get("output_dir", "./hepilot_output"))
 
+    # Skip processed documents or not
+    skip_processed = args.skip_processed or config_from_file.get("skip_processed", False)
+
     # Create and run adapter
-    adapter = HEPilotArxivAdapter(config, output_dir, skip_processed=args.skip_processed)
+    adapter = HEPilotArxivAdapter(config, output_dir, skip_processed=skip_processed)
+
 
     logger.info(f"Starting adapter with the following configuration:\n{json.dumps(config.to_dict(), indent=2)}")
 

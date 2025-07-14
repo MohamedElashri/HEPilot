@@ -19,7 +19,9 @@ The adapter follows a modular, pipeline-based architecture. Each stage of the pr
 
 4.  **`ChunkingEngine`**: The processed Markdown is segmented into smaller, overlapping chunks suitable for ingestion by a large language model. This simple implementation splits the text by sentences and creates chunks based on a configurable token count.
 
-5.  **`HEPilotArxivAdapter`**: This is the main orchestrator class that initializes and runs the entire pipeline in sequence. It manages the flow of data from one component to the next and saves the final structured output.
+5.  **`UnifiedCache`**: This module provides an intelligent caching system that unifies API response caching, document state tracking, and content-based deduplication. It avoids redundant storage and processing by detecting already downloaded and processed documents in the same working directory.
+
+6.  **`HEPilotArxivAdapter`**: This is the main orchestrator class that initializes and runs the entire pipeline in sequence. It manages the flow of data from one component to the next and saves the final structured output.
 
 The final output is stored in a structured directory, including the full processed Markdown, individual chunk files, and metadata for each document and chunk.
 
@@ -69,6 +71,5 @@ python run.py --max-documents 5 --output-dir my_arxiv_output
 
 
 1. Handle withdrawn papers (because current code doesn't handle this case and gives error)
-2. Improve and simplfy the caching strategy
-3. Add batch processing for documents
-4. Add `--enrich-formula` option to `docling` to improve formula understanding
+2. Add batch processing for documents
+3. Add `--enrich-formula` option to `docling` to improve formula understanding
