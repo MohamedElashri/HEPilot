@@ -21,6 +21,10 @@
           "description": "Document class handled by this adapter",
           "enum": ["arxiv", "indico", "internal_notes", "twiki", "other"]
         },
+        "credential_id": {
+          "type": "string",
+          "description": "Identifier for the credential to use from an external store."
+        },
         "processing_config": {
           "type": "object",
           "required": [

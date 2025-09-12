@@ -1,9 +1,9 @@
 ## HEPilot RAG Adapter Framework Specification
-**Version 1.0** — Initial Personal Release
+**Version 1.0** — Initial Personal Release
 
-**Last-modified** 14 July 2025 · Next-review January 2026
+**Last-modified** 14 July 2025 · Next-review January 2026
 
-**Author** Mohamed Elashri · Contact [mohamed.elashri@cern.ch](mailto:mohamed.elashri@cern.ch)
+**Author** Mohamed Elashri · Contact [mohamed.elashri@cern.ch](mailto:mohamed.elashri@cern.ch)
 
 **Repository** [https://github.com/MohamedElashri/HEPilot/standards](https://github.com/MohamedElashri/HEPilot/standards)
 
@@ -92,6 +92,11 @@ Normative keywords **MUST**, **SHALL** and **REQUIRED** denote mandatory behavio
           "enum": ["arxiv", "indico", "internal_notes", "twiki", "other"]
         },
 
+        "credential_id": {
+          "type": "string",
+          "description": "Identifier for the credential to use from an external store."
+        },
+
         "processing_config": {
           "type": "object",
           "required": [
@@ -151,9 +156,26 @@ Normative keywords **MUST**, **SHALL** and **REQUIRED** denote mandatory behavio
 
 ## 4 Discovery Module
 
-### 4.1 Security Hooks
+### 4.1 Authentication
 
-A Discovery implementation **SHALL** accept an opaque credential object (token, certificate, API key …).  The adapter passes it unchanged to the target service; public endpoints ignore it.
+For sources that require authentication, a Discovery implementation **MUST** handle it in a standardized manner. For sources that do not require authentication (e.g., public arXiv), this section can be ignored.
+
+#### 4.1.1 Credential Management
+
+When authentication is required, the `adapter_config.json` **SHOULD** specify a `credential_id`. This identifier corresponds to an entry in a separate, non-version-controlled `credentials.json` file. This approach avoids hardcoding secrets and allows for a flexible and secure way to manage credentials.
+
+The structure of the `credentials.json` file is defined by the `credentials.schema.json`, which supports various authentication methods, including API keys, bearer tokens, OAuth2, and x509 certificates.
+
+**Security Warning:** The `credentials.json` file **MUST NOT** be committed to version control. Add it to your project's `.gitignore` file.
+
+#### 4.1.2 Example Usage
+
+If an adapter needs to access a protected resource, its `adapter_config.json` might contain:
+```json
+"credential_id": "my_protected_service_key"
+```
+
+The adapter would then look for an entry with `id: "my_protected_service_key"` in the `credentials.json` file to retrieve the necessary authentication details, such as an API key or token.
 
 ### 4.2 Global Rate-Limit Status
 
@@ -285,13 +307,9 @@ Every file **MUST** pass:
           "file_hash_sha512":   { "type": "string", "pattern": "^[A-Fa-f0-9]{128}$" },
           "file_size":          { "type": "integer" },
           "download_timestamp": { "type": "string", "format": "date-time" },
-          "download_status":    {
-            "enum": ["success", "failed", "partial", "abandoned"]
-          },
+          "download_status":    { "enum": ["success", "failed", "partial", "abandoned"] },
           "retry_count":        { "type": "integer", "minimum": 0 },
-          "validation_status":  {
-            "enum": ["passed", "failed", "warning"]
-          }
+          "validation_status":  { "enum": ["passed", "failed", "warning"] }
         },
         "additionalProperties": false
       }
@@ -542,7 +560,7 @@ def chunk_generator(document: Document) -> Iterator[Chunk]:
 
 ### 8.3 Processing Metadata
 
-*(See § 6.7.)*
+(See § 6.7.)
 
 ---
 
@@ -707,7 +725,7 @@ The *HEPilot* repository hosts a reference corpus and an automated test harness.
 ### 11.2 Reference Implementation
 
 An illustrative adapter resides at
-[https://github.com/MohamedElashri/HEPilot/standards/reference\_adapter](https://github.com/MohamedElashri/HEPilot/standards/reference_adapter).
+[https://github.com/MohamedElashri/HEPilot/standards/reference_adapter](https://github.com/MohamedElashri/HEPilot/standards/reference_adapter).
 
 ---
 
@@ -739,7 +757,7 @@ Feedback and pull-requests are welcome at the GitHub repository or by contacting
 
 ---
 
-## Appendix A Machine-Readable JSON Schemas
+## Appendix A Machine-Readable JSON Schemas
 
 All schemas conform to JSON-Schema Draft 2020-12 and disable unspecified properties (`"additionalProperties": false"`) unless otherwise noted.  File paths under `$id` correspond to:
 
@@ -749,7 +767,78 @@ https://github.com/MohamedElashri/HEPilot/standards/schemas/
 
 ---
 
-### A.1  rate\_limit\_status.schema.json
+### A.1  credentials.schema.json
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MohamedElashri/HEPilot/standards/schemas/credentials.schema.json",
+  "title": "Credential Store",
+  "description": "A collection of credentials for accessing data sources. This file MUST NOT be committed to version control.",
+  "type": "object",
+  "properties": {
+    "credentials": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "type"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "A unique identifier for the credential."
+          },
+          "type": {
+            "type": "string",
+            "enum": ["api_key", "bearer_token", "oauth2_client_credentials", "x509"]
+          },
+          "description": {
+            "type": "string",
+            "description": "An optional description of the credential."
+          }
+        },
+        "oneOf": [
+          {
+            "properties": {
+              "type": { "const": "api_key" },
+              "key": { "type": "string" }
+            },
+            "required": ["key"]
+          },
+          {
+            "properties": {
+              "type": { "const": "bearer_token" },
+              "token": { "type": "string" }
+            },
+            "required": ["token"]
+          },
+          {
+            "properties": {
+              "type": { "const": "oauth2_client_credentials" },
+              "token_url": { "type": "string", "format": "uri" },
+              "client_id": { "type": "string" },
+              "client_secret": { "type": "string" }
+            },
+            "required": ["token_url", "client_id", "client_secret"]
+          },
+          {
+            "properties": {
+              "type": { "const": "x509" },
+              "cert_path": { "type": "string" },
+              "key_path": { "type": "string" }
+            },
+            "required": ["cert_path", "key_path"]
+          }
+        ]
+      }
+    }
+  },
+  "required": ["credentials"]
+}
+```
+
+---
+
+### A.2  rate_limit_status.schema.json
 
 ```json
 {
@@ -769,7 +858,7 @@ https://github.com/MohamedElashri/HEPilot/standards/schemas/
 
 ---
 
-### A.2  adapter\_config.schema.json
+### A.3  adapter_config.schema.json
 
 ```json
 {
@@ -794,6 +883,10 @@ https://github.com/MohamedElashri/HEPilot/standards/schemas/
         "source_type": {
           "description": "Document class handled by this adapter",
           "enum": ["arxiv", "indico", "internal_notes", "twiki", "other"]
+        },
+        "credential_id": {
+          "type": "string",
+          "description": "Identifier for the credential to use from an external store."
         },
         "processing_config": {
           "type": "object",
@@ -844,7 +937,7 @@ https://github.com/MohamedElashri/HEPilot/standards/schemas/
 
 ---
 
-### A.3  discovery\_output.schema.json
+### A.4  discovery_output.schema.json
 
 ```json
 {
@@ -890,7 +983,7 @@ https://github.com/MohamedElashri/HEPilot/standards/schemas/
 
 ---
 
-### A.4  acquisition\_output.schema.json
+### A.5  acquisition_output.schema.json
 
 ```json
 {
@@ -935,7 +1028,7 @@ https://github.com/MohamedElashri/HEPilot/standards/schemas/
 
 ---
 
-### A.5  chunk\_output.schema.json
+### A.6  chunk_output.schema.json
 
 ```json
 {
@@ -979,7 +1072,7 @@ https://github.com/MohamedElashri/HEPilot/standards/schemas/
 
 ---
 
-### A.6  document\_metadata.schema.json
+### A.7  document_metadata.schema.json
 
 ```json
 {
@@ -1021,7 +1114,7 @@ https://github.com/MohamedElashri/HEPilot/standards/schemas/
 
 ---
 
-### A.7  chunk\_metadata.schema.json
+### A.8  chunk_metadata.schema.json
 
 ```json
 {
@@ -1071,7 +1164,7 @@ https://github.com/MohamedElashri/HEPilot/standards/schemas/
 
 ---
 
-### A.8  processing\_metadata.schema.json
+### A.9  processing_metadata.schema.json
 
 ```json
 {
@@ -1099,7 +1192,7 @@ https://github.com/MohamedElashri/HEPilot/standards/schemas/
 
 ---
 
-### A.9  catalog.schema.json
+### A.10  catalog.schema.json
 
 ```json
 {
@@ -1130,6 +1223,7 @@ https://github.com/MohamedElashri/HEPilot/standards/schemas/
       },
       "additionalProperties": false
     },
+
     "documents": {
       "type": "array",
       "items": {
@@ -1158,7 +1252,7 @@ https://github.com/MohamedElashri/HEPilot/standards/schemas/
 
 ---
 
-### A.10  log\_entry.schema.json
+### A.11  log_entry.schema.json
 
 ```json
 {
