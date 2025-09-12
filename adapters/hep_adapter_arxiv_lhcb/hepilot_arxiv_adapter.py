@@ -36,47 +36,7 @@ except ImportError:
     DOCLING_ADVANCED_IMPORTS = False
 
 
-@dataclass
-class AdapterConfig:
-    """Configuration for the HEPilot arXiv adapter."""
-    name: str = "hepilot-arxiv-lhcb"
-    version: str = "1.0.0"
-    source_type: str = "arxiv"
-    chunk_size: int = 1024
-    chunk_overlap: float = 0.1
-    preserve_tables: bool = True
-    preserve_equations: bool = True
-    preserve_inline_equations: bool = True
-    include_authors: bool = False  # When false, authors will be removed from documents and chunks
-    profile: str = "core"
-    tokenizer_model: str = "BAAI/bge-large-en-v1.5"
-    cache_dir: str = "./hepilot_output/cache"
-    state_file: str = "./hepilot_output/state.json"
-    
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to specification-compliant dictionary."""
-        config_dict = {
-            "adapter_config": {
-                "name": self.name,
-                "version": self.version,
-                "source_type": self.source_type,
-                "processing_config": {
-                    "chunk_size": self.chunk_size,
-                    "chunk_overlap": self.chunk_overlap,
-                    "preserve_tables": self.preserve_tables,
-                    "preserve_equations": self.preserve_equations,
-                    "preserve_inline_equations": self.preserve_inline_equations
-                },
-                "profile": self.profile,
-                "config_hash": self._compute_hash()
-            }
-        }
-        return config_dict
-    
-    def _compute_hash(self) -> str:
-        """Compute SHA-256 hash of canonicalized configuration."""
-        config_str = json.dumps(asdict(self), sort_keys=True)
-        return hashlib.sha256(config_str.encode()).hexdigest()
+
 
 
 @dataclass
@@ -139,12 +99,12 @@ class Chunk:
 class ArxivDiscovery:
     """Discovery module for arXiv papers containing LHCb."""
     
-    def __init__(self, config: AdapterConfig, output_dir: Path, cache: UnifiedCache = None):
+    def __init__(self, config: Dict[str, Any], output_dir: Path, cache: UnifiedCache = None):
         self.config = config
         self.output_dir = output_dir
         self.logger = logging.getLogger(__name__)
         self.session: Optional[aiohttp.ClientSession] = None
-        self.cache = cache or UnifiedCache(output_dir, Path(self.config.cache_dir))
+        self.cache = cache or UnifiedCache(output_dir, Path(self.config["x_extension"]["cache_dir"]))
         
     async def __aenter__(self):
         self.session = aiohttp.ClientSession()
@@ -470,7 +430,7 @@ class ArxivDiscovery:
         }
         
         # Only include authors if configured to do so
-        if self.config.include_authors:
+        if self.config.get("x_extension", {}).get("include_authors"):
             doc_dict["authors"] = doc.authors
             
         return doc_dict
@@ -479,7 +439,7 @@ class ArxivDiscovery:
 class DocumentAcquisition:
     """Acquisition module for downloading arXiv papers."""
     
-    def __init__(self, config: AdapterConfig, output_dir: Path):
+    def __init__(self, config: Dict[str, Any], output_dir: Path):
         self.config = config
         self.output_dir = output_dir
         self.logger = logging.getLogger(__name__)
@@ -599,7 +559,7 @@ class DocumentAcquisition:
 class DocumentProcessor:
     """Processing pipeline using docling for PDF conversion."""
     
-    def __init__(self, config: AdapterConfig):
+    def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.logger = logging.getLogger(__name__)
         
@@ -640,13 +600,13 @@ class DocumentProcessor:
                 warnings.append(f"Markdown extraction failed: {e}")
             
             # Post-process markdown
-            if self.config.preserve_equations:
+            if self.config.get("processing_config", {}).get("preserve_equations"):
                 markdown_content = self._preserve_equations(markdown_content)
 
-            if self.config.preserve_inline_equations:
+            if self.config.get("x_extension", {}).get("preserve_inline_equations"):
                 markdown_content = self._preserve_inline_equations(markdown_content)
             
-            if self.config.preserve_tables:
+            if self.config.get("processing_config", {}).get("preserve_tables"):
                 markdown_content = self._enhance_tables(markdown_content)
             
             # Extract references if available
@@ -720,10 +680,10 @@ from sentence_transformers import SentenceTransformer
 class ChunkingEngine:
     """Chunking engine for segmenting documents."""
     
-    def __init__(self, config: AdapterConfig):
+    def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.logger = logging.getLogger(__name__)
-        self.tokenizer = SentenceTransformer(self.config.tokenizer_model).tokenizer
+        self.tokenizer = SentenceTransformer(self.config["x_extension"]["tokenizer_model"]).tokenizer
     
     def chunk_document(self, document_id: str, content: str) -> Iterator[Chunk]:
         """Chunk document content into LLM-sized pieces."""
@@ -741,7 +701,7 @@ class ChunkingEngine:
             sentence_tokens = len(self.tokenizer.encode(sentence))
             
             # Check if adding this sentence exceeds chunk size
-            if current_tokens + sentence_tokens > self.config.chunk_size and current_chunk:
+            if current_tokens + sentence_tokens > self.config["processing_config"]["chunk_size"] and current_chunk:
                 # Create chunk
                 chunk_content = ' '.join(current_chunk)
                 chunk = self._create_chunk(
@@ -750,7 +710,7 @@ class ChunkingEngine:
                 yield chunk
                 
                 # Calculate overlap
-                overlap_tokens = int(self.config.chunk_size * self.config.chunk_overlap)
+                overlap_tokens = int(self.config["processing_config"]["chunk_size"] * self.config["processing_config"]["chunk_overlap"])
                 overlap_sentences = self._get_overlap_sentences(current_chunk, overlap_tokens)
                 
                 # Start new chunk with overlap
@@ -777,7 +737,7 @@ class ChunkingEngine:
     
     def _estimate_chunk_count(self, total_tokens: int) -> int:
         """Estimate total number of chunks."""
-        return max(1, (total_tokens + self.config.chunk_size - 1) // self.config.chunk_size)
+        return max(1, (total_tokens + self.config["processing_config"]["chunk_size"] - 1) // self.config["processing_config"]["chunk_size"])
     
     def _get_overlap_sentences(self, sentences: List[str], overlap_tokens: int) -> List[str]:
         """Get sentences for overlap."""
@@ -825,72 +785,23 @@ class ChunkingEngine:
 class HEPilotArxivAdapter:
     """Main adapter class orchestrating the entire pipeline."""
     
-    def __init__(self, config: AdapterConfig, output_dir: Path, skip_processed: bool = False):
+    def __init__(self, config: Dict[str, Any]):
         self.config = config
-        self.output_dir = output_dir
-        self.logger = self._setup_logging()
+        self.output_dir = Path(config["x_extension"]["output_dir"])
+        self.logger = logging.getLogger(__name__)
         self.unified_cache = UnifiedCache(
-            output_dir, 
-            Path(self.config.cache_dir), 
-            Path(self.config.state_file)
+            self.output_dir, 
+            Path(self.config["x_extension"]["cache_dir"]), 
+            Path(self.config["x_extension"]["state_file"])
         )
-        self.skip_processed = skip_processed
+        self.skip_processed = self.config["x_extension"]["skip_processed"]
         
         # Create output directory structure
         self.output_dir.mkdir(parents=True, exist_ok=True)
         (self.output_dir / "documents").mkdir(exist_ok=True)
-        
-    def _setup_logging(self) -> logging.Logger:
-        """Setup logging configuration with colored output for different log levels."""
-        # Initialize colorama
-        init(autoreset=True)
-        
-        logger = logging.getLogger(__name__)
-        logger.setLevel(logging.INFO)
-        
-        # Prevent propagation to avoid duplicate logs
-        logger.propagate = False
-        
-        # Remove any existing handlers to avoid duplicates
-        for handler in logger.handlers[:]:  # Use a copy to safely modify during iteration
-            logger.removeHandler(handler)
-        
-        # Create new handler with colored formatting
-        handler = logging.StreamHandler()
-        
-        # Custom formatter with colors
-        class ColoredFormatter(logging.Formatter):
-            FORMATS = {
-                logging.DEBUG: '%(asctime)s - %(name)s - ' + Fore.CYAN + '%(levelname)s' + Style.RESET_ALL + ' - %(message)s',
-                logging.INFO: '%(asctime)s - %(name)s - ' + Fore.GREEN + '%(levelname)s' + Style.RESET_ALL + ' - %(message)s',
-                logging.WARNING: '%(asctime)s - %(name)s - ' + Fore.YELLOW + '%(levelname)s' + Style.RESET_ALL + ' - %(message)s',
-                logging.ERROR: '%(asctime)s - %(name)s - ' + Fore.RED + '%(levelname)s' + Style.RESET_ALL + ' - %(message)s',
-                logging.CRITICAL: '%(asctime)s - %(name)s - ' + Fore.RED + Style.BRIGHT + '%(levelname)s' + Style.RESET_ALL + ' - %(message)s'
-            }
 
-            def format(self, record):
-                log_fmt = self.FORMATS.get(record.levelno)
-                formatter = logging.Formatter(log_fmt)
-                return formatter.format(record)
-        
-        handler.setFormatter(ColoredFormatter())
-        logger.addHandler(handler)
-        
-        return logger
-    
-    async def run_pipeline(self, max_documents: int = 10, fetch_all: bool = False) -> Dict[str, Any]:
-        """Run the complete RAG adapter pipeline.
-        
-        Args:
-            max_documents: Maximum number of documents to process. If fetch_all is True, this limit
-                         applies only to how many PDFs are downloaded and processed, not to discovery.
-            fetch_all: If True, fetches all available papers from arXiv before filtering and processing.
-                      This ensures we have complete metadata before deciding which to download.
-        """
-        self.logger.info(f"Starting HEPilot arXiv LHCb adapter pipeline...")
-        self.logger.info(f"Configuration: {json.dumps(asdict(self.config), indent=2)}")
-        
-        # Step 1: Discovery
+    async def discover(self, max_documents: int = None, fetch_all: bool = False) -> List[Dict[str, Any]]:
+        """Discover documents from arXiv."""
         self.logger.info("Step 1: Discovering LHCb papers from arXiv...")
         
         discovery_max = None if fetch_all else max_documents
@@ -902,11 +813,10 @@ class HEPilotArxivAdapter:
         discovered_docs = discovery_result["discovered_documents"]
         self.logger.info(f"Discovered {len(discovered_docs)} documents")
         
-        if not discovered_docs:
-            self.logger.warning("No documents discovered, pipeline complete.")
-            return
-        
-        # Step 2: Acquisition
+        return discovered_docs
+
+    async def acquire(self, discovered_docs: List[Dict[str, Any]], max_documents: int = None) -> List[Dict[str, Any]]:
+        """Acquire documents from the discovered list."""
         self.logger.info("Step 2: Acquiring (downloading) discovered papers...")
         
         # Skip already processed documents if configured
@@ -922,7 +832,7 @@ class HEPilotArxivAdapter:
             self.logger.info(f"After filtering, {len(discovered_docs)} documents remain for processing")
         
         # If we're limiting how many to acquire and process, apply the limit here
-        if len(discovered_docs) > max_documents:
+        if max_documents and len(discovered_docs) > max_documents:
             self.logger.info(f"Limiting acquisition to {max_documents} documents out of {len(discovered_docs)} discovered")
             discovered_docs = discovered_docs[:max_documents]
         
@@ -932,138 +842,101 @@ class HEPilotArxivAdapter:
         acquired_docs = acquisition_result["acquired_documents"]
         self.logger.info(f"Acquired {len(acquired_docs)} documents")
         
-        if not acquired_docs:
-            self.logger.warning("No documents acquired, pipeline complete.")
-            return
-        
-        # Processing and chunking phase
+        return acquired_docs
+
+    def process_and_chunk(self, acquired_docs: List[Dict[str, Any]], discovered_docs: List[Dict[str, Any]]) -> Tuple[List[Dict[str, Any]], int]:
+        """Process and chunk acquired documents."""
         processor = DocumentProcessor(self.config)
         chunker = ChunkingEngine(self.config)
         
         catalog_entries = []
         total_chunks = 0
 
-        try:
-            # Process newly acquired documents with progress bar
-            for acquired_doc_dict in tqdm(acquired_docs, desc="Processing papers", unit="paper"):
-                acquired_doc = AcquiredDocument(**acquired_doc_dict)
-                
-                try:
-                    # Process document
-                    self.logger.info(f"Processing document {acquired_doc.document_id}")
-                    markdown_content, processing_metadata = processor.process_document(acquired_doc)
-                    
-                    # Generate chunks
-                    chunks = chunker.chunk_document(acquired_doc.document_id, markdown_content)
-                    
-                    # Save outputs
-                    doc_metadata = discovery_metadata.get(acquired_doc.document_id, {})
-                    catalog_entry = self._save_document_outputs(
-                        acquired_doc, markdown_content, chunks, processing_metadata, doc_metadata)
-                    
-                    catalog_entries.append(catalog_entry)
-                    total_chunks += len(chunks)
-                    
-                except Exception as e:
-                    self.logger.error(f"Failed to process document {acquired_doc.document_id}: {e}")
-                    continue
+        discovery_metadata = {doc["document_id"]: doc for doc in discovered_docs}
 
-            # Add already processed documents to the catalog from unified cache
-            for doc in docs_already_processed:
-                doc_metadata = self.unified_cache.get_document_metadata(doc["document_id"])
-                if doc_metadata:
-                    catalog_entries.append({
-                        "document_id": doc["document_id"],
-                        "source_type": "arxiv",
-                        "title": doc_metadata.get("title", "Unknown Title"),
-                        "chunk_count": doc_metadata.get("chunk_count", 0),
-                        "file_path": doc_metadata.get("file_path", "")
-                    })
-                    total_chunks += doc_metadata.get("chunk_count", 0)
-
-            # Process newly acquired documents with progress bar
-            for acquired_doc_dict in tqdm(acquired_docs, desc="Processing papers", unit="paper"):
-                acquired_doc = AcquiredDocument(**acquired_doc_dict)
+        for acquired_doc_dict in tqdm(acquired_docs, desc="Processing papers", unit="paper"):
+            acquired_doc = AcquiredDocument(**acquired_doc_dict)
+            
+            try:
+                # Get original discovery metadata
+                original_metadata = discovery_metadata.get(acquired_doc.document_id, {})
                 
-                try:
-                    # Get original discovery metadata
-                    original_metadata = discovery_metadata.get(acquired_doc.document_id, {})
-                    
-                    # Process document
-                    self.logger.info(f"Processing document {acquired_doc.document_id}")
-                    markdown_content, processing_metadata = processor.process_document(acquired_doc)
-                    
-                    # Chunk document
-                    chunks = list(chunker.chunk_document(acquired_doc.document_id, markdown_content))
-                    
-                    # Save outputs with original metadata
-                    doc_output_dir = self._save_document_outputs(
-                        acquired_doc, markdown_content, chunks, processing_metadata, original_metadata
-                    )
-                    
-                    # Extract title (prefer original, then from content)
-                    title = original_metadata.get("title", self._extract_title_from_content(markdown_content))
-                    
-                    # Add to catalog
-                    catalog_entries.append({
-                        "document_id": acquired_doc.document_id,
-                        "source_type": "arxiv",
+                # Process document
+                self.logger.info(f"Processing document {acquired_doc.document_id}")
+                markdown_content, processing_metadata = processor.process_document(acquired_doc)
+                
+                # Chunk document
+                chunks = list(chunker.chunk_document(acquired_doc.document_id, markdown_content))
+                
+                # Save outputs with original metadata
+                doc_output_dir = self._save_document_outputs(
+                    acquired_doc, markdown_content, chunks, processing_metadata, original_metadata
+                )
+                
+                # Extract title (prefer original, then from content)
+                title = original_metadata.get("title", self._extract_title_from_content(markdown_content))
+                
+                # Add to catalog
+                catalog_entries.append({
+                    "document_id": acquired_doc.document_id,
+                    "source_type": "arxiv",
+                    "title": title,
+                    "chunk_count": len(chunks),
+                    "file_path": str(doc_output_dir.relative_to(self.output_dir))
+                })
+                
+                total_chunks += len(chunks)
+                self.logger.info(f"Created {len(chunks)} chunks for document {acquired_doc.document_id}")
+                
+                # Update document state in unified cache
+                self.unified_cache.set_document_processed(
+                    acquired_doc.document_id,
+                    acquired_doc.file_hash_sha256,
+                    metadata={
                         "title": title,
                         "chunk_count": len(chunks),
                         "file_path": str(doc_output_dir.relative_to(self.output_dir))
-                    })
-                    
-                    total_chunks += len(chunks)
-                    self.logger.info(f"Created {len(chunks)} chunks for document {acquired_doc.document_id}")
-                    
-                    # Update document state in unified cache
-                    self.unified_cache.set_document_processed(
-                        acquired_doc.document_id,
-                        acquired_doc.file_hash_sha256,
-                        metadata={
-                            "title": title,
-                            "chunk_count": len(chunks),
-                            "file_path": str(doc_output_dir.relative_to(self.output_dir))
-                        }
-                    )
-                    
-                except Exception as e:
-                    self.logger.error(f"Failed to process document {acquired_doc.document_id}: {e}")
-                    self.unified_cache.set_document_failed(acquired_doc.document_id, str(e))
-            
-            # Create catalog
-            catalog = {
-                "creation_timestamp": datetime.now(timezone.utc).isoformat(),
-                "adapter_version": self.config.version,
-                "total_documents": len(catalog_entries),
-                "total_chunks": total_chunks,
-                "source_distribution": {
-                    "arxiv": len(catalog_entries),
-                    "indico": 0,
-                    "internal_notes": 0,
-                    "twiki": 0,
-                    "other": 0
-                },
-                "documents": catalog_entries
-            }
-            
-            # Save catalog
-            catalog_path = self.output_dir / "catalog.json"
-            with open(catalog_path, 'w') as f:
-                json.dump(catalog, f, indent=2)
-            
-            self.logger.info(f"Pipeline completed. Processed {len(catalog_entries)} documents, created {total_chunks} chunks")
-            
-            return {
-                "status": "completed",
-                "documents_processed": len(catalog_entries),
-                "total_chunks": total_chunks,
-                "catalog_path": str(catalog_path)
-            }
-            
-        except Exception as e:
-            self.logger.error(f"Pipeline failed: {e}")
-            raise
+                    }
+                )
+                
+            except Exception as e:
+                self.logger.error(f"Failed to process document {acquired_doc.document_id}: {e}")
+                self.unified_cache.set_document_failed(acquired_doc.document_id, str(e))
+        
+        return catalog_entries, total_chunks
+
+    def create_catalog(self, catalog_entries: List[Dict[str, Any]], total_chunks: int) -> Dict[str, Any]:
+        """Create the final catalog.json file."""
+        catalog = {
+            "creation_timestamp": datetime.now(timezone.utc).isoformat(),
+            "adapter_version": self.config["version"],
+            "total_documents": len(catalog_entries),
+            "total_chunks": total_chunks,
+            "source_distribution": {
+                "arxiv": len(catalog_entries),
+                "indico": 0,
+                "internal_notes": 0,
+                "twiki": 0,
+                "other": 0
+            },
+            "documents": catalog_entries
+        }
+        
+        # Save catalog
+        catalog_path = self.output_dir / "catalog.json"
+        with open(catalog_path, 'w') as f:
+            json.dump(catalog, f, indent=2)
+        
+        self.logger.info(f"Pipeline completed. Processed {len(catalog_entries)} documents, created {total_chunks} chunks")
+        
+        return {
+            "status": "completed",
+            "documents_processed": len(catalog_entries),
+            "total_chunks": total_chunks,
+            "catalog_path": str(catalog_path)
+        }
+    
+    
     
     def _save_document_outputs(self, acquired_doc: AcquiredDocument, markdown_content: str, 
                                chunks: List[Chunk], processing_metadata: Dict[str, Any],
@@ -1100,11 +973,11 @@ class HEPilotArxivAdapter:
             "file_hash": acquired_doc.file_hash_sha256,
             "file_size": acquired_doc.file_size,
             "processing_timestamp": datetime.now(timezone.utc).isoformat(),
-            "adapter_version": self.config.version
+            "adapter_version": self.config["version"]
         }
         
         # Only include authors if configured to do so
-        if self.config.include_authors and authors:
+        if self.config.get("x_extension", {}).get("include_authors") and authors:
             document_metadata["authors"] = authors
         
         with open(doc_dir / "document_metadata.json", 'w') as f:
@@ -1131,7 +1004,7 @@ class HEPilotArxivAdapter:
                 "overlap_info": {
                     "has_previous_overlap": chunk.has_overlap_previous,
                     "has_next_overlap": chunk.has_overlap_next,
-                    "overlap_token_count": int(self.config.chunk_size * self.config.chunk_overlap)
+                    "overlap_token_count": int(self.config["processing_config"]["chunk_size"] * self.config["processing_config"]["chunk_overlap"])
                 }
             }
             
@@ -1149,7 +1022,7 @@ class HEPilotArxivAdapter:
                 "overlap_info": {
                     "has_previous_overlap": chunk.has_overlap_previous,
                     "has_next_overlap": chunk.has_overlap_next,
-                    "overlap_token_count": int(self.config.chunk_size * self.config.chunk_overlap)
+                    "overlap_token_count": int(self.config["processing_config"]["chunk_size"] * self.config["processing_config"]["chunk_overlap"])
                 }
             }
             

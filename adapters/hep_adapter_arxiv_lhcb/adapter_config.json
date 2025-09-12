@@ -1,0 +1,26 @@
+{
+  "adapter_config": {
+    "name": "hepilot-arxiv-lhcb",
+    "version": "1.0.0",
+    "source_type": "arxiv",
+    "credential_id": null,
+    "processing_config": {
+      "chunk_size": 512,
+      "chunk_overlap": 0.1,
+      "preserve_tables": true,
+      "preserve_equations": true
+    },
+    "profile": "core",
+    "config_hash": "",
+    "x_extension": {
+      "preserve_inline_equations": true,
+      "include_authors": false,
+      "tokenizer_model": "BAAI/bge-large-en-v1.5",
+      "output_dir": "./hepilot_output",
+      "cache_dir": "./hepilot_output/cache",
+      "state_file": "./hepilot_output/state.json",
+      "max_documents": 5,
+      "skip_processed": true
+    }
+  }
+}
