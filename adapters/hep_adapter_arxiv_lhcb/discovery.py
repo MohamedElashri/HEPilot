@@ -56,15 +56,32 @@ class ArxivDiscovery:
         """
         discovered_docs = []
         
-        # Search via arXiv API - collect all papers when max_results is None
+        # Primary search via arXiv API
+        self.logger.info("Starting primary search via arXiv API")
         api_docs = await self._search_arxiv_api(max_results=max_results)
         discovered_docs.extend(api_docs)
+        self.logger.info(f"ArXiv API returned {len(api_docs)} documents")
         
-        # Search via OAI-PMH - collect all papers when max_results is None
-        # Note: For simplicity, we're limiting OAI-PMH results when max_results is specified
-        oai_max_results = None if max_results is None else (max_results // 2)
-        oai_docs = await self._search_oai_pmh(max_results=oai_max_results)
-        discovered_docs.extend(oai_docs)
+        # Only use OAI-PMH as fallback if we didn't get enough results from the main API
+        use_fallback = False
+        if max_results is not None and len(api_docs) < max_results:
+            use_fallback = True
+            remaining_needed = max_results - len(api_docs)
+            self.logger.info(f"Main API returned {len(api_docs)} documents, need {remaining_needed} more. Using OAI-PMH fallback.")
+        elif max_results is None and len(api_docs) == 0:
+            # If no max_results specified but API returned nothing, try fallback
+            use_fallback = True
+            self.logger.info("Main API returned no documents. Using OAI-PMH fallback.")
+        else:
+            self.logger.info("Main API provided sufficient results. Skipping OAI-PMH fallback.")
+        
+        if use_fallback:
+            # Calculate how many more results we need from OAI-PMH
+            oai_max_results = None if max_results is None else (max_results - len(api_docs))
+            self.logger.info("Starting fallback search via OAI-PMH")
+            oai_docs = await self._search_oai_pmh(max_results=oai_max_results)
+            discovered_docs.extend(oai_docs)
+            self.logger.info(f"OAI-PMH fallback returned {len(oai_docs)} additional documents")
         
         # Remove duplicates
         seen_ids = set()
