@@ -18,6 +18,7 @@ from acquisition import DocumentAcquisition
 from processing import DocumentProcessor
 from chunking import ChunkingEngine
 from unified_cache import UnifiedCache
+from progress_tracker import ProgressTracker
 
 
 class HEPilotArxivAdapter:
@@ -36,8 +37,9 @@ class HEPilotArxivAdapter:
         self.output_dir = Path(self.config.get("x_extension", {}).get("output_dir", "./hepilot_output"))
         self.cache_dir = Path(self.config.get("x_extension", {}).get("cache_dir", "./hepilot_output/cache"))
         
-        # Initialize unified cache
+        # Initialize unified cache and progress tracker
         self.unified_cache = UnifiedCache(self.output_dir, self.cache_dir)
+        self.progress_tracker = ProgressTracker(self.output_dir)
         
         # Configuration options
         self.skip_processed = self.config.get("x_extension", {}).get("skip_processed", True)
@@ -118,15 +120,53 @@ class HEPilotArxivAdapter:
         """
         self.logger.info("Step 3: Processing and chunking documents...")
         
+        # Filter for documents that need processing
+        papers_to_process = self.progress_tracker.get_papers_needing_processing(acquired_docs)
+        
         processor = DocumentProcessor(self.config)
-        chunker = ChunkingEngine(self.config)
+        chunker = ChunkingEngine(self.config, self.output_dir)
         
         catalog_entries = []
         total_chunks = 0
 
         discovery_metadata = {doc["document_id"]: doc for doc in discovered_docs}
 
-        for acquired_doc_dict in tqdm(acquired_docs, desc="Processing papers", unit="paper"):
+        # Handle already processed documents first
+        for acquired_doc_dict in acquired_docs:
+            doc_id = acquired_doc_dict["document_id"]
+            progress = self.progress_tracker._progress_data.get(doc_id)
+            
+            if progress and progress.processing_status == "completed":
+                # Add already processed document to catalog
+                original_metadata = discovery_metadata.get(doc_id, {})
+                title = original_metadata.get("title", f"Document {doc_id}")
+                
+                # Try to get chunk count from progress tracker or estimate
+                chunk_count = progress.chunk_count if progress.chunk_count > 0 else 1
+                
+                # Create catalog entry for already processed document
+                doc_dir = self.output_dir / "documents" / f"arxiv_{doc_id}"
+                catalog_entries.append({
+                    "document_id": doc_id,
+                    "source_type": "arxiv",
+                    "title": title,
+                    "chunk_count": chunk_count,
+                    "file_path": str(doc_dir.relative_to(self.output_dir)) if doc_dir.exists() else f"documents/arxiv_{doc_id}"
+                })
+                total_chunks += chunk_count
+        
+        if not papers_to_process:
+            skipped_count = len(acquired_docs)
+            self.logger.info(f"All {skipped_count} papers already processed, no new processing needed")
+            return catalog_entries, total_chunks
+        
+        skipped_count = len(acquired_docs) - len(papers_to_process)
+        if skipped_count > 0:
+            self.logger.info(f"Skipping {skipped_count} already processed papers")
+        
+        self.logger.info(f"Processing {len(papers_to_process)} new papers")
+
+        for acquired_doc_dict in tqdm(papers_to_process, desc="Processing papers", unit="paper"):
             acquired_doc = AcquiredDocument(**acquired_doc_dict)
             
             try:
@@ -148,17 +188,36 @@ class HEPilotArxivAdapter:
                 # Extract title (prefer original, then from content)
                 title = original_metadata.get("title", self._extract_title_from_content(markdown_content))
                 
-                # Add to catalog
-                catalog_entries.append({
-                    "document_id": acquired_doc.document_id,
-                    "source_type": "arxiv",
-                    "title": title,
-                    "chunk_count": len(chunks),
-                    "file_path": str(doc_output_dir.relative_to(self.output_dir))
-                })
+                # Update catalog entry if it exists (from already processed), otherwise add new one
+                existing_entry = None
+                for entry in catalog_entries:
+                    if entry["document_id"] == acquired_doc.document_id:
+                        existing_entry = entry
+                        break
                 
-                total_chunks += len(chunks)
+                if existing_entry:
+                    # Update existing entry
+                    existing_entry.update({
+                        "title": title,
+                        "chunk_count": len(chunks),
+                        "file_path": str(doc_output_dir.relative_to(self.output_dir))
+                    })
+                    total_chunks = total_chunks - existing_entry.get("chunk_count", 0) + len(chunks)
+                else:
+                    # Add new catalog entry
+                    catalog_entries.append({
+                        "document_id": acquired_doc.document_id,
+                        "source_type": "arxiv",
+                        "title": title,
+                        "chunk_count": len(chunks),
+                        "file_path": str(doc_output_dir.relative_to(self.output_dir))
+                    })
+                    total_chunks += len(chunks)
+                
                 self.logger.info(f"Created {len(chunks)} chunks for document {acquired_doc.document_id}")
+                
+                # Mark processing as completed in progress tracker
+                self.progress_tracker.mark_processing_completed(acquired_doc.document_id, len(chunks))
                 
                 # Update document state in unified cache
                 self.unified_cache.set_document_processed(
@@ -173,9 +232,36 @@ class HEPilotArxivAdapter:
                 
             except Exception as e:
                 self.logger.error(f"Failed to process document {acquired_doc.document_id}: {e}")
+                self.progress_tracker.mark_processing_failed(acquired_doc.document_id, str(e))
                 self.unified_cache.set_document_failed(acquired_doc.document_id, str(e))
         
         return catalog_entries, total_chunks
+
+    def show_progress_summary(self) -> None:
+        """Display progress summary to the user."""
+        summary = self.progress_tracker.get_summary()
+        failed = self.progress_tracker.get_failed_papers()
+        
+        self.logger.info("=== Progress Summary ===")
+        self.logger.info(f"Total papers tracked: {summary['total_papers']}")
+        self.logger.info(f"Download progress: {summary['download']['completed']}/{summary['total_papers']} completed, {summary['download']['failed']} failed, {summary['download']['pending']} pending")
+        self.logger.info(f"Processing progress: {summary['processing']['completed']}/{summary['total_papers']} completed, {summary['processing']['failed']} failed, {summary['processing']['pending']} pending")
+        self.logger.info(f"Fully completed: {summary['fully_completed']}/{summary['total_papers']}")
+        self.logger.info(f"Total chunks created: {summary['total_chunks_created']}")
+        
+        if failed['download_failed']:
+            self.logger.warning(f"Download failures: {len(failed['download_failed'])}")
+            for failure in failed['download_failed'][:5]:  # Show first 5
+                self.logger.warning(f"  - {failure['arxiv_id']}: {failure['error']}")
+            if len(failed['download_failed']) > 5:
+                self.logger.warning(f"  ... and {len(failed['download_failed']) - 5} more")
+        
+        if failed['processing_failed']:
+            self.logger.warning(f"Processing failures: {len(failed['processing_failed'])}")
+            for failure in failed['processing_failed'][:5]:  # Show first 5
+                self.logger.warning(f"  - {failure['arxiv_id']}: {failure['error']}")
+            if len(failed['processing_failed']) > 5:
+                self.logger.warning(f"  ... and {len(failed['processing_failed']) - 5} more")
 
     def create_catalog(self, catalog_entries: List[Dict[str, Any]], total_chunks: int) -> Dict[str, Any]:
         """Create the final catalog.json file.

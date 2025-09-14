@@ -110,6 +110,9 @@ async def main():
         catalog_entries, total_chunks = adapter.process_and_chunk(acquired_docs, discovered_docs)
 
         result = adapter.create_catalog(catalog_entries, total_chunks)
+        
+        # Show progress summary
+        adapter.show_progress_summary()
 
         logger.info(f"Pipeline completed successfully: {result}")
 

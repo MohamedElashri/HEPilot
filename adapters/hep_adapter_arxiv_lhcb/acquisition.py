@@ -15,6 +15,7 @@ import aiohttp
 from tqdm.asyncio import tqdm
 
 from models import AcquiredDocument
+from progress_tracker import ProgressTracker
 
 
 class DocumentAcquisition:
@@ -31,6 +32,7 @@ class DocumentAcquisition:
         self.output_dir = output_dir
         self.logger = logging.getLogger(__name__)
         self.session: Optional[aiohttp.ClientSession] = None
+        self.progress_tracker = ProgressTracker(output_dir)
         
     async def __aenter__(self):
         """Async context manager entry."""
@@ -51,19 +53,60 @@ class DocumentAcquisition:
         Returns:
             Dictionary containing acquired documents information
         """
-        acquired_docs = []
+        # Register discovered papers and filter for those needing download
+        self.progress_tracker.register_discovered_papers(discovered_docs)
+        papers_to_download = self.progress_tracker.get_papers_needing_download(discovered_docs)
         
-        # Create progress bar for downloading
-        self.logger.info(f"Starting download of {len(discovered_docs)} papers")
+        # Get already completed papers for final output
+        all_acquired_docs = []
+        skipped_count = 0
+        
+        # Add already downloaded papers to output
+        for doc_dict in discovered_docs:
+            doc_id = doc_dict["document_id"]
+            progress = self.progress_tracker._progress_data.get(doc_id)
+            if progress and progress.download_status == "completed" and progress.download_path:
+                # Verify file still exists
+                file_path = Path(progress.download_path)
+                if file_path.exists():
+                    # Create AcquiredDocument for already downloaded file
+                    with open(file_path, 'rb') as f:
+                        content = f.read()
+                    
+                    acquired_doc = AcquiredDocument(
+                        document_id=doc_id,
+                        local_path=progress.download_path,
+                        file_hash_sha256=hashlib.sha256(content).hexdigest(),
+                        file_hash_sha512=hashlib.sha512(content).hexdigest(),
+                        file_size=len(content),
+                        download_timestamp=progress.download_timestamp,
+                        download_status="success",
+                        validation_status="passed",
+                        retry_count=progress.retry_count
+                    )
+                    all_acquired_docs.append(acquired_doc)
+                    skipped_count += 1
+        
+        if skipped_count > 0:
+            self.logger.info(f"Skipping {skipped_count} already downloaded papers")
+        
+        if not papers_to_download:
+            self.logger.info("All papers already downloaded, no new downloads needed")
+            return {
+                "acquired_documents": [self._acquired_doc_to_dict(doc) for doc in all_acquired_docs]
+            }
+        
+        # Download remaining papers
+        self.logger.info(f"Starting download of {len(papers_to_download)} new papers")
         progress_bar = tqdm(
-            total=len(discovered_docs),
+            total=len(papers_to_download),
             desc="Downloading papers",
             unit="paper",
             colour="green"
         )
         
         try:
-            for doc_dict in discovered_docs:
+            for doc_dict in papers_to_download:
                 try:
                     # Update progress bar description with current paper
                     paper_id = doc_dict.get('arxiv_id', doc_dict['document_id'])[:20]
@@ -71,20 +114,23 @@ class DocumentAcquisition:
                     
                     acquired_doc = await self._download_document(doc_dict)
                     if acquired_doc:
-                        acquired_docs.append(acquired_doc)
-                        progress_bar.set_postfix({"successful": len(acquired_docs)})
+                        all_acquired_docs.append(acquired_doc)
+                        progress_bar.set_postfix({"successful": len([d for d in all_acquired_docs if d.download_timestamp >= datetime.now(timezone.utc).replace(hour=0, minute=0, second=0).isoformat()])})
                     
                 except Exception as e:
                     self.logger.error(f"Failed to acquire {doc_dict['document_id']}: {e}")
+                    self.progress_tracker.mark_download_failed(doc_dict['document_id'], str(e))
                 finally:
                     progress_bar.update(1)
         finally:
             progress_bar.close()
                 
-        self.logger.info(f"Successfully downloaded {len(acquired_docs)} out of {len(discovered_docs)} papers")
+        new_downloads = len(papers_to_download)
+        self.logger.info(f"Downloaded {len(all_acquired_docs) - skipped_count} out of {new_downloads} new papers")
+        self.logger.info(f"Total papers available: {len(all_acquired_docs)} (including {skipped_count} previously downloaded)")
         
         return {
-            "acquired_documents": [self._acquired_doc_to_dict(doc) for doc in acquired_docs]
+            "acquired_documents": [self._acquired_doc_to_dict(doc) for doc in all_acquired_docs]
         }
     
     async def _download_document(self, doc_dict: Dict[str, Any]) -> Optional[AcquiredDocument]:
@@ -121,7 +167,7 @@ class DocumentAcquisition:
                         
                         # Validate file
                         if await self._validate_file(local_path, content):
-                            return AcquiredDocument(
+                            acquired_doc = AcquiredDocument(
                                 document_id=doc_id,
                                 local_path=str(local_path),
                                 file_hash_sha256=hashlib.sha256(content).hexdigest(),
@@ -132,6 +178,9 @@ class DocumentAcquisition:
                                 validation_status="passed",
                                 retry_count=retry_count
                             )
+                            # Mark download as completed in progress tracker
+                            self.progress_tracker.mark_download_completed(doc_id, str(local_path))
+                            return acquired_doc
                         else:
                             raise ValueError("File validation failed")
                             

@@ -8,24 +8,28 @@ import logging
 import re
 import uuid
 from typing import Dict, Any, Iterator, List
+from pathlib import Path
 
 from sentence_transformers import SentenceTransformer
 
 from models import Chunk
+from progress_tracker import ProgressTracker
 
 
 class ChunkingEngine:
     """Chunking engine for segmenting documents into LLM-sized pieces."""
     
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: Dict[str, Any], output_dir: Path = None):
         """Initialize the chunking engine.
         
         Args:
             config: Adapter configuration dictionary
+            output_dir: Output directory path for progress tracking (optional)
         """
         self.config = config
         self.logger = logging.getLogger(__name__)
         self.tokenizer = SentenceTransformer(self.config["x_extension"]["tokenizer_model"]).tokenizer
+        self.progress_tracker = ProgressTracker(output_dir) if output_dir else None
     
     def chunk_document(self, document_id: str, content: str) -> Iterator[Chunk]:
         """Chunk document content into LLM-sized pieces.
