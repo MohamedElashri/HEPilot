@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 
 import aiohttp
+from tqdm.asyncio import tqdm
 
 from models import AcquiredDocument
 
@@ -52,15 +53,36 @@ class DocumentAcquisition:
         """
         acquired_docs = []
         
-        for doc_dict in discovered_docs:
-            try:
-                acquired_doc = await self._download_document(doc_dict)
-                if acquired_doc:
-                    acquired_docs.append(acquired_doc)
+        # Create progress bar for downloading
+        self.logger.info(f"Starting download of {len(discovered_docs)} papers")
+        progress_bar = tqdm(
+            total=len(discovered_docs),
+            desc="Downloading papers",
+            unit="paper",
+            colour="green"
+        )
+        
+        try:
+            for doc_dict in discovered_docs:
+                try:
+                    # Update progress bar description with current paper
+                    paper_id = doc_dict.get('arxiv_id', doc_dict['document_id'])[:20]
+                    progress_bar.set_description(f"Downloading {paper_id}")
                     
-            except Exception as e:
-                self.logger.error(f"Failed to acquire {doc_dict['document_id']}: {e}")
+                    acquired_doc = await self._download_document(doc_dict)
+                    if acquired_doc:
+                        acquired_docs.append(acquired_doc)
+                        progress_bar.set_postfix({"successful": len(acquired_docs)})
+                    
+                except Exception as e:
+                    self.logger.error(f"Failed to acquire {doc_dict['document_id']}: {e}")
+                finally:
+                    progress_bar.update(1)
+        finally:
+            progress_bar.close()
                 
+        self.logger.info(f"Successfully downloaded {len(acquired_docs)} out of {len(discovered_docs)} papers")
+        
         return {
             "acquired_documents": [self._acquired_doc_to_dict(doc) for doc in acquired_docs]
         }
@@ -90,6 +112,7 @@ class DocumentAcquisition:
             try:
                 async with self.session.get(url) as response:
                     if response.status == 200:
+                        # Download content without individual file progress bar
                         content = await response.read()
                         
                         # Write file
