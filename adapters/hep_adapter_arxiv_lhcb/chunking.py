@@ -41,14 +41,14 @@ class ChunkingEngine:
         sentences = self._split_sentences(content)
         
         chunk_index = 0
-        total_tokens = len(self.tokenizer.encode(content))
+        total_tokens = self._count_tokens_safely(content)
         total_chunks = self._estimate_chunk_count(total_tokens)
         
         current_chunk = []
         current_tokens = 0
         
         for i, sentence in enumerate(sentences):
-            sentence_tokens = len(self.tokenizer.encode(sentence))
+            sentence_tokens = self._count_sentence_tokens_safely(sentence)
             
             # Check if adding this sentence exceeds chunk size
             if current_tokens + sentence_tokens > self.config["processing_config"]["chunk_size"] and current_chunk:
@@ -66,7 +66,7 @@ class ChunkingEngine:
                 # Keep some sentences for overlap
                 overlap_sentences = self._get_overlap_sentences(current_chunk, overlap_size)
                 current_chunk = overlap_sentences
-                current_tokens = sum(len(self.tokenizer.encode(s)) for s in current_chunk)
+                current_tokens = sum(self._count_sentence_tokens_safely(s) for s in current_chunk)
                 
                 chunk_index += 1
             
@@ -159,7 +159,7 @@ class ChunkingEngine:
         
         # Start from the end and work backwards
         for sentence in reversed(sentences):
-            sentence_tokens = len(self.tokenizer.encode(sentence))
+            sentence_tokens = self._count_sentence_tokens_safely(sentence)
             if current_tokens + sentence_tokens <= overlap_tokens:
                 overlap_sentences.insert(0, sentence)
                 current_tokens += sentence_tokens
@@ -217,3 +217,51 @@ class ChunkingEngine:
             level, title = headings[0]
             return [title.strip()]
         return []
+    
+    def _count_tokens_safely(self, content: str) -> int:
+        """Safely count tokens by processing content in smaller batches to avoid memory issues.
+        
+        Args:
+            content: Document content to count tokens for
+            
+        Returns:
+            Total token count
+        """
+        # Split content into manageable chunks for token counting
+        max_chars_per_batch = 10000  # Process ~10KB at a time
+        total_tokens = 0
+        
+        # Process content in batches to avoid hitting token limits
+        for i in range(0, len(content), max_chars_per_batch):
+            batch = content[i:i + max_chars_per_batch]
+            try:
+                batch_tokens = len(self.tokenizer.encode(batch, add_special_tokens=False))
+                total_tokens += batch_tokens
+            except Exception as e:
+                self.logger.warning(f"Token counting failed for batch {i//max_chars_per_batch}, using character estimation: {e}")
+                # Fallback to character-based estimation (rough approximation: 4 chars per token)
+                total_tokens += len(batch) // 4
+        
+        self.logger.debug(f"Document token count: {total_tokens}")
+        return total_tokens
+    
+    def _count_sentence_tokens_safely(self, sentence: str) -> int:
+        """Safely count tokens for a single sentence with fallback for very long sentences.
+        
+        Args:
+            sentence: Single sentence to count tokens for
+            
+        Returns:
+            Token count for the sentence
+        """
+        try:
+            # If sentence is extremely long, use character estimation instead
+            if len(sentence) > 20000:  # ~20KB sentence, likely corrupted or concatenated
+                self.logger.warning(f"Very long sentence detected ({len(sentence)} chars), using character estimation")
+                return len(sentence) // 4  # Rough approximation
+            
+            return len(self.tokenizer.encode(sentence, add_special_tokens=False))
+        except Exception as e:
+            self.logger.warning(f"Token counting failed for sentence, using character estimation: {e}")
+            # Fallback to character-based estimation
+            return len(sentence) // 4
