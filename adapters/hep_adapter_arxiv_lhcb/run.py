@@ -80,9 +80,18 @@ async def main():
 
     # Run the pipeline
     try:
+        # Handle "all" as a special case for max_documents
+        max_docs_config = config["adapter_config"]["x_extension"].get("max_documents")
+        if max_docs_config == "all":
+            max_documents = None
+            fetch_all = True
+        else:
+            max_documents = max_docs_config
+            fetch_all = config["adapter_config"]["x_extension"].get("fetch_all", False)
+        
         discovered_docs = await adapter.discover(
-            max_documents=config["adapter_config"]["x_extension"].get("max_documents"),
-            fetch_all=config["adapter_config"]["x_extension"].get("fetch_all", False)
+            max_documents=max_documents,
+            fetch_all=fetch_all
         )
 
         if not discovered_docs:
@@ -91,7 +100,7 @@ async def main():
 
         acquired_docs = await adapter.acquire(
             discovered_docs,
-            max_documents=config["adapter_config"]["x_extension"].get("max_documents")
+            max_documents=max_documents
         )
 
         if not acquired_docs:

@@ -27,7 +27,7 @@
       "output_dir": "./hepilot_output",
       "cache_dir": "./hepilot_output/cache",
       "state_file": "./hepilot_output/state.json",
-      "max_documents": 5,
+      "max_documents": "all",
       "skip_processed": true
     }
   }

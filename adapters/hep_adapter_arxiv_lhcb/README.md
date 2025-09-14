@@ -165,7 +165,7 @@ For comprehensive processing, create `full_processing_config.json`:
     },
     "profile": "core",
     "x_extension": {
-      "max_documents": null,
+      "max_documents": "all",
       "fetch_all": true,
       "output_dir": "./full_lhcb_corpus",
       "cache_dir": "./full_lhcb_corpus/cache",
@@ -186,7 +186,7 @@ Then run:
 python run.py --config full_processing_config.json
 ```
 
-**Note**: Setting `"max_documents": null` and `"fetch_all": true` will process all available LHCb papers on arXiv. This can take considerable time and storage space.
+**Note**: Setting `"max_documents": "all"` and `"fetch_all": true` will process all available LHCb papers on arXiv. This can take considerable time and storage space.
 
 #### Example 3: Research-Focused Configuration
 
@@ -250,7 +250,7 @@ For research applications requiring maximum mathematical content preservation:
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `max_documents` | integer/null | 5 | Maximum number of documents to process (null = no limit) |
+| `max_documents` | integer/"all" | 5 | Maximum number of documents to process ("all" = no limit) |
 | `fetch_all` | boolean | false | Process all available LHCb papers when true |
 | `output_dir` | string | "./hepilot_output" | Directory for processed files |
 | `cache_dir` | string | "./hepilot_output/cache" | Directory for caching |
