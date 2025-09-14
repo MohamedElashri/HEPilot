@@ -236,7 +236,10 @@ class HEPilotArxivAdapter:
         if original_metadata is None:
             original_metadata = {}
             
-        doc_dir = Path(acquired_doc.local_path).parent
+        # Ensure we're using the documents folder structure
+        doc_id = acquired_doc.document_id
+        doc_dir = self.output_dir / "documents" / f"arxiv_{doc_id}"
+        doc_dir.mkdir(parents=True, exist_ok=True)
         chunks_dir = doc_dir / "chunks"
         chunks_dir.mkdir(exist_ok=True)
         
@@ -254,7 +257,7 @@ class HEPilotArxivAdapter:
         # Extract authors from original metadata
         authors = original_metadata.get("authors", [])
         
-        # Save document metadata, respecting include_authors config
+        # Save document metadata, respecting exclude_authors config
         document_metadata = {
             "document_id": acquired_doc.document_id,
             "source_type": "arxiv",
@@ -267,8 +270,9 @@ class HEPilotArxivAdapter:
             "adapter_version": self.config["version"]
         }
         
-        # Only include authors if configured to do so
-        if self.config.get("x_extension", {}).get("include_authors") and authors:
+        # Only include authors if not excluded by configuration
+        exclude_authors = self.config.get("x_extension", {}).get("exclude_authors", True)
+        if not exclude_authors and authors:
             document_metadata["authors"] = authors
         
         with open(doc_dir / "document_metadata.json", 'w') as f:
