@@ -13,9 +13,15 @@ The adapter follows a modular, pipeline-based architecture. Each stage of the pr
 
 2.  **`DocumentAcquisition`**: This module takes the list of discovered documents and downloads the PDF source for each one. It includes retry logic to handle transient network issues.
 
-3.  **`DocumentProcessor`**: Once a document is downloaded, this module uses the `docling` library to convert the PDF into clean, structured Markdown. It performs additional post-processing to ensure that mathematical content is preserved correctly:
-    *   **Block Equations** (`$$...$$` or `\[...\]`) are wrapped in Markdown code blocks.
-    *   **Inline Equations and Symbols** (`$...$`) are wrapped in backticks to preserve them as inline code.
+3.  **`DocumentProcessor`**: Once a document is downloaded, this module uses the `docling` library to convert the PDF into clean, structured Markdown with comprehensive LaTeX and mathematical content preservation:
+    *   **LaTeX Math Environments**: Comprehensive support for `equation`, `align`, `gather`, `multline`, `split`, `matrix` and their starred variants
+    *   **Block Equations** (`$$...$$` or `\[...\]`) are wrapped in LaTeX-formatted code blocks
+    *   **Inline Equations** (`$...$` or `\(...\)`) are preserved with backtick wrapping
+    *   **Mathematical Symbols**: Greek letters, operators, and special symbols are preserved
+    *   **LaTeX Commands**: Common formatting commands like `\textbf`, `\mathbf` are maintained
+    *   **Enhanced Tables**: Special handling for mathematical content within tables and LaTeX table environments
+    *   **Equation Numbering**: Support for labeled equations and cross-references
+    *   **Formula Enrichment**: Advanced formula understanding using docling's AI-powered formula extraction to identify and preserve LaTeX representations
 
 4.  **`ChunkingEngine`**: The processed Markdown is segmented into smaller, overlapping chunks suitable for ingestion by a large language model. This simple implementation splits the text by sentences and creates chunks based on a configurable token count.
 
@@ -68,9 +74,41 @@ To process the 5 most recent documents and save the output to a directory named 
 python run.py --max-documents 5 --output-dir my_arxiv_output
 ```
 
-## ToDo 
+## LaTeX and Mathematical Content Features
 
+### Comprehensive Mathematical Environment Support
+- **Standard Environments**: `equation`, `align`, `gather`, `multline`, `split`
+- **Matrix Environments**: `matrix`, `pmatrix`, `bmatrix`, `vmatrix`, `Vmatrix`
+- **Array and Table Environments**: `array`, `tabular` with mathematical content
+- **Starred Variants**: Support for unnumbered versions (`equation*`, `align*`, etc.)
+
+### Symbol and Command Preservation
+- **Greek Letters**: All standard Greek alphabet symbols (α, β, γ, Δ, etc.)
+- **Mathematical Operators**: Integrals, summations, products, limits
+- **Set Theory**: Union, intersection, subset, superset symbols
+- **Logic Symbols**: Quantifiers, logical operators
+- **Formatting Commands**: Bold, italic, roman text in math mode
+
+### Enhanced Processing Configuration
+- `latex_environment_detection`: Comprehensive LaTeX environment recognition
+- `comprehensive_math_preservation`: Enhanced mathematical notation handling
+- `mathematical_symbol_preservation`: Individual symbol protection
+- `latex_command_preservation`: LaTeX command maintenance
+- `enhanced_table_processing`: Mathematical table content handling
+- `enable_formula_enrichment`: AI-powered formula understanding and LaTeX extraction
+
+### Formula Enrichment Features
+- **AI-Powered Analysis**: Uses docling's specialized formula understanding model
+- **LaTeX Extraction**: Automatically extracts LaTeX representations from visual formulas in PDFs
+- **Formula Classification**: Identifies and labels mathematical formulas in documents
+- **Metadata Enhancement**: Adds enriched formula data to processing metadata
+- **Bounding Box Detection**: Preserves spatial information about formula locations
+
+## ToDo 
 
 1. Handle withdrawn papers (because current code doesn't handle this case and gives error)
 2. Add batch processing for documents
-3. Add `--enrich-formula` option to `docling` to improve formula understanding
+3. ~~Add `--enrich-formula` option to `docling` to improve formula understanding~~ ✅ Implemented comprehensive LaTeX processing with AI-powered formula enrichment
+4. Add validation testing for mathematical content preservation
+5. Implement equation cross-reference resolution
+6. Add support for additional docling enrichment features (code understanding, picture classification)

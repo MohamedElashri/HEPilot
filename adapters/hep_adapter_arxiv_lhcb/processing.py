@@ -10,15 +10,13 @@ import time
 from datetime import datetime, timezone
 from typing import Dict, Any, Tuple, List, Optional
 
-from docling.document_converter import DocumentConverter
+from docling.document_converter import DocumentConverter, PdfFormatOption
 
 from models import AcquiredDocument
 
 try:
-    from docling.datamodel.base_models import InputFormat
     from docling.datamodel.pipeline_options import PdfPipelineOptions
-    from docling.backend.pypdfium2_backend import PyPdfiumDocumentBackend
-    from docling.datamodel.settings import settings
+    from docling.datamodel.base_models import InputFormat
     DOCLING_ADVANCED_IMPORTS = True
 except ImportError:
     # Fallback for different docling versions
@@ -101,13 +99,21 @@ class DocumentProcessor:
             if references:
                 markdown_content += "\n\n<!--references-->\n"
             
+            # Extract enriched formula data if available
+            enriched_formulas = self._extract_enriched_formulas(result)
+            if enriched_formulas:
+                processing_metadata["enriched_formulas_count"] = len(enriched_formulas)
+                processing_metadata["enriched_formulas"] = enriched_formulas[:10]  # Store first 10 for metadata
+                self.logger.info(f"Extracted {len(enriched_formulas)} enriched formulas")
+            
             processing_duration = time.time() - start_time
             
             processing_metadata = {
                 "processor_used": "docling",
                 "processing_timestamp": datetime.now(timezone.utc).isoformat(),
                 "processing_duration": processing_duration,
-                "conversion_warnings": warnings
+                "conversion_warnings": warnings,
+                "formula_enrichment_enabled": self.config.get("processing_config", {}).get("enable_formula_enrichment", False)
             }
             
             return markdown_content, processing_metadata
@@ -125,34 +131,81 @@ class DocumentProcessor:
             return fallback_content, processing_metadata
     
     def _preserve_equations(self, content: str) -> str:
-        """Wraps block equations in markdown code blocks.
+        """Comprehensively preserves LaTeX mathematical environments and equations.
         
         Args:
             content: Markdown content to process
             
         Returns:
-            Content with preserved equations
+            Content with enhanced equation preservation
         """
+        # Define comprehensive LaTeX math environments
+        math_environments = [
+            r'equation\*?', r'align\*?', r'gather\*?', r'multline\*?', 
+            r'split', r'alignat\*?', r'flalign\*?', r'eqnarray\*?',
+            r'array', r'matrix', r'pmatrix', r'bmatrix', r'vmatrix', r'Vmatrix'
+        ]
+        
+        # Process LaTeX math environments
+        for env in math_environments:
+            pattern = rf'(\\begin\{{{env}\}}.*?\\end\{{{env}\}})'
+            content = re.sub(pattern, r'\n```latex\n\1\n```\n', content, flags=re.DOTALL | re.IGNORECASE)
+        
         # Process block equations $$...$$
-        content = re.sub(r'(\$\$.*?\$\$)', r'\n```\n\1\n```\n', content, flags=re.DOTALL)
+        content = re.sub(r'(\$\$(?:(?!\$\$).)*\$\$)', r'\n```latex\n\1\n```\n', content, flags=re.DOTALL)
+        
         # Process block equations \[...\]
-        content = re.sub(r'(\\[.*?\\])', r'\n```\n\1\n```\n', content, flags=re.DOTALL)
+        content = re.sub(r'(\\\[(?:(?!\\\]).)*\\\])', r'\n```latex\n\1\n```\n', content, flags=re.DOTALL)
+        
+        # Process numbered equations with labels
+        content = re.sub(r'(\\begin\{equation\}.*?\\label\{[^}]+\}.*?\\end\{equation\})', 
+                        r'\n```latex\n\1\n```\n', content, flags=re.DOTALL | re.IGNORECASE)
+        
         return content
 
     def _preserve_inline_equations(self, content: str) -> str:
-        """Wraps inline equations in markdown backticks.
+        """Comprehensively preserves inline mathematical expressions and LaTeX commands.
         
         Args:
             content: Markdown content to process
             
         Returns:
-            Content with preserved inline equations
+            Content with enhanced inline equation preservation
         """
         # Process inline equations that are not block equations
-        return re.sub(r'(?<!\$)\$([^\$]+?)\$(?!\$)', r'`$\1$`', content)
+        content = re.sub(r'(?<!\$)\$([^\$\n]+?)\$(?!\$)', r'`$\1$`', content)
+        
+        # Process inline LaTeX \(...\)
+        content = re.sub(r'\\\(([^)]+?)\\\)', r'`$\1$`', content)
+        
+        # Preserve common LaTeX mathematical commands and symbols
+        latex_commands = [
+            r'\\alpha', r'\\beta', r'\\gamma', r'\\delta', r'\\epsilon', r'\\zeta',
+            r'\\eta', r'\\theta', r'\\iota', r'\\kappa', r'\\lambda', r'\\mu',
+            r'\\nu', r'\\xi', r'\\pi', r'\\rho', r'\\sigma', r'\\tau',
+            r'\\upsilon', r'\\phi', r'\\chi', r'\\psi', r'\\omega',
+            r'\\Gamma', r'\\Delta', r'\\Theta', r'\\Lambda', r'\\Xi', r'\\Pi',
+            r'\\Sigma', r'\\Upsilon', r'\\Phi', r'\\Chi', r'\\Psi', r'\\Omega',
+            r'\\infty', r'\\partial', r'\\nabla', r'\\sum', r'\\prod', r'\\int',
+            r'\\sqrt', r'\\frac', r'\\cdot', r'\\times', r'\\div', r'\\pm', r'\\mp',
+            r'\\leq', r'\\geq', r'\\neq', r'\\approx', r'\\equiv', r'\\propto',
+            r'\\in', r'\\notin', r'\\subset', r'\\supset', r'\\subseteq', r'\\supseteq',
+            r'\\cup', r'\\cap', r'\\emptyset', r'\\forall', r'\\exists'
+        ]
+        
+        # Preserve LaTeX commands when they appear inline
+        for cmd in latex_commands:
+            content = re.sub(f'({cmd})', r'`\1`', content)
+        
+        # Preserve LaTeX formatting commands
+        formatting_commands = [r'\\textbf', r'\\textit', r'\\mathbf', r'\\mathit', r'\\mathrm']
+        for cmd in formatting_commands:
+            content = re.sub(f'({cmd}\{{[^}}]+\}})', r'`\1`', content)
+        
+        return content
 
     def _enhance_tables(self, content: str) -> str:
-        """Enhance table formatting in markdown.
+        """Enhance table formatting with special handling for mathematical content.
         
         Args:
             content: Markdown content to process
@@ -160,8 +213,111 @@ class DocumentProcessor:
         Returns:
             Content with enhanced table formatting
         """
-        # Basic table enhancement - can be extended
-        return content
+        # Preserve LaTeX table environments
+        table_environments = [r'tabular', r'array', r'matrix', r'pmatrix', r'bmatrix']
+        
+        for env in table_environments:
+            pattern = rf'(\\begin\{{{env}\}}.*?\\end\{{{env}\}})'
+            content = re.sub(pattern, r'\n```latex\n\1\n```\n', content, flags=re.DOTALL | re.IGNORECASE)
+        
+        # Enhanced markdown table formatting
+        lines = content.split('\n')
+        in_table = False
+        enhanced_lines = []
+        
+        for line in lines:
+            # Detect markdown table lines
+            if '|' in line and line.count('|') >= 2:
+                if not in_table:
+                    # Start of table - add spacing
+                    enhanced_lines.append('')
+                    in_table = True
+                
+                # Clean up table cell content
+                cells = line.split('|')
+                cleaned_cells = []
+                for cell in cells:
+                    cell = cell.strip()
+                    # Preserve mathematical expressions in table cells
+                    if '$' in cell or '\\' in cell:
+                        cell = self._preserve_table_math(cell)
+                    cleaned_cells.append(cell)
+                
+                enhanced_lines.append('|'.join(cleaned_cells))
+            else:
+                if in_table:
+                    # End of table - add spacing
+                    enhanced_lines.append('')
+                    in_table = False
+                enhanced_lines.append(line)
+        
+        return '\n'.join(enhanced_lines)
+    
+    def _preserve_table_math(self, cell_content: str) -> str:
+        """Preserve mathematical expressions within table cells.
+        
+        Args:
+            cell_content: Content of a table cell
+            
+        Returns:
+            Cell content with preserved mathematical expressions
+        """
+        # Preserve inline math in table cells
+        cell_content = re.sub(r'(?<!\$)\$([^\$\n]+?)\$(?!\$)', r'`$\1$`', cell_content)
+        
+        # Preserve LaTeX commands in table cells
+        cell_content = re.sub(r'(\\[a-zA-Z]+(?:\{[^}]*\})*)', r'`\1`', cell_content)
+        
+        return cell_content
+    
+    def _extract_enriched_formulas(self, result) -> List[Dict[str, Any]]:
+        """Extract enriched formula data from docling result.
+        
+        Args:
+            result: Docling conversion result with potential formula enrichment
+            
+        Returns:
+            List of enriched formula dictionaries
+        """
+        enriched_formulas = []
+        
+        try:
+            if hasattr(result, 'document') and hasattr(result.document, 'texts'):
+                # Iterate through document text items to find formulas
+                for item in result.document.texts:
+                    if hasattr(item, 'label') and item.label == 'FORMULA':
+                        formula_data = {
+                            "text": str(item.text) if hasattr(item, 'text') else "",
+                            "label": item.label
+                        }
+                        
+                        # Extract LaTeX representation if available from enrichment
+                        if hasattr(item, 'latex') and item.latex:
+                            formula_data["latex"] = item.latex
+                        elif hasattr(item, 'enrichment') and item.enrichment:
+                            if hasattr(item.enrichment, 'latex'):
+                                formula_data["latex"] = item.enrichment.latex
+                            elif hasattr(item.enrichment, 'formula'):
+                                formula_data["latex"] = item.enrichment.formula
+                        
+                        # Extract bounding box if available
+                        if hasattr(item, 'prov') and item.prov:
+                            for prov in item.prov:
+                                if hasattr(prov, 'bbox'):
+                                    formula_data["bbox"] = {
+                                        "l": prov.bbox.l,
+                                        "t": prov.bbox.t, 
+                                        "r": prov.bbox.r,
+                                        "b": prov.bbox.b
+                                    }
+                                    break
+                        
+                        enriched_formulas.append(formula_data)
+                        
+        except Exception as e:
+            self.logger.warning(f"Failed to extract enriched formulas: {e}")
+        
+        return enriched_formulas
     
     def _extract_references(self, result) -> Optional[List[Dict[str, Any]]]:
         """Extract and format references from the docling result.
@@ -190,27 +346,38 @@ class DocumentProcessor:
         return extracted_references
     
     def _create_optimized_converter(self) -> DocumentConverter:
-        """Create an optimized docling converter with content filtering.
+        """Create an optimized docling converter with formula enrichment.
         
         Returns:
             Configured DocumentConverter instance
         """
         try:
             if DOCLING_ADVANCED_IMPORTS:
-                # Configure pipeline options for content filtering
+                # Configure pipeline options for enhanced LaTeX processing
                 pipeline_options = PdfPipelineOptions()
                 
-                # Configure to exclude unwanted sections
+                # Enhanced configuration for mathematical content
                 pipeline_options.do_ocr = False  # Disable OCR for faster processing
                 pipeline_options.images_scale = 1.0  # Keep original image scale
+                pipeline_options.generate_page_images = False  # Skip page images for performance
+                pipeline_options.generate_picture_images = True  # Keep mathematical figures
+                
+                # Enable docling enrichment features
+                enable_formula_enrichment = self.config.get("processing_config", {}).get("enable_formula_enrichment", True)
+                if enable_formula_enrichment:
+                    pipeline_options.do_formula_enrichment = True
+                    self.logger.info("Enabling formula understanding enrichment - CodeFormula model will be downloaded if needed")
+                
+                # Use correct API - PdfFormatOption wrapper
+                pdf_format_option = PdfFormatOption(pipeline_options=pipeline_options)
                 
                 converter = DocumentConverter(
                     format_options={
-                        InputFormat.PDF: pipeline_options
+                        InputFormat.PDF: pdf_format_option
                     }
                 )
                 
-                self.logger.info("Created optimized docling converter with advanced options")
+                self.logger.info("Created optimized docling converter with formula enrichment enabled")
                 return converter
             else:
                 # Fallback for basic docling versions
