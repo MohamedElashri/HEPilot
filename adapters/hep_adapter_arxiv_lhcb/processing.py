@@ -72,17 +72,20 @@ class DocumentProcessor:
                 markdown_content = f"# Document Content\n\nFailed to extract content from {acquired_doc.local_path}"
                 warnings.append(f"Markdown extraction failed: {e}")
             
-            # Apply content filtering (exclude authors and acknowledgments by default)
+            # Apply content filtering (exclude authors, acknowledgments, and references by default)
             exclude_authors = self.config.get("x_extension", {}).get("exclude_authors", True)
             exclude_acknowledgments = self.config.get("x_extension", {}).get("exclude_acknowledgments", True)
+            exclude_references = self.config.get("x_extension", {}).get("exclude_references", True)
             
-            if exclude_authors or exclude_acknowledgments:
-                markdown_content = self._filter_unwanted_sections(markdown_content)
+            if exclude_authors or exclude_acknowledgments or exclude_references:
+                markdown_content = self._filter_unwanted_sections(markdown_content, exclude_references)
                 if exclude_authors:
                     markdown_content = self._remove_author_metadata_blocks(markdown_content)
                     warnings.append("Filtered out author sections and metadata")
                 if exclude_acknowledgments:
                     warnings.append("Filtered out acknowledgment sections")
+                if exclude_references:
+                    warnings.append("Filtered out reference sections")
             
             # Post-process markdown
             if self.config.get("processing_config", {}).get("preserve_equations"):
@@ -94,10 +97,14 @@ class DocumentProcessor:
             if self.config.get("processing_config", {}).get("preserve_tables"):
                 markdown_content = self._enhance_tables(markdown_content)
             
-            # Extract references if available
-            references = self._extract_references(result)
-            if references:
-                markdown_content += "\n\n<!--references-->\n"
+            # Extract references if available and not excluded
+            references = None
+            if not exclude_references:
+                references = self._extract_references(result)
+                if references:
+                    markdown_content += "\n\n<!--references-->\n"
+                    for ref in references:
+                        markdown_content += f"\n{ref['text']}\n"
             
             # Extract enriched formula data if available
             enriched_formulas = self._extract_enriched_formulas(result)
@@ -390,11 +397,12 @@ class DocumentProcessor:
             # Final fallback
             return DocumentConverter()
     
-    def _filter_unwanted_sections(self, content: str) -> str:
+    def _filter_unwanted_sections(self, content: str, exclude_references: bool = True) -> str:
         """Filter out unwanted sections from processed content.
         
         Args:
             content: Markdown content to filter
+            exclude_references: Whether to exclude reference sections
             
         Returns:
             Filtered content with unwanted sections removed
@@ -408,6 +416,7 @@ class DocumentProcessor:
             r'^#+ author information\s*$',
             r'^#+ correspondence\s*$',
             r'^#+ affiliations?\s*$',
+            r'^#+ lhcb collaboration\s*$',
             # Acknowledgment section patterns
             r'^#+ acknowledgments?\s*$',
             r'^#+ acknowledgements?\s*$',
@@ -416,6 +425,17 @@ class DocumentProcessor:
             r'^#+ conflicts? of interest\s*$',
             r'^#+ data availability\s*$',
         ]
+        
+        # Add reference section patterns if excluding references
+        if exclude_references:
+            reference_patterns = [
+                r'^#+ references?\s*$',
+                r'^#+ bibliography\s*$',
+                r'^#+ citations?\s*$',
+                r'^#+ works? cited\s*$',
+                r'^#+ literature cited\s*$',
+            ]
+            section_patterns.extend(reference_patterns)
         
         for line in lines:
             line_lower = line.lower().strip()
