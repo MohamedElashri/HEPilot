@@ -3,7 +3,6 @@
     "name": "hepilot-arxiv-lhcb",
     "version": "1.0.0",
     "source_type": "arxiv",
-    "credential_id": null,
     "processing_config": {
       "chunk_size": 512,
       "chunk_overlap": 0.1,
@@ -11,7 +10,7 @@
       "preserve_equations": true
     },
     "profile": "core",
-    "config_hash": "",
+    "config_hash": "1e5f1ed2b1bdf42744955c92aed6ee437c8c6cd0c9da681d38508bb447007951",
     "x_extension": {
       "preserve_inline_equations": true,
       "include_authors": false,
