@@ -4,7 +4,7 @@
   "title": "HEPilot Data Acquisition and Preparation Specification for RAG",
   "description": "Machine-readable specification defining the data acquisition and preparation format for RAG (Retrieval-Augmented Generation) systems processing High-Energy Physics literature. Defines the complete pipeline for discovering, acquiring, processing, chunking, and generating metadata from HEP documents. Implements modular adapters that convert documents from various sources (arXiv, Indico, TWiki, Internal Notes) into standardized, embedding-ready markdown chunks with comprehensive metadata for RAG system ingestion. Version 1.0 - Initial Personal Release.",
   "version": "1.0.0",
-  "last_modified": "2025-07-14",
+  "last_modified": "2025-02-02",
   "next_review": "2026-01",
   "author": "Mohamed Elashri",
   "contact": "mohamed.elashri@cern.ch",

@@ -2,7 +2,7 @@
 
 **Version 1.0** — Data Acquisition System Format for RAG
 
-**Last Modified:** 2025-07-14 | **Next Review:** 2026-01
+**Last Modified:** 2025-10-02 | **Next Review:** 2026-01
 
 **Author:** Mohamed Elashri | **Contact:** [mohamed.elashri@cern.ch](mailto:mohamed.elashri@cern.ch)
 
