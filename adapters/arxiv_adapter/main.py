@@ -38,7 +38,10 @@ class ArxivAdapterPipeline:
             adapter_version=self.config_manager.config.version,
             include_authors=self.config_manager.get_include_authors_metadata()
         )
-        self.discovery: ArxivDiscovery = ArxivDiscovery(max_results=max_results)
+        self.discovery: ArxivDiscovery = ArxivDiscovery(
+            max_results=max_results,
+            include_authors=self.config_manager.get_include_authors_metadata()
+        )
         self.acquisition: ArxivAcquisition = ArxivAcquisition(
             download_dir=output_dir / "downloads"
         )

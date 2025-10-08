@@ -17,14 +17,16 @@ from models import DiscoveredDocument
 class ArxivDiscovery:
     """Discovers HEP papers from arXiv API."""
     
-    def __init__(self, max_results: Optional[int] = None) -> None:
+    def __init__(self, max_results: Optional[int] = None, include_authors: bool = False) -> None:
         """
         Initialize ArXiv discovery module.
         
         Args:
             max_results: Maximum number of papers to discover (None for unlimited)
+            include_authors: Whether to include author lists in discovery output
         """
         self.max_results: Optional[int] = max_results
+        self.include_authors: bool = include_authors
         self.client: arxiv.Client = arxiv.Client()
     
     def search(self, query: str = "cat:hep-ex OR cat:hep-ph") -> List[DiscoveredDocument]:
@@ -79,7 +81,9 @@ class ArxivDiscovery:
             Discovered document model
         """
         doc_id: uuid.UUID = uuid.uuid4()
-        authors: List[str] = [author.name for author in result.authors]
+        authors: Optional[List[str]] = None
+        if self.include_authors:
+            authors = [author.name for author in result.authors]
         estimated_size: int = self._estimate_pdf_size(result)
         return DiscoveredDocument(
             document_id=doc_id,
@@ -118,14 +122,16 @@ class ArxivDiscovery:
         output_data: Dict[str, Any] = {
             "discovered_documents": [
                 {
-                    "document_id": str(doc.document_id),
-                    "source_type": doc.source_type,
-                    "source_url": doc.source_url,
-                    "title": doc.title,
-                    "authors": doc.authors,
-                    "discovery_timestamp": doc.discovery_timestamp.isoformat(),
-                    "estimated_size": doc.estimated_size,
-                    "content_type": doc.content_type
+                    k: v for k, v in {
+                        "document_id": str(doc.document_id),
+                        "source_type": doc.source_type,
+                        "source_url": doc.source_url,
+                        "title": doc.title,
+                        "authors": doc.authors,
+                        "discovery_timestamp": doc.discovery_timestamp.isoformat(),
+                        "estimated_size": doc.estimated_size,
+                        "content_type": doc.content_type
+                    }.items() if v is not None
                 }
                 for doc in documents
             ]

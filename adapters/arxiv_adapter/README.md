@@ -185,10 +185,12 @@ Discovery → Acquisition → Processing → Chunking → Metadata
   - Large PDFs (>10 MB) trigger automatic warnings (for debugging purpose)
   - Failed documents are logged with timeout warnings
   - Increase for very complex papers with many tables/formulas
-- **exclude_references**: Remove references/bibliography sections (default: true)
-- **exclude_acknowledgments**: Remove acknowledgments sections (default: true)
+- **exclude_references**: Remove references/bibliography sections from content (default: true)
+- **exclude_acknowledgments**: Remove acknowledgments sections from content (default: true)
 - **exclude_author_lists**: Remove author lists and collaboration sections from content (default: true)
-- **include_authors_metadata**: Include author lists in document_metadata.json (default: false)
+- **include_authors_metadata**: Include author lists in discovery_output.json and document_metadata.json (default: false)
+  - When `false`: Author fields are omitted from all output files
+  - When `true`: Author lists included in discovery and metadata files
 
 #### Embedding Configuration
 - **model_name**: Embedding model for token counting (default: "BAAI/bge-large-en-v1.5")
@@ -287,10 +289,11 @@ All outputs validate against HEPilot schemas:
 
 ### Non-Recoverable Errors
 - Redacted papers → Skipped during discovery
-- Invalid PDFs → Marked as failed in acquisition
-- Processing failures → Logged, document skipped
+- Invalid PDFs → Marked as `validation_status: "failed"` in acquisition
+- Processing timeouts → Logged as ERROR in processing_log.json, document skipped
+- Processing failures → Logged as ERROR in processing_log.json, document skipped
 
-All errors are logged to `processing_log.json` with structured context.
+**Important**: Check `processing_log.json` for complete pipeline status. Documents with successful acquisition (`validation_status: "passed"`) may still fail during processing.
 
 
 ---
