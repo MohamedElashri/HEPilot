@@ -31,7 +31,7 @@ class ArxivAdapterPipeline:
         Args:
             config_path: Path to adapter_config.json
             output_dir: Directory for output files
-            max_results: Maximum number of papers to process (None for unlimited)
+            max_results: Maximum number of papers to process (None for All)
             enable_cache: Whether to enable caching system
             verbose: Enable verbose debug output (auto-enabled in dev mode)
         """

@@ -85,7 +85,7 @@ if [ "$MODE" = "dev" ]; then
         --query "cat:hep-ex OR cat:hep-ph" \
         --dev
 elif [ "$MODE" = "prod" ]; then
-    echo "Running in PRODUCTION mode (unlimited papers)"
+    echo "Running in PRODUCTION mode (All papers)"
     python3 main.py \
         --config adapter_config.json \
         --output arxiv_output \
