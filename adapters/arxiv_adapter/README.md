@@ -48,6 +48,31 @@ pip install uv
 
 Processes papers without limit (use `--max-results` flag in script for custom limits).
 
+### Makefile Commands (Alternative Interface)
+
+The adapter includes a Makefile for common tasks:
+
+```bash
+# Show all available commands
+make help
+
+# Run pipeline
+make dev          # Development mode (5 papers)
+make prod         # Production mode
+
+# Cleanup
+make clean        # Remove output files (keeps model cache)
+make clean-cache  # Remove model cache files
+make clean-all    # Remove output + cache
+make clean-full   # Remove everything including venv
+
+# Quick shortcuts
+make reset        # Clean output + cache (alias for clean-all)
+make nuke         # Nuclear option - remove everything (alias for clean-full)
+```
+
+**Note**: `run.sh` is the primary interface. The Makefile provides convenient shortcuts for cleanup and common tasks.
+
 ---
 
 ## Architecture
@@ -287,10 +312,11 @@ arxiv_adapter/
 ├── models.py            # Data models (Pydantic)
 ├── adapter_config.json  # Configuration
 ├── requirements.txt     # Dependencies
-├── run.sh              # Control script
-├── README.md           # This file
-├── Agent.md            # Agent context
-└── plan.md             # Implementation plan
+├── run.sh               # Control script (primary interface)
+├── Makefile             # Make targets (cleanup, shortcuts)
+├── README.md            # This file
+├── Agent.md             # Agent context
+└── plan.md              # Implementation plan
 ```
 
 ### Testing
