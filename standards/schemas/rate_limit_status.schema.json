@@ -2,12 +2,25 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/MohamedElashri/HEPilot/standards/schemas/rate_limit_status.schema.json",
   "title": "Rate-Limit Status",
+  "description": "Rate limit information from external APIs. Discovery implementations MUST include this data when the source API provides rate limiting headers. This enables adaptive throttling and prevents quota exhaustion.",
   "type": "object",
   "required": ["limit", "remaining", "reset_timestamp"],
   "properties": {
-    "limit":           { "type": "integer", "minimum": 0 },
-    "remaining":       { "type": "integer", "minimum": 0 },
-    "reset_timestamp": { "type": "string", "format": "date-time" }
+    "limit": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Total number of requests allowed in the current rate limit window. This is the maximum quota provided by the API."
+    },
+    "remaining": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of requests remaining in the current window before rate limiting occurs. When this approaches zero, the adapter SHOULD throttle requests to avoid hitting the limit."
+    },
+    "reset_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when the rate limit window resets and the quota is replenished. Adapters SHOULD pause requests until this time if remaining quota is exhausted."
+    }
   },
   "additionalProperties": false
 }

@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/MohamedElashri/HEPilot/standards/schemas/processing_metadata.schema.json",
   "title": "Processing Metadata",
+  "description": "Metadata documenting the processing pipeline execution for a document. Captures which processor was used, timing information, and any warnings encountered during format conversion. This enables reproducibility tracking and quality monitoring. Processing requirements: MUST preserve section hierarchy, MUST convert tables to GitHub-Flavoured Markdown, MUST preserve LaTeX equations ($...$ and $$...$$), SHOULD maintain cross-references and citations, MUST handle multi-column layouts. Content filtering: strip embedded images (unless figure extraction enabled), remove navigation elements/headers/footers, exclude adverts/boilerplate, eliminate duplicate content blocks.",
   "type": "object",
   "required": [
     "processor_used",
@@ -9,12 +10,23 @@
     "processing_duration"
   ],
   "properties": {
-    "processor_used":      { "type": "string" },
-    "processing_timestamp":{ "type": "string", "format": "date-time" },
-    "processing_duration": { "type": "number" },
+    "processor_used": {
+      "type": "string",
+      "description": "Name and version of the processor that converted this document to markdown. Format SHOULD be 'processor_name/version' (e.g., 'docling/1.2.3', 'pandoc/2.19'). Used for tracking processing tool versions and debugging conversion issues."
+    },
+    "processing_timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when processing started. Used for tracking pipeline performance and correlating with logs."
+    },
+    "processing_duration": {
+      "type": "number",
+      "description": "Duration of processing in seconds (floating point). Measures time from processing start to completion. Used for performance monitoring and identifying bottlenecks."
+    },
     "conversion_warnings": {
       "type": "array",
-      "items": { "type": "string" }
+      "items": { "type": "string" },
+      "description": "Array of warning messages generated during format conversion. Each string describes a non-fatal issue encountered (e.g., 'Failed to parse equation on line 42', 'Table structure ambiguous'). Empty array indicates no warnings. Used for quality assessment and identifying documents requiring manual review."
     }
   },
   "additionalProperties": false

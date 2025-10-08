@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/MohamedElashri/HEPilot/standards/schemas/log_entry.schema.json",
   "title": "Processing Log Entry",
+  "description": "Structured log entry for pipeline processing events. All log entries are written to processing_log.json and follow this schema for consistent parsing and analysis. Log entries enable tracing processing flows, diagnosing failures, and monitoring performance. Error categories include: Discovery (API failure, credential mismatch), Acquisition (network timeout, checksum error), Processing (parser exception, unsupported format), Output (I/O error, JSON schema violation). When retries apply, context.retry_policy SHOULD be included.",
   "type": "object",
   "required": [
     "timestamp",
@@ -11,15 +12,45 @@
     "message"
   ],
   "properties": {
-    "timestamp":  { "type": "string", "format": "date-time" },
-    "trace_id":   { "type": "string", "format": "uuid" },
-    "level":      { "enum": ["debug", "info", "warning", "error", "critical"] },
-    "component":  { "type": "string" },
-    "document_id":{ "type": "string", "format": "uuid" },
-    "message":    { "type": "string" },
-    "error_code": { "type": "string" },
-    "recovery_action": { "type": "string" },
-    "context":    { "type": "object" }
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when this log entry was created. Used for chronological sorting and time-based analysis."
+    },
+    "trace_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique trace identifier (UUID v4) that correlates all log entries for a single processing session or document workflow. Enables filtering logs for a specific processing run."
+    },
+    "level": {
+      "enum": ["debug", "info", "warning", "error", "critical"],
+      "description": "Log severity level. 'debug': detailed diagnostic information. 'info': normal operational messages. 'warning': unexpected but handled situations. 'error': failures that prevent processing a document but don't stop the pipeline. 'critical': severe failures requiring immediate attention."
+    },
+    "component": {
+      "type": "string",
+      "description": "Name of the pipeline component that generated this log entry (e.g., 'DiscoveryModule', 'AcquisitionModule', 'ChunkingEngine', 'ArxivProcessor'). Used for component-level filtering and debugging."
+    },
+    "document_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the document being processed when this log entry was created. Optional field that SHOULD be included for document-specific events. Enables filtering logs for a specific document."
+    },
+    "message": {
+      "type": "string",
+      "description": "Human-readable log message describing the event. SHOULD be clear and actionable. MAY include placeholders or structured data for machine parsing."
+    },
+    "error_code": {
+      "type": "string",
+      "description": "Machine-readable error code for programmatic error handling. Format SHOULD be hierarchical (e.g., 'ACQ_TIMEOUT', 'PROC_UNSUPPORTED_FORMAT'). Used for error aggregation and automated recovery."
+    },
+    "recovery_action": {
+      "type": "string",
+      "description": "Description of the recovery action taken or recommended. Examples: 'Retrying with exponential backoff', 'Skipping document', 'Using fallback processor'. Used for operational monitoring and automation."
+    },
+    "context": {
+      "type": "object",
+      "description": "Additional structured context data specific to this log entry. Contents vary by component and event type. Common fields include: retry_policy (for retry operations), file_path, http_status_code, processing_duration. Enables detailed debugging without cluttering the message field."
+    }
   },
   "additionalProperties": false
 }

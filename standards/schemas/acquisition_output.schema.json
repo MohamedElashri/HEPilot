@@ -2,11 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/MohamedElashri/HEPilot/standards/schemas/acquisition_output.schema.json",
   "title": "Acquisition Output",
+  "description": "Output from the Acquisition Module documenting downloaded documents with cryptographic verification and validation status. The Acquisition Module downloads artefacts while preserving provenance, enforcing quotas, and ensuring integrity. Download requirements: MUST implement exponential-backoff retry logic, MUST honour HTTP/HTTPS rate-limit headers, SHOULD use HTTP Range requests with 16 MiB blocks for artefacts larger than 1 GiB. Validation: Every file MUST pass SHA-256 and SHA-512 hash verification, format/extension consistency check, minimum size threshold, and virus scan for external sources.",
   "type": "object",
   "required": ["acquired_documents"],
   "properties": {
     "acquired_documents": {
       "type": "array",
+      "description": "Array of acquisition results, one entry per document attempt. Includes both successful and failed acquisitions to maintain a complete audit trail.",
       "items": {
         "type": "object",
         "required": [
@@ -20,15 +22,47 @@
           "validation_status"
         ],
         "properties": {
-          "document_id":        { "type": "string", "format": "uuid" },
-          "local_path":         { "type": "string" },
-          "file_hash_sha256":   { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" },
-          "file_hash_sha512":   { "type": "string", "pattern": "^[A-Fa-f0-9]{128}$" },
-          "file_size":          { "type": "integer" },
-          "download_timestamp": { "type": "string", "format": "date-time" },
-          "download_status":    { "enum": ["success", "failed", "partial", "abandoned"] },
-          "retry_count":        { "type": "integer", "minimum": 0 },
-          "validation_status":  { "enum": ["passed", "failed", "warning"] }
+          "document_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "UUID of the document, matching the ID from discovery output. Used to correlate acquisition with discovery and downstream processing."
+          },
+          "local_path": {
+            "type": "string",
+            "description": "Local filesystem path or virtual URI where the acquired file is stored. SHOULD use 'adp://{bucket}/{key}' virtual URI scheme to abstract local vs. object storage locations."
+          },
+          "file_hash_sha256": {
+            "type": "string",
+            "pattern": "^[A-Fa-f0-9]{64}$",
+            "description": "SHA-256 hash of the downloaded file in hexadecimal format (64 characters). MUST be computed from the complete file content. Used for integrity verification and deduplication."
+          },
+          "file_hash_sha512": {
+            "type": "string",
+            "pattern": "^[A-Fa-f0-9]{128}$",
+            "description": "SHA-512 hash of the downloaded file in hexadecimal format (128 characters). MUST be computed from the complete file content. Provides additional cryptographic assurance beyond SHA-256."
+          },
+          "file_size": {
+            "type": "integer",
+            "description": "Actual size of the downloaded file in bytes. Used to verify complete download and for storage accounting."
+          },
+          "download_timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when the download completed (successfully or otherwise). Used for tracking acquisition timing and SLA monitoring."
+          },
+          "download_status": {
+            "enum": ["success", "failed", "partial", "abandoned"],
+            "description": "Status of the download operation. 'success': complete download. 'failed': download failed after all retries. 'partial': incomplete download (e.g., connection interrupted). 'abandoned': download skipped or cancelled (e.g., quota exceeded)."
+          },
+          "retry_count": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "Number of retry attempts made before reaching final download_status. Zero indicates success on first attempt. Used for monitoring source reliability and network issues."
+          },
+          "validation_status": {
+            "enum": ["passed", "failed", "warning"],
+            "description": "Result of post-download validation checks. 'passed': all validation checks succeeded (hash verification, format consistency, size threshold, virus scan). 'failed': one or more critical checks failed. 'warning': non-critical issues detected but file is usable."
+          }
         },
         "additionalProperties": false
       }

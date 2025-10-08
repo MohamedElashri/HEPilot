@@ -2,6 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/MohamedElashri/HEPilot/standards/schemas/chunk_output.schema.json",
   "title": "Chunk Output",
+  "description": "Individual chunk from the Chunking Engine with content and metadata. Chunks are semantically coherent subsequences of documents produced by the chunking algorithm. Chunking strategy: Prefer semantic boundaries (sections > paragraphs > sentences). If semantic boundaries exceed chunk_size, use greedy token packing with splits at sentence boundaries. MUST NOT split inside equations, tables, or fenced code blocks. Overlap is applied as: chunk_size × chunk_overlap tokens included from previous chunk.",
   "type": "object",
   "required": [
     "chunk_id",
@@ -12,23 +13,69 @@
     "token_count"
   ],
   "properties": {
-    "chunk_id":       { "type": "string", "format": "uuid" },
-    "document_id":    { "type": "string", "format": "uuid" },
-    "chunk_index":    { "type": "integer" },
-    "total_chunks":   { "type": "integer" },
-    "content":        { "type": "string" },
-    "token_count":    { "type": "integer" },
-    "chunk_type":     { "enum": ["text", "table", "equation", "mixed"] },
-    "section_path":   { "type": "array", "items": { "type": "string" } },
-    "has_overlap_previous": { "type": "boolean" },
-    "has_overlap_next":     { "type": "boolean" },
+    "chunk_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this chunk (UUID v4). Used to reference this specific chunk in embeddings, search results, and retrieval systems."
+    },
+    "document_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "UUID of the parent document this chunk belongs to. Links chunk back to original document for provenance and full-text retrieval."
+    },
+    "chunk_index": {
+      "type": "integer",
+      "description": "Zero-based index of this chunk within the document. Chunks MUST be numbered sequentially from 0 to total_chunks-1. Used to maintain reading order."
+    },
+    "total_chunks": {
+      "type": "integer",
+      "description": "Total number of chunks created from this document. Same value appears in all chunks from the same document. Used to determine if this is the last chunk."
+    },
+    "content": {
+      "type": "string",
+      "description": "The actual text content of this chunk in CommonMark markdown format. MUST be valid UTF-8. Contains the chunk text with preserved formatting, equations, tables, and semantic structure. This is the content that will be embedded or indexed."
+    },
+    "token_count": {
+      "type": "integer",
+      "description": "Number of tokens in this chunk as counted by the tokenizer specified in the adapter configuration. MUST NOT exceed the configured chunk_size (except when a single semantic unit like a table exceeds the limit). Used to verify chunks fit within model context windows."
+    },
+    "chunk_type": {
+      "enum": ["text", "table", "equation", "mixed"],
+      "description": "Primary content type of this chunk. 'text': predominantly plain text and paragraphs. 'table': contains one or more complete tables. 'equation': contains one or more standalone equations. 'mixed': combination of multiple content types. Used for specialized retrieval or processing."
+    },
+    "section_path": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Hierarchical path of section headings leading to this chunk content. Array ordered from top-level section to immediate parent (e.g., ['Introduction', 'Background', 'LHC Overview']). Provides context for the chunk and enables section-aware retrieval."
+    },
+    "has_overlap_previous": {
+      "type": "boolean",
+      "description": "True if this chunk includes overlapping content from the previous chunk. Always false for chunk_index=0. Used to understand chunk boundaries and avoid double-counting overlapping text."
+    },
+    "has_overlap_next": {
+      "type": "boolean",
+      "description": "True if the next chunk will include overlapping content from this chunk. Always false for the last chunk. Used to understand chunk boundaries."
+    },
     "content_features": {
       "type": "object",
+      "description": "Structural features of the chunk content. Provides quick insight into chunk composition without parsing the content string.",
       "properties": {
-        "heading_count":  { "type": "integer" },
-        "list_count":     { "type": "integer" },
-        "table_count":    { "type": "integer" },
-        "equation_count": { "type": "integer" }
+        "heading_count": {
+          "type": "integer",
+          "description": "Number of markdown headings (# through ######) in this chunk. Used to assess structural depth."
+        },
+        "list_count": {
+          "type": "integer",
+          "description": "Number of lists (ordered or unordered) in this chunk. Used to identify enumeration-heavy content."
+        },
+        "table_count": {
+          "type": "integer",
+          "description": "Number of markdown tables in this chunk. Used to identify data-rich content."
+        },
+        "equation_count": {
+          "type": "integer",
+          "description": "Number of LaTeX equations (inline and display) in this chunk. Used to identify mathematical content."
+        }
       },
       "additionalProperties": false
     }

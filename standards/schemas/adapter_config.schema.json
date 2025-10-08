@@ -2,11 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/MohamedElashri/HEPilot/standards/schemas/adapter_config.schema.json",
   "title": "Adapter Configuration",
+  "description": "Configuration schema for HEPilot RAG adapters. This schema defines the settings, processing parameters, and behavioral constraints for adapters that discover, acquire, process, and chunk High-Energy Physics documents for LLM consumption. Every adapter MUST validate its configuration against this schema and maintain consistency through the config_hash mechanism.",
   "type": "object",
   "required": ["adapter_config"],
   "properties": {
     "adapter_config": {
       "type": "object",
+      "description": "Root configuration object containing all adapter settings and processing parameters. Implementations that advertise themselves as HEPilot-Adapter-Compliant MUST satisfy every mandatory clause for the source types they elect to support.",
       "required": [
         "name",
         "version",
@@ -15,18 +17,27 @@
         "config_hash"
       ],
       "properties": {
-        "name":    { "type": "string" },
-        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "name": {
+          "type": "string",
+          "description": "Human-readable identifier for this adapter instance. SHOULD be unique within a deployment and descriptive of the adapter's purpose or target source."
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^\\d+\\.\\d+\\.\\d+$",
+          "description": "Semantic version of the adapter implementation (MAJOR.MINOR.PATCH). MUST follow Semantic Versioning 2.0.0 specification. Breaking changes increment MAJOR, backward-compatible additions increment MINOR, bug fixes increment PATCH."
+        },
         "source_type": {
-          "description": "Document class handled by this adapter",
+          "type": "string",
+          "description": "Key identifying the document class handled by this adapter. Determines which source-specific requirements apply from the specification. An implementation is NOT REQUIRED to support all source classes.",
           "enum": ["arxiv", "indico", "internal_notes", "twiki", "other"]
         },
         "credential_id": {
           "type": "string",
-          "description": "Identifier for the credential to use from an external store."
+          "description": "Identifier for the credential to use from an external credentials store (credentials.json). For sources requiring authentication, this SHOULD reference an entry in the credentials file. The credentials file MUST NOT be committed to version control. This approach avoids hardcoding secrets and allows flexible, secure credential management."
         },
         "processing_config": {
           "type": "object",
+          "description": "Processing pipeline configuration controlling how documents are converted to markdown and chunked for LLM consumption. These settings directly impact retrieval quality and must be tuned based on the target embedding model's capabilities.",
           "required": [
             "chunk_size",
             "chunk_overlap",
@@ -37,31 +48,41 @@
             "chunk_size": {
               "type": "integer",
               "minimum": 512,
-              "maximum": 4096
+              "maximum": 4096,
+              "description": "Target size for text chunks in tokens. Chunks are created by preferring semantic boundaries (sections > paragraphs > sentences). If semantic boundaries exceed this size, greedy token packing is used with splits at sentence boundaries. MUST NOT split inside equations, tables, or fenced code blocks. Typical values: 512 for general retrieval, 1024-2048 for context-rich retrieval, up to 4096 for long-context models."
             },
             "chunk_overlap": {
               "type": "number",
               "minimum": 0.0,
               "exclusiveMaximum": 1.0,
-              "default": 0.1
+              "default": 0.1,
+              "description": "Overlap between consecutive chunks expressed as a fraction (0 ≤ x < 1). SHALL be interpreted as a fraction where the overlap is calculated as: chunk_size × chunk_overlap tokens. This overlap preserves context across chunk boundaries and improves retrieval recall. Typical values: 0.1 (10%) for minimal overlap, 0.15-0.2 for better context preservation. The overlap is applied by including the last N tokens of chunk[i] at the beginning of chunk[i+1]."
             },
-            "preserve_tables":    { "type": "boolean", "default": true },
-            "preserve_equations": { "type": "boolean", "default": true }
+            "preserve_tables": {
+              "type": "boolean",
+              "default": true,
+              "description": "When true, tables MUST be converted to GitHub-Flavoured Markdown format and preserved in chunks. When false, tables MAY be omitted or converted to simplified text. Table preservation is essential for scientific documents containing experimental data, particle properties, or comparison tables."
+            },
+            "preserve_equations": {
+              "type": "boolean",
+              "default": true,
+              "description": "When true, LaTeX equations MUST be preserved in their original form using standard delimiters: inline ($...$) and display ($$...$$). Comprehensive LaTeX math environment support is REQUIRED including: equation, align, gather, multline, split, and matrix variants. Mathematical symbols, Greek letters, operators, and formatting commands MUST be preserved. When false, equations MAY be converted to text approximations or omitted."
+            }
           },
           "additionalProperties": false
         },
         "profile": {
           "type": "string",
-          "description": "Feature profile (e.g. \"core+figures\")"
+          "description": "Feature profile identifier indicating which optional capabilities are enabled (e.g., 'core', 'core+figures', 'core+figures+citations'). Implementations declare supported feature sets via this field. The profile determines which SHOULD and MAY requirements from the specification are active. Core profile includes only MUST requirements."
         },
         "config_hash": {
           "type": "string",
           "pattern": "^[A-Fa-f0-9]{64}$",
-          "description": "SHA-256 of the canonicalised configuration JSON"
+          "description": "SHA-256 hash of the canonicalized configuration JSON. MUST be recomputed and committed after each configuration change. This hash enables: (1) configuration change detection, (2) reproducibility verification, (3) cache invalidation when settings change. Canonicalization MUST use stable JSON serialization with sorted keys and consistent whitespace."
         },
         "x_extension": {
           "type": "object",
-          "description": "Forward-compatible extensions",
+          "description": "Forward-compatible vendor extensions for adapter-specific settings not covered by this specification. Properties in this object are ignored by the standard validation but MAY be used by specific adapter implementations for custom behavior. Use namespaced property names to avoid conflicts (e.g., 'vendor:feature').",
           "additionalProperties": true
         }
       },

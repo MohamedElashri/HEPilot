@@ -1,0 +1,463 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/MohamedElashri/HEPilot/standards/spec.json",
+  "title": "HEPilot Data Acquisition and Preparation Specification for RAG",
+  "description": "Machine-readable specification defining the data acquisition and preparation format for RAG (Retrieval-Augmented Generation) systems processing High-Energy Physics literature. Defines the complete pipeline for discovering, acquiring, processing, chunking, and generating metadata from HEP documents. Implements modular adapters that convert documents from various sources (arXiv, Indico, TWiki, Internal Notes) into standardized, embedding-ready markdown chunks with comprehensive metadata for RAG system ingestion. Version 1.0 - Initial Personal Release.",
+  "version": "1.0.0",
+  "last_modified": "2025-07-14",
+  "next_review": "2026-01",
+  "author": "Mohamed Elashri",
+  "contact": "mohamed.elashri@cern.ch",
+  "repository": "https://github.com/MohamedElashri/HEPilot/standards",
+  "type": "object",
+  "properties": {
+    "metadata": {
+      "type": "object",
+      "description": "Specification metadata and governance information",
+      "properties": {
+        "version": {
+          "type": "string",
+          "const": "1.0.0",
+          "description": "Specification version following Semantic Versioning"
+        },
+        "classification": {
+          "type": "string",
+          "const": "Public",
+          "description": "Access classification for this specification"
+        },
+        "compliance_keywords": {
+          "type": "object",
+          "description": "Normative keywords used throughout this specification per RFC 2119",
+          "properties": {
+            "MUST": {
+              "type": "string",
+              "const": "Absolute requirement. Implementations cannot claim compliance without this.",
+              "description": "MUST, SHALL, REQUIRED denote mandatory behavior"
+            },
+            "SHOULD": {
+              "type": "string",
+              "const": "Strong recommendation. May be ignored with valid reason and full implications understood.",
+              "description": "SHOULD, RECOMMENDED denote best practices"
+            },
+            "MAY": {
+              "type": "string",
+              "const": "Optional capability. Implementations may choose to support or not.",
+              "description": "MAY, OPTIONAL denote optional features"
+            }
+          }
+        }
+      }
+    },
+    "glossary": {
+      "type": "object",
+      "description": "Terminology used throughout this specification",
+      "properties": {
+        "Document": {
+          "type": "string",
+          "const": "A complete source artefact (PDF, LaTeX bundle, PPTX) uniquely identified by document_id",
+          "description": "The atomic unit of content being processed"
+        },
+        "Chunk": {
+          "type": "string",
+          "const": "A semantically coherent subsequence of a Document produced by the Chunking Engine",
+          "description": "The unit of text optimized for LLM embedding and retrieval"
+        },
+        "Token": {
+          "type": "string",
+          "const": "The minimal text unit recognised by the downstream LLM tokenizer",
+          "description": "Basis for chunk size calculations"
+        },
+        "Character": {
+          "type": "string",
+          "const": "A single Unicode scalar value",
+          "description": "Alternative size metric for content"
+        },
+        "Byte": {
+          "type": "string",
+          "const": "An 8-bit octet in the binary representation of a file",
+          "description": "Storage size metric"
+        }
+      }
+    },
+    "architecture": {
+      "type": "object",
+      "description": "Framework architecture and component responsibilities",
+      "properties": {
+        "components": {
+          "type": "array",
+          "description": "Core pipeline components in processing order",
+          "items": {
+            "type": "object",
+            "required": ["name", "responsibility", "schema_reference"],
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Component name"
+              },
+              "responsibility": {
+                "type": "string",
+                "description": "What this component does"
+              },
+              "schema_reference": {
+                "type": "string",
+                "description": "Path to the JSON schema defining this component's output"
+              }
+            }
+          },
+          "prefixItems": [
+            {
+              "properties": {
+                "name": { "const": "Configuration Manager" },
+                "responsibility": { "const": "Loads, validates and persists adapter settings" },
+                "schema_reference": { "const": "./schemas/adapter_config.schema.json" }
+              }
+            },
+            {
+              "properties": {
+                "name": { "const": "Discovery Module" },
+                "responsibility": { "const": "Finds candidate documents, returns a registry" },
+                "schema_reference": { "const": "./schemas/discovery_output.schema.json" }
+              }
+            },
+            {
+              "properties": {
+                "name": { "const": "Acquisition Module" },
+                "responsibility": { "const": "Downloads artefacts, verifies integrity, enforces quotas" },
+                "schema_reference": { "const": "./schemas/acquisition_output.schema.json" }
+              }
+            },
+            {
+              "properties": {
+                "name": { "const": "Processing Pipeline" },
+                "responsibility": { "const": "Converts source files to CommonMark markdown" },
+                "schema_reference": { "const": "./schemas/processing_metadata.schema.json" }
+              }
+            },
+            {
+              "properties": {
+                "name": { "const": "Chunking Engine" },
+                "responsibility": { "const": "Segments markdown into LLM-sized chunks with overlap" },
+                "schema_reference": { "const": "./schemas/chunk_output.schema.json" }
+              }
+            },
+            {
+              "properties": {
+                "name": { "const": "Metadata Manager" },
+                "responsibility": { "const": "Creates and stores document-, chunk- and processing-level metadata" },
+                "schema_reference": { "const": "./schemas/document_metadata.schema.json" }
+              }
+            }
+          ]
+        }
+      }
+    },
+    "output_format": {
+      "type": "object",
+      "description": "Standard output directory layout and file organization",
+      "properties": {
+        "content_storage_model": {
+          "type": "string",
+          "const": "separated",
+          "description": "Content is stored in markdown (.md) files separate from metadata JSON files. This separation enables efficient metadata queries without loading large content, better version control, and specialized tooling per format."
+        },
+        "directory_structure": {
+          "type": "object",
+          "description": "Standard directory layout for processed documents",
+          "properties": {
+            "root": {
+              "type": "string",
+              "const": "output/",
+              "description": "Root output directory"
+            },
+            "documents_dir": {
+              "type": "string",
+              "const": "output/documents/",
+              "description": "Container for all processed documents"
+            },
+            "document_subdir": {
+              "type": "string",
+              "const": "output/documents/{source_type}_{document_id}/",
+              "description": "Directory for a single document's outputs"
+            },
+            "chunks_dir": {
+              "type": "string",
+              "const": "output/documents/{source_type}_{document_id}/chunks/",
+              "description": "Container for individual chunk files"
+            }
+          }
+        },
+        "file_types": {
+          "type": "object",
+          "description": "File types and their purposes in the output structure",
+          "properties": {
+            "content_files": {
+              "type": "array",
+              "description": "Files containing actual document content (text, equations, tables)",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "filename_pattern": { "type": "string" },
+                  "format": { "type": "string" },
+                  "purpose": { "type": "string" }
+                }
+              },
+              "prefixItems": [
+                {
+                  "properties": {
+                    "filename_pattern": { "const": "chunk_NNNN.md" },
+                    "format": { "const": "CommonMark markdown" },
+                    "purpose": { "const": "Individual chunk content for embedding/indexing" }
+                  }
+                },
+                {
+                  "properties": {
+                    "filename_pattern": { "const": "full_document.md" },
+                    "format": { "const": "CommonMark markdown" },
+                    "purpose": { "const": "Complete document in single file for full-text access" }
+                  }
+                }
+              ]
+            },
+            "metadata_files": {
+              "type": "array",
+              "description": "Files containing structured metadata about documents and chunks",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "filename_pattern": { "type": "string" },
+                  "format": { "type": "string" },
+                  "schema_reference": { "type": "string" },
+                  "purpose": { "type": "string" }
+                }
+              },
+              "prefixItems": [
+                {
+                  "properties": {
+                    "filename_pattern": { "const": "chunk_NNNN_metadata.json" },
+                    "format": { "const": "JSON" },
+                    "schema_reference": { "const": "./schemas/chunk_metadata.schema.json" },
+                    "purpose": { "const": "Metadata for individual chunk" }
+                  }
+                },
+                {
+                  "properties": {
+                    "filename_pattern": { "const": "document_metadata.json" },
+                    "format": { "const": "JSON" },
+                    "schema_reference": { "const": "./schemas/document_metadata.schema.json" },
+                    "purpose": { "const": "Document-level metadata (provenance, bibliographic info)" }
+                  }
+                },
+                {
+                  "properties": {
+                    "filename_pattern": { "const": "processing_metadata.json" },
+                    "format": { "const": "JSON" },
+                    "schema_reference": { "const": "./schemas/processing_metadata.schema.json" },
+                    "purpose": { "const": "Processing execution metadata (processor, timing, warnings)" }
+                  }
+                },
+                {
+                  "properties": {
+                    "filename_pattern": { "const": "references.json" },
+                    "format": { "const": "CSL-JSON" },
+                    "schema_reference": { "const": "https://citeproc-js.readthedocs.io/en/latest/csl-json/markup.html" },
+                    "purpose": { "const": "Bibliography in Citation Style Language format" }
+                  }
+                }
+              ]
+            },
+            "catalog_files": {
+              "type": "array",
+              "description": "Top-level catalog and logging files",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "filename": { "type": "string" },
+                  "location": { "type": "string" },
+                  "schema_reference": { "type": "string" },
+                  "purpose": { "type": "string" }
+                }
+              },
+              "prefixItems": [
+                {
+                  "properties": {
+                    "filename": { "const": "catalog.json" },
+                    "location": { "const": "output/" },
+                    "schema_reference": { "const": "./schemas/catalog.schema.json" },
+                    "purpose": { "const": "Master index of all processed documents" }
+                  }
+                },
+                {
+                  "properties": {
+                    "filename": { "const": "processing_log.json" },
+                    "location": { "const": "output/" },
+                    "schema_reference": { "const": "./schemas/log_entry.schema.json" },
+                    "purpose": { "const": "Structured log of all processing events" }
+                  }
+                }
+              ]
+            }
+          }
+        },
+        "naming_conventions": {
+          "type": "object",
+          "description": "File and directory naming rules",
+          "properties": {
+            "case": {
+              "type": "string",
+              "const": "lowercase",
+              "description": "All filenames MUST be lowercase"
+            },
+            "separator": {
+              "type": "string",
+              "const": "underscore",
+              "description": "Words separated by underscores"
+            },
+            "chunk_index_padding": {
+              "type": "string",
+              "const": "zero-padded to 4 digits",
+              "description": "Chunk indices formatted as 0001, 0002, etc."
+            },
+            "encoding": {
+              "type": "string",
+              "const": "UTF-8",
+              "description": "All text files MUST use UTF-8 encoding"
+            }
+          }
+        },
+        "compression": {
+          "type": "object",
+          "description": "Optional compression for documents with many chunks",
+          "properties": {
+            "threshold": {
+              "type": "integer",
+              "const": 128,
+              "description": "Documents with more than 128 chunks MAY be compressed"
+            },
+            "format": {
+              "type": "string",
+              "const": "tar.zst",
+              "description": "Zstandard-compressed tarball format"
+            },
+            "filename_pattern": {
+              "type": "string",
+              "const": "document_{id}.tar.zst",
+              "description": "Compressed archive replaces individual directory"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "type": "object",
+      "description": "References to all component schemas in this specification",
+      "properties": {
+        "adapter_config": {
+          "type": "object",
+          "properties": {
+            "$ref": { "type": "string", "const": "./schemas/adapter_config.schema.json" },
+            "description": { "type": "string", "const": "Configuration schema for adapter settings and processing parameters" }
+          }
+        },
+        "credentials": {
+          "type": "object",
+          "properties": {
+            "$ref": { "type": "string", "const": "./schemas/credentials.schema.json" },
+            "description": { "type": "string", "const": "Credential store for authentication (MUST NOT be version controlled)" }
+          }
+        },
+        "rate_limit_status": {
+          "type": "object",
+          "properties": {
+            "$ref": { "type": "string", "const": "./schemas/rate_limit_status.schema.json" },
+            "description": { "type": "string", "const": "API rate limiting information" }
+          }
+        },
+        "discovery_output": {
+          "type": "object",
+          "properties": {
+            "$ref": { "type": "string", "const": "./schemas/discovery_output.schema.json" },
+            "description": { "type": "string", "const": "Output from Discovery Module listing candidate documents" }
+          }
+        },
+        "acquisition_output": {
+          "type": "object",
+          "properties": {
+            "$ref": { "type": "string", "const": "./schemas/acquisition_output.schema.json" },
+            "description": { "type": "string", "const": "Output from Acquisition Module with download results" }
+          }
+        },
+        "processing_metadata": {
+          "type": "object",
+          "properties": {
+            "$ref": { "type": "string", "const": "./schemas/processing_metadata.schema.json" },
+            "description": { "type": "string", "const": "Metadata about processing pipeline execution" }
+          }
+        },
+        "chunk_output": {
+          "type": "object",
+          "properties": {
+            "$ref": { "type": "string", "const": "./schemas/chunk_output.schema.json" },
+            "description": { "type": "string", "const": "Individual chunk with content and metadata" }
+          }
+        },
+        "chunk_metadata": {
+          "type": "object",
+          "properties": {
+            "$ref": { "type": "string", "const": "./schemas/chunk_metadata.schema.json" },
+            "description": { "type": "string", "const": "Metadata for individual chunks" }
+          }
+        },
+        "document_metadata": {
+          "type": "object",
+          "properties": {
+            "$ref": { "type": "string", "const": "./schemas/document_metadata.schema.json" },
+            "description": { "type": "string", "const": "Document-level metadata including provenance and bibliographic info" }
+          }
+        },
+        "catalog": {
+          "type": "object",
+          "properties": {
+            "$ref": { "type": "string", "const": "./schemas/catalog.schema.json" },
+            "description": { "type": "string", "const": "Master catalog of all processed documents" }
+          }
+        },
+        "log_entry": {
+          "type": "object",
+          "properties": {
+            "$ref": { "type": "string", "const": "./schemas/log_entry.schema.json" },
+            "description": { "type": "string", "const": "Structured log entry for processing events" }
+          }
+        }
+      }
+    },
+    "compliance_testing": {
+      "type": "object",
+      "description": "Requirements for claiming HEPilot-Adapter-Compliant status",
+      "properties": {
+        "required_tests": {
+          "type": "array",
+          "description": "Tests that implementations MUST pass",
+          "items": {
+            "type": "string"
+          },
+          "prefixItems": [
+            { "const": "JSON schema validation for all output artifacts" },
+            { "const": "Format conversion tests for supported source types" },
+            { "const": "Performance benchmark (< 1 GiB RAM per process)" },
+            { "const": "Interoperability: generated markdown embeddable without errors" }
+          ]
+        },
+        "reference_implementation": {
+          "type": "string",
+          "const": "https://github.com/MohamedElashri/HEPilot/standards/reference_adapter",
+          "description": "URL to illustrative reference adapter"
+        },
+        "test_corpus": {
+          "type": "string",
+          "description": "Location of reference test corpus in repository"
+        }
+      }
+    }
+  },
+  "additionalProperties": false
+}
