@@ -54,7 +54,7 @@
       "properties": {
         "Document": {
           "type": "string",
-          "const": "A complete source artefact (PDF, LaTeX bundle, PPTX) uniquely identified by document_id",
+          "const": "A complete source artefact (PDF, LaTeX bundle, PPTX, source code file, or repository) uniquely identified by document_id. For code sources: code_docs uses individual files as documents, code uses entire repositories as documents with hierarchical chunking.",
           "description": "The atomic unit of content being processed"
         },
         "Chunk": {
@@ -192,7 +192,7 @@
           "properties": {
             "content_files": {
               "type": "array",
-              "description": "Files containing actual document content (text, equations, tables)",
+              "description": "Files containing actual document content (text, equations, tables, code). For code sources, content includes extracted documentation (code_docs) or full source code with syntax preservation (code).",
               "items": {
                 "type": "object",
                 "properties": {

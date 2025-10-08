@@ -85,6 +85,26 @@
     "license": {
       "type": "string",
       "description": "License or usage rights for this document (e.g., 'CC-BY-4.0', 'arXiv.org perpetual license'). Used to determine permitted uses and redistribution rights."
+    },
+    "repository": {
+      "type": "string",
+      "description": "Source code repository identifier for code_docs and code source types (e.g., 'gitlab.cern.ch/lhcb/LHCb'). Used to link back to the code repository. Only applicable for source_type=code_docs or source_type=code."
+    },
+    "branch": {
+      "type": "string",
+      "description": "Git branch or tag name for code sources (e.g., 'master', 'v2.1.0'). Indicates which version of the code was processed. Only applicable for source_type=code_docs or source_type=code."
+    },
+    "commit_hash": {
+      "type": "string",
+      "description": "Git commit hash (SHA) for exact version tracking of code sources. Enables reproducibility and detecting when code has changed. Format SHOULD be full 40-character SHA-1 hash. Only applicable for source_type=code_docs or source_type=code."
+    },
+    "file_path": {
+      "type": "string",
+      "description": "Path to the source file within the repository for file-based code_docs documents (e.g., 'python/LHCb/Kernel/LHCbMath.py'). For repository-based code documents, this field MAY be omitted. Used for navigating to specific files."
+    },
+    "programming_language": {
+      "type": "string",
+      "description": "Primary programming language of the code source (e.g., 'python', 'cpp', 'java'). Used for syntax-aware processing and display. Only applicable for source_type=code_docs or source_type=code."
     }
   },
   "additionalProperties": false

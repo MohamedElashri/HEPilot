@@ -29,7 +29,8 @@ This specification defines the **data acquisition and preparation format** for R
 **Key Features:**
 - Standardized pipeline from source documents to embedding-ready chunks
 - Self-documenting JSON schemas with embedded requirements
-- Support for multiple HEP sources (arXiv, Indico, TWiki, Internal Notes)
+- Support for multiple HEP sources (arXiv, Indico, TWiki, Internal Notes, Code repositories)
+- Code documentation extraction (docstrings, comments) and full source code indexing
 - Comprehensive metadata for retrieval and provenance
 - Modular adapter architecture for extensibility
 - Output format designed for RAG indexing systems
@@ -143,6 +144,8 @@ See [`discovery_output.schema.json`](./schemas/discovery_output.schema.json) and
 | **Indico** | Traverse event hierarchies<br>Capture speaker metadata<br>Handle authentication | Date-range filtering |
 | **Internal Notes** | Respect ACLs & classification flags | Content-based filtering |
 | **TWiki** | Resolve internal links & page histories | Namespace filtering |
+| **code_docs** | Authenticate with repository API<br>Traverse file tree<br>Extract docstrings (Python ast module)<br>Extract Doxygen comments (C++) | Respect .gitignore patterns<br>Filter by file extensions<br>Support specific paths (e.g., docs/) |
+| **code** | Authenticate with repository API<br>Parse AST for functions/classes<br>Preserve imports & dependencies<br>Maintain file hierarchy in section_path | Language-specific optimizations<br>Support incremental updates (git diff)<br>Configurable depth limits |
 
 ### Acquisition
 See [`acquisition_output.schema.json`](./schemas/acquisition_output.schema.json).

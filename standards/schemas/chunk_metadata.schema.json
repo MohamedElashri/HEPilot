@@ -78,6 +78,39 @@
         }
       },
       "additionalProperties": false
+    },
+    "code_chunk_info": {
+      "type": "object",
+      "description": "Code-specific metadata for chunks from source_type=code_docs or source_type=code. Provides information about the code structure and context. Only present for code source types.",
+      "properties": {
+        "code_element_type": {
+          "type": "string",
+          "enum": ["module", "class", "function", "method", "documentation"],
+          "description": "Type of code element this chunk represents. 'module' for module-level docstrings, 'class' for class definitions, 'function' for standalone functions, 'method' for class methods, 'documentation' for pure documentation files."
+        },
+        "element_name": {
+          "type": "string",
+          "description": "Name of the code element (e.g., 'calculate_momentum', 'Particle', '__init__'). Used for code navigation and search."
+        },
+        "function_signature": {
+          "type": "string",
+          "description": "Full function or method signature including parameters and return type (e.g., 'def calculate_momentum(particle: Particle, frame: str) -> Vector:'). Only applicable for functions and methods."
+        },
+        "parent_class": {
+          "type": "string",
+          "description": "Name of the containing class for methods. Null for standalone functions. Provides class context for method chunks."
+        },
+        "imports": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "List of imports or dependencies referenced in this code chunk (e.g., ['numpy', 'ROOT.TLorentzVector']). Helps understand code dependencies."
+        },
+        "file_location": {
+          "type": "string",
+          "description": "File path within the repository for this code chunk (e.g., 'python/LHCb/Kernel/LHCbMath.py'). May differ from document-level file_path for repository-based code documents."
+        }
+      },
+      "additionalProperties": false
     }
   },
   "additionalProperties": false

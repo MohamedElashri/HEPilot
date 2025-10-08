@@ -28,8 +28,8 @@
         },
         "source_type": {
           "type": "string",
-          "description": "Key identifying the document class handled by this adapter. Determines which source-specific requirements apply from the specification. An implementation is NOT REQUIRED to support all source classes.",
-          "enum": ["arxiv", "indico", "internal_notes", "twiki", "other"]
+          "description": "Key identifying the document class handled by this adapter. Determines which source-specific requirements apply from the specification. An implementation is NOT REQUIRED to support all source classes. For code sources: 'code_docs' extracts documentation from source code (docstrings, comments), 'code' indexes actual source code with full function/class extraction.",
+          "enum": ["arxiv", "indico", "internal_notes", "twiki", "code_docs", "code", "other"]
         },
         "credential_id": {
           "type": "string",

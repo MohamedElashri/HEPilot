@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/MohamedElashri/HEPilot/standards/schemas/discovery_output.schema.json",
   "title": "Discovery Output",
-  "description": "Output from the Discovery Module containing candidate documents found in source repositories. The Discovery Module is responsible for finding candidate documents and returning a registry with metadata that enables prioritization and acquisition planning. Source-specific requirements: arXiv adapters MUST query both REST API and OAI-PMH feed, extract version history and withdrawal notices. Indico adapters MUST traverse event hierarchies and capture speaker metadata. Internal Notes MUST respect repository ACLs and classification flags. TWiki adapters MUST resolve internal links and page histories.",
+  "description": "Output from the Discovery Module containing candidate documents found in source repositories. The Discovery Module is responsible for finding candidate documents and returning a registry with metadata that enables prioritization and acquisition planning. Source-specific requirements: arXiv adapters MUST query both REST API and OAI-PMH feed, extract version history and withdrawal notices. Indico adapters MUST traverse event hierarchies and capture speaker metadata. Internal Notes MUST respect repository ACLs and classification flags. TWiki adapters MUST resolve internal links and page histories. Code adapters (code_docs, code) MUST authenticate with repository API, traverse file trees, and identify documentation or source files for processing.",
   "type": "object",
   "required": ["discovered_documents"],
   "properties": {
@@ -31,7 +31,7 @@
           },
           "source_type": {
             "type": "string",
-            "description": "Type of source this document originates from. MUST match one of the supported source types: arxiv, indico, internal_notes, twiki, or other. Determines which source-specific processing rules apply."
+            "description": "Type of source this document originates from. MUST match one of the supported source types: arxiv, indico, internal_notes, twiki, code_docs, code, or other. Determines which source-specific processing rules apply."
           },
           "source_url": {
             "type": "string",
@@ -63,6 +63,26 @@
           "priority_score": {
             "type": "number",
             "description": "Optional relevance or priority score for this document. Higher scores indicate higher priority for acquisition. Scoring algorithm is implementation-specific but SHOULD consider factors like recency, citation count, or relevance to query criteria."
+          },
+          "repository": {
+            "type": "string",
+            "description": "Repository identifier for code sources (e.g., 'gitlab.cern.ch/lhcb/LHCb'). Only applicable for source_type=code_docs or source_type=code. Used to identify the source repository during discovery."
+          },
+          "branch": {
+            "type": "string",
+            "description": "Git branch or tag name for code sources (e.g., 'master', 'v2.1.0'). Only applicable for source_type=code_docs or source_type=code. Specifies which version to acquire."
+          },
+          "commit_hash": {
+            "type": "string",
+            "description": "Git commit hash discovered at time of discovery for code sources. Only applicable for source_type=code_docs or source_type=code. Used for version tracking."
+          },
+          "file_path": {
+            "type": "string",
+            "description": "Path to specific file within repository for code_docs sources (e.g., 'python/LHCb/Kernel/LHCbMath.py'). For code sources (repository-based), this MAY be omitted. Only applicable for code source types."
+          },
+          "programming_language": {
+            "type": "string",
+            "description": "Detected programming language for code sources (e.g., 'python', 'cpp'). Only applicable for source_type=code_docs or source_type=code. Used for language-specific processing decisions."
           }
         },
         "additionalProperties": false
