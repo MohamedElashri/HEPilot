@@ -79,7 +79,9 @@ class ArxivAcquisition:
                     download_timestamp=datetime.now(timezone.utc),
                     download_status="success",
                     retry_count=retry_count,
-                    validation_status=validation_status
+                    validation_status=validation_status,
+                    arxiv_id=doc.arxiv_id,
+                    arxiv_version=doc.arxiv_version
                 )
             except Exception as e:
                 retry_count += 1
@@ -93,7 +95,9 @@ class ArxivAcquisition:
                         download_timestamp=datetime.now(timezone.utc),
                         download_status="failed",
                         retry_count=retry_count,
-                        validation_status="failed"
+                        validation_status="failed",
+                        arxiv_id=doc.arxiv_id,
+                        arxiv_version=doc.arxiv_version
                     )
         return self._create_failed_acquisition(doc)
     
@@ -175,7 +179,9 @@ class ArxivAcquisition:
             download_timestamp=datetime.now(timezone.utc),
             download_status="failed",
             retry_count=5,
-            validation_status="failed"
+            validation_status="failed",
+            arxiv_id=doc.arxiv_id,
+            arxiv_version=doc.arxiv_version
         )
     
     def save_acquisition_output(self, acquired: List[AcquiredDocument], output_path: Path) -> None:
@@ -189,15 +195,19 @@ class ArxivAcquisition:
         output_data: Dict[str, Any] = {
             "acquired_documents": [
                 {
-                    "document_id": str(doc.document_id),
-                    "local_path": doc.local_path,
-                    "file_hash_sha256": doc.file_hash_sha256,
-                    "file_hash_sha512": doc.file_hash_sha512,
-                    "file_size": doc.file_size,
-                    "download_timestamp": doc.download_timestamp.isoformat(),
-                    "download_status": doc.download_status,
-                    "retry_count": doc.retry_count,
-                    "validation_status": doc.validation_status
+                    k: v for k, v in {
+                        "document_id": str(doc.document_id),
+                        "local_path": doc.local_path,
+                        "file_hash_sha256": doc.file_hash_sha256,
+                        "file_hash_sha512": doc.file_hash_sha512,
+                        "file_size": doc.file_size,
+                        "download_timestamp": doc.download_timestamp.isoformat(),
+                        "download_status": doc.download_status,
+                        "retry_count": doc.retry_count,
+                        "validation_status": doc.validation_status,
+                        "arxiv_id": doc.arxiv_id,
+                        "arxiv_version": doc.arxiv_version
+                    }.items() if v is not None
                 }
                 for doc in acquired
             ]

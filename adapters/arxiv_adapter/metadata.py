@@ -67,7 +67,9 @@ class MetadataManager:
             adapter_version=self.adapter_version,
             experiment_tags=experiment_tags if experiment_tags else None,
             collaboration=self._detect_collaboration(discovered.title, discovered.authors or []),
-            license="arXiv.org perpetual license"
+            license="arXiv.org perpetual license",
+            arxiv_id=discovered.arxiv_id,
+            arxiv_version=discovered.arxiv_version
         )
     
     def _extract_arxiv_id(self, url: str) -> str:
@@ -157,22 +159,26 @@ class MetadataManager:
             output_path: Path to output JSON file
         """
         data: Dict[str, Any] = {
-            "document_id": str(metadata.document_id),
-            "source_type": metadata.source_type,
-            "original_url": metadata.original_url,
-            "local_path": metadata.local_path,
-            "title": metadata.title,
-            "authors": metadata.authors,
-            "publication_date": metadata.publication_date,
-            "subject_categories": metadata.subject_categories,
-            "language": metadata.language,
-            "file_hash": metadata.file_hash,
-            "file_size": metadata.file_size,
-            "processing_timestamp": metadata.processing_timestamp.isoformat(),
-            "adapter_version": metadata.adapter_version,
-            "experiment_tags": metadata.experiment_tags,
-            "collaboration": metadata.collaboration,
-            "license": metadata.license
+            k: v for k, v in {
+                "document_id": str(metadata.document_id),
+                "source_type": metadata.source_type,
+                "original_url": metadata.original_url,
+                "local_path": metadata.local_path,
+                "title": metadata.title,
+                "authors": metadata.authors,
+                "publication_date": metadata.publication_date,
+                "subject_categories": metadata.subject_categories,
+                "language": metadata.language,
+                "file_hash": metadata.file_hash,
+                "file_size": metadata.file_size,
+                "processing_timestamp": metadata.processing_timestamp.isoformat(),
+                "adapter_version": metadata.adapter_version,
+                "experiment_tags": metadata.experiment_tags,
+                "collaboration": metadata.collaboration,
+                "license": metadata.license,
+                "arxiv_id": metadata.arxiv_id,
+                "arxiv_version": metadata.arxiv_version
+            }.items() if v is not None
         }
         output_path.parent.mkdir(parents=True, exist_ok=True)
         with open(output_path, 'w', encoding='utf-8') as f:

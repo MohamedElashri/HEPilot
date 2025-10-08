@@ -8,10 +8,11 @@ and generates discovery output compliant with HEPilot schema.
 import arxiv
 import uuid
 import json
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Tuple
 from datetime import datetime, timezone
 from pathlib import Path
 from models import DiscoveredDocument
+from cache_manager import CacheManager
 
 
 class ArxivDiscovery:
@@ -80,7 +81,11 @@ class ArxivDiscovery:
         Returns:
             Discovered document model
         """
-        doc_id: uuid.UUID = uuid.uuid4()
+        arxiv_id, version = CacheManager.extract_arxiv_id_and_version(result.pdf_url)
+        if arxiv_id is None:
+            doc_id: uuid.UUID = uuid.uuid4()
+        else:
+            doc_id: uuid.UUID = CacheManager.generate_stable_document_id(arxiv_id)
         authors: Optional[List[str]] = None
         if self.include_authors:
             authors = [author.name for author in result.authors]
@@ -94,7 +99,9 @@ class ArxivDiscovery:
             discovery_timestamp=datetime.now(timezone.utc),
             estimated_size=estimated_size,
             content_type="application/pdf",
-            priority_score=None
+            priority_score=None,
+            arxiv_id=arxiv_id,
+            arxiv_version=version
         )
     
     def _estimate_pdf_size(self, result: arxiv.Result) -> int:
@@ -130,7 +137,9 @@ class ArxivDiscovery:
                         "authors": doc.authors,
                         "discovery_timestamp": doc.discovery_timestamp.isoformat(),
                         "estimated_size": doc.estimated_size,
-                        "content_type": doc.content_type
+                        "content_type": doc.content_type,
+                        "arxiv_id": doc.arxiv_id,
+                        "arxiv_version": doc.arxiv_version
                     }.items() if v is not None
                 }
                 for doc in documents

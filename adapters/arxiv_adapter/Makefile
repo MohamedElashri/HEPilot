@@ -9,7 +9,7 @@
 # Configuration
 PYTHON := python3
 VENV := .venv
-OUTPUT_DIR := output
+OUTPUT_DIR := arxiv_output
 CACHE_DIR := .model_cache
 DOWNLOADS_DIR := $(OUTPUT_DIR)/downloads
 

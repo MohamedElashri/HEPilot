@@ -133,10 +133,18 @@ Discovery → Acquisition → Processing → Chunking → Metadata
 - Creates catalog entries
 - Maintains structured processing log
 
+#### `cache_manager.py` - Cache Manager
+- Tracks processed papers with version history
+- Uses stable ArXiv IDs (UUID5 from ArXiv URL)
+- Prevents redundant downloads and reprocessing
+- Detects new versions on ArXiv
+- Hash-based content verification
+
 #### `main.py` - Pipeline Orchestrator
 - Coordinates all stages
 - Handles errors gracefully
 - Provides CLI interface
+- Manages cache for incremental processing
 
 ---
 
@@ -216,6 +224,8 @@ output/
 │       ├── full_document.md               # Complete document (provenance)
 │       ├── document_metadata.json         # Document metadata
 │       └── processing_metadata.json       # Processing details
+├── cache/
+│   └── arxiv_cache.json                   # Cache database with version tracking
 ├── downloads/                             # Downloaded PDFs
 ├── catalog.json                           # Master catalog
 ├── discovery_output.json                  # Discovery results
@@ -247,6 +257,12 @@ python3 main.py \
     --output output \
     --query "cat:hep-ex AND LHCb" \
     --max-results 10
+```
+
+### Disable Caching (Force Reprocessing)
+
+```bash
+python3 main.py --no-cache
 ```
 
 ### Query Examples
@@ -298,6 +314,57 @@ All outputs validate against HEPilot schemas:
 
 ---
 
+## Caching System
+
+### Overview
+
+The adapter includes a robust caching system that tracks processed papers by their ArXiv ID and version, preventing redundant downloads and reprocessing unless a new version is available.
+
+### Cache Database
+
+Stored in `arxiv_output/cache/arxiv_cache.json` with the following structure:
+
+```json
+{
+  "2301.12345": {
+    "arxiv_id": "2301.12345",
+    "version": "v2",
+    "document_id": "uuid-string",
+    "file_hash_sha256": "hash-string",
+    "processing_timestamp": "2025-10-08T10:30:00Z",
+    "output_dir": "arxiv_output/documents/arxiv_uuid",
+    "source_url": "https://arxiv.org/pdf/2301.12345v2",
+    "title": "Paper Title"
+  }
+}
+```
+
+### Cache Validation
+
+A paper is reprocessed if:
+- ArXiv ID not found in cache
+- Version number has changed (e.g., `v1` → `v2`)
+- File hash differs (content change detection)
+- Required output files are missing (`chunks.json`, `document_metadata.json`)
+
+### Disabling Cache
+
+To force reprocessing of all papers:
+
+```bash
+python3 main.py --no-cache
+```
+
+### Cache Cleanup
+
+To clear the cache:
+
+```bash
+make clean-cache  # Removes cache directory
+```
+
+---
+
 ## Development
 
 
@@ -323,12 +390,10 @@ python3 main.py --max-results 1
 - No figure extraction (text only)
 - Basic table detection (no complex table parsing)
 - No citation graph extraction
-- No version history tracking
 
 ### Planned Enhancements
 - LaTeX source processing for better equation handling
 - Figure extraction and OCR/vlm
-- Incremental updates (detect new versions)
 
 ---
 

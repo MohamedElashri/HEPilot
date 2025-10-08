@@ -81,14 +81,14 @@ if [ "$MODE" = "dev" ]; then
     echo "Running in DEVELOPMENT mode (5 papers max)"
     python3 main.py \
         --config adapter_config.json \
-        --output output \
+        --output arxiv_output \
         --query "cat:hep-ex OR cat:hep-ph" \
         --dev
 elif [ "$MODE" = "prod" ]; then
     echo "Running in PRODUCTION mode (unlimited papers)"
     python3 main.py \
         --config adapter_config.json \
-        --output output \
+        --output arxiv_output \
         --query "cat:hep-ex OR cat:hep-ph"
 else
     echo "ERROR: Invalid mode '$MODE'. Use 'dev' or 'prod'"
@@ -118,19 +118,19 @@ if [ $EXIT_CODE -eq 0 ]; then
     echo "  └── processing_log.json"
     echo ""
     
-    if [ -f "output/catalog.json" ]; then
-        DOC_COUNT=$(python3 -c "import json; print(json.load(open('output/catalog.json'))['document_count'])" 2>/dev/null || echo "unknown")
+    if [ -f "arxiv_output/catalog.json" ]; then
+        DOC_COUNT=$(python3 -c "import json; print(json.load(open('arxiv_output/catalog.json'))['document_count'])" 2>/dev/null || echo "unknown")
         echo "Documents processed: $DOC_COUNT"
     fi
     
-    if [ -f "output/processing_log.json" ]; then
-        ERROR_COUNT=$(python3 -c "import json; logs=json.load(open('output/processing_log.json')); print(sum(1 for e in logs if e['level']=='ERROR'))" 2>/dev/null || echo "unknown")
+    if [ -f "arxiv_output/processing_log.json" ]; then
+        ERROR_COUNT=$(python3 -c "import json; logs=json.load(open('arxiv_output/processing_log.json')); print(sum(1 for e in logs if e['level']=='ERROR'))" 2>/dev/null || echo "unknown")
         echo "Errors encountered: $ERROR_COUNT"
     fi
 else
     echo "Pipeline failed with exit code $EXIT_CODE"
     echo ""
-    echo "Check output/processing_log.json for details"
+    echo "Check arxiv_output/processing_log.json for details"
 fi
 echo "=========================================="
 

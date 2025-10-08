@@ -32,6 +32,8 @@ class DiscoveredDocument(BaseModel):
     estimated_size: int
     content_type: str = "application/pdf"
     priority_score: Optional[float] = None
+    arxiv_id: Optional[str] = None
+    arxiv_version: Optional[str] = None
 
 
 class AcquiredDocument(BaseModel):
@@ -45,6 +47,8 @@ class AcquiredDocument(BaseModel):
     download_status: str
     retry_count: int = 0
     validation_status: str
+    arxiv_id: Optional[str] = None
+    arxiv_version: Optional[str] = None
 
 
 class ProcessingMetadata(BaseModel):
@@ -88,6 +92,8 @@ class DocumentMetadata(BaseModel):
     experiment_tags: Optional[List[str]] = None
     collaboration: Optional[str] = None
     license: Optional[str] = None
+    arxiv_id: Optional[str] = None
+    arxiv_version: Optional[str] = None
 
 
 class LogEntry(BaseModel):
