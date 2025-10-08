@@ -113,9 +113,11 @@ Discovery → Acquisition → Processing → Chunking → Metadata
 - **Formula Enrichment**: ML-based LaTeX extraction from equations (resolves `<!-- formula-not-decoded -->` placeholders)
 - Comprehensive LaTeX math environment support (equation, align, gather, multline, split, matrix variants)
 - Intelligent content filtering (removes references, acknowledgments, author lists)
+- **Configurable table processing**: Fast mode (default) or accurate mode for complex tables
+- **Timeout protection**: Prevents indefinite hangs on problematic PDFs (default: 10 minutes)
+- **Progress logging**: Detailed logs for debugging stuck processing
 - Preserves LaTeX equations with enhanced detection
 - Maintains section hierarchy and table structure
-- Converts to CommonMark markdown
 
 #### `chunking.py` - Chunking Engine
 - **Uses actual embedding model's tokenizer** (BAAI/bge-large-en-v1.5)
@@ -153,7 +155,9 @@ Discovery → Acquisition → Processing → Chunking → Metadata
       "chunk_overlap": 0.1,
       "preserve_tables": true,
       "preserve_equations": true,
-      "enrich_formulas": true
+      "enrich_formulas": true,
+      "table_mode": "fast",
+      "processing_timeout": 600
     },
     "profile": "core",
     "config_hash": "<computed>"
@@ -172,6 +176,13 @@ Discovery → Acquisition → Processing → Chunking → Metadata
   - When enabled, replaces `<!-- formula-not-decoded -->` placeholders with actual LaTeX representations
   - Uses docling's CodeFormula model for advanced equation analysis
   - Significantly improves mathematical content quality in RAG applications
+- **table_mode**: Table processing mode - "fast" or "accurate" (default: "fast")
+  - **fast**: Faster processing, good quality for most papers (recommended for large-scale processing)
+  - **accurate**: Slower but more precise table structure detection (use for critical table-heavy papers)
+- **processing_timeout**: Maximum seconds to process a single PDF (default: 600, 0 = no timeout)
+  - Prevents indefinite hangs on problematic PDFs
+  - Failed documents are logged with timeout warnings
+  - Increase for very complex papers with many tables/formulas
 - **exclude_references**: Remove references/bibliography sections (default: true)
 - **exclude_acknowledgments**: Remove acknowledgments sections (default: true)
 - **exclude_author_lists**: Remove author lists and collaboration sections from content (default: true)
@@ -207,12 +218,6 @@ output/
 ├── acquisition_output.json                # Acquisition results
 └── processing_log.json                    # Structured logs
 ```
-
-### Key Principles
-
-✅ **Content in `.md` files** - Markdown text for RAG embedding  
-✅ **Metadata in `.json` files** - Structured data about content  
-❌ **Never embed content in JSON** - Maintains efficiency and compliance
 
 ---
 
@@ -285,39 +290,11 @@ All outputs validate against HEPilot schemas:
 
 All errors are logged to `processing_log.json` with structured context.
 
----
-
-## Performance
-
-- **Processing Speed**: ~30-60 seconds per paper
-- **Memory Usage**: <1GB per process
-- **Disk Space**: ~500KB-2MB per paper (PDF + markdown + chunks)
-- **Throughput**: ~50-100 papers/hour (depending on network)
 
 ---
 
 ## Development
 
-### Project Structure
-
-```
-arxiv_adapter/
-├── main.py              # Pipeline orchestrator
-├── config.py            # Configuration manager
-├── discovery.py         # Discovery module
-├── acquisition.py       # Acquisition module
-├── processing.py        # Processing pipeline
-├── chunking.py          # Chunking engine
-├── metadata.py          # Metadata manager
-├── models.py            # Data models (Pydantic)
-├── adapter_config.json  # Configuration
-├── requirements.txt     # Dependencies
-├── run.sh               # Control script (primary interface)
-├── Makefile             # Make targets (cleanup, shortcuts)
-├── README.md            # This file
-├── Agent.md             # Agent context
-└── plan.md              # Implementation plan
-```
 
 ### Testing
 
@@ -344,10 +321,8 @@ python3 main.py --max-results 1
 - No version history tracking
 
 ### Planned Enhancements
-- OAI-PMH feed integration for incremental discovery
 - LaTeX source processing for better equation handling
-- Figure extraction and OCR
-- Citation network analysis
+- Figure extraction and OCR/vlm
 - Incremental updates (detect new versions)
 
 ---
@@ -355,15 +330,8 @@ python3 main.py --max-results 1
 ## Dependencies
 
 ```
-arxiv>=2.1.0                 # Official arXiv API client
-docling>=1.0.0               # ML-powered PDF processing with LaTeX support
-sentence-transformers>=2.2.0 # Embedding model for accurate token counting
-transformers>=4.35.0         # Transformer models and tokenizers
-tiktoken>=0.5.0              # Alternative token counting (fallback)
-pydantic>=2.5.0              # Schema validation
-requests>=2.31.0             # HTTP with retry logic
-torch>=2.0.0                 # PyTorch for embedding models
-```
+
+The dependencies of the adapter live inside `requirements.txt` file
 
 **Key Points**:
 - **Docling**: ML-based formula extraction and advanced PDF processing
@@ -405,26 +373,3 @@ This adapter is part of the HEPilot project.
 
 ---
 
-## Contact
-
-**Maintainer**: Mohamed Elashri  
-**Email**: mohamed.elashri@cern.ch  
-**Repository**: https://github.com/MohamedElashri/HEPilot
-
----
-
-## Changelog
-
-### v1.0.0 (2025-10-08)
-- Initial release with complete rewrite from scratch
-- Full HEPilot v1.0 compliance with all schema validation
-- **ML-Powered Processing**: Integrated docling for advanced PDF processing
-- **Real Embedding Model Tokenization**: Uses BAAI/bge-large-en-v1.5 model's tokenizer for accurate chunking
-- **Configurable Embedding Models**: Easy model switching via configuration
-- **LaTeX Formula Support**: Comprehensive math environment detection (equation, align, gather, multline, split, matrix variants)
-- **Content Filtering**: Intelligent removal of references, acknowledgments, and author lists
-- **Safe Token Counting**: Batched processing prevents memory issues with 161K+ token documents
-- Discovery, acquisition, processing, chunking, and metadata modules
-- Dev/prod mode support via bash control script
-- Comprehensive error handling with structured logging
-- Type-safe implementation with full Pydantic models

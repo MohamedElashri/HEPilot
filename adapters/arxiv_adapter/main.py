@@ -46,9 +46,11 @@ class ArxivAdapterPipeline:
             preserve_tables=self.config_manager.get_preserve_tables(),
             preserve_equations=self.config_manager.get_preserve_equations(),
             enrich_formulas=self.config_manager.get_enrich_formulas(),
+            table_mode=self.config_manager.get_table_mode(),
             exclude_references=self.config_manager.get_exclude_references(),
             exclude_acknowledgments=self.config_manager.get_exclude_acknowledgments(),
-            exclude_author_lists=self.config_manager.get_exclude_author_lists()
+            exclude_author_lists=self.config_manager.get_exclude_author_lists(),
+            processing_timeout=self.config_manager.get_processing_timeout()
         )
         self.chunker: ArxivChunker = ArxivChunker(
             chunk_size=self.config_manager.get_chunk_size(),

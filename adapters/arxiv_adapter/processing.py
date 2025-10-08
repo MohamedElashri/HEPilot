@@ -7,6 +7,8 @@ extraction, table handling, and section detection with comprehensive content fil
 
 import re
 import json
+import signal
+import logging
 from typing import List, Tuple, Optional, Dict, Any
 from datetime import datetime, timezone
 from pathlib import Path
@@ -14,6 +16,11 @@ from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import PdfPipelineOptions, TableFormerMode
 from models import AcquiredDocument, ProcessingMetadata
+
+
+class TimeoutException(Exception):
+    """Exception raised when processing times out."""
+    pass
 
 
 class ArxivProcessor:
@@ -24,9 +31,11 @@ class ArxivProcessor:
         preserve_tables: bool = True,
         preserve_equations: bool = True,
         enrich_formulas: bool = True,
+        table_mode: str = "fast",
         exclude_references: bool = True,
         exclude_acknowledgments: bool = True,
-        exclude_author_lists: bool = True
+        exclude_author_lists: bool = True,
+        processing_timeout: int = 600
     ) -> None:
         """
         Initialize processing module with docling.
@@ -35,16 +44,21 @@ class ArxivProcessor:
             preserve_tables: Whether to preserve tables in markdown
             preserve_equations: Whether to preserve LaTeX equations
             enrich_formulas: Whether to enrich formulas with LaTeX extraction
+            table_mode: Table processing mode ('fast' or 'accurate')
             exclude_references: Whether to exclude references section
             exclude_acknowledgments: Whether to exclude acknowledgments
             exclude_author_lists: Whether to exclude author lists
+            processing_timeout: Maximum seconds to process a single PDF (0 = no timeout)
         """
+        self.logger: logging.Logger = logging.getLogger(__name__)
         self.preserve_tables: bool = preserve_tables
         self.preserve_equations: bool = preserve_equations
         self.enrich_formulas: bool = enrich_formulas
+        self.table_mode: str = table_mode.lower()
         self.exclude_references: bool = exclude_references
         self.exclude_acknowledgments: bool = exclude_acknowledgments
         self.exclude_author_lists: bool = exclude_author_lists
+        self.processing_timeout: int = processing_timeout
         self.converter: DocumentConverter = self._initialize_converter()
     
     def _initialize_converter(self) -> DocumentConverter:
@@ -56,7 +70,12 @@ class ArxivProcessor:
         """
         pipeline_options: PdfPipelineOptions = PdfPipelineOptions()
         pipeline_options.do_table_structure = self.preserve_tables
-        pipeline_options.table_structure_options.mode = TableFormerMode.ACCURATE
+        if self.table_mode == "accurate":
+            pipeline_options.table_structure_options.mode = TableFormerMode.ACCURATE
+            self.logger.info("Using ACCURATE table processing mode (slower but more precise)")
+        else:
+            pipeline_options.table_structure_options.mode = TableFormerMode.FAST
+            self.logger.info("Using FAST table processing mode (faster but less precise)")
         pipeline_options.do_formula_enrichment = self.enrich_formulas
         pipeline_options.do_ocr = False
         pipeline_options.generate_page_images = False
@@ -69,6 +88,10 @@ class ArxivProcessor:
             }
         )
         return converter
+    
+    def _timeout_handler(self, signum: int, frame: Any) -> None:
+        """Signal handler for processing timeout."""
+        raise TimeoutException("PDF processing exceeded timeout limit")
     
     def process(self, acquired: AcquiredDocument, output_dir: Path) -> Tuple[Path, ProcessingMetadata]:
         """
@@ -83,10 +106,21 @@ class ArxivProcessor:
         """
         start_time: datetime = datetime.now(timezone.utc)
         warnings: List[str] = []
+        old_handler = None
         try:
             pdf_path: Path = Path(acquired.local_path)
+            self.logger.info(f"Starting PDF conversion for {pdf_path.name}")
+            if self.processing_timeout > 0:
+                old_handler = signal.signal(signal.SIGALRM, self._timeout_handler)
+                signal.alarm(self.processing_timeout)
+                self.logger.info(f"Set processing timeout to {self.processing_timeout} seconds")
+            self.logger.info("Running docling converter (this may take several minutes for complex PDFs)...")
             result = self.converter.convert(str(pdf_path))
+            if self.processing_timeout > 0:
+                signal.alarm(0)
+            self.logger.info("Docling conversion completed, exporting to markdown...")
             markdown: str = result.document.export_to_markdown()
+            self.logger.info("Markdown export completed")
             markdown = self._filter_content(markdown, warnings)
             if self.preserve_equations:
                 markdown = self._enhance_equations(markdown)
@@ -104,9 +138,29 @@ class ArxivProcessor:
                 conversion_warnings=warnings
             )
             return md_path, metadata
-        except Exception as e:
+        except TimeoutException as e:
+            if self.processing_timeout > 0 and old_handler:
+                signal.alarm(0)
+                signal.signal(signal.SIGALRM, old_handler)
             duration: float = (datetime.now(timezone.utc) - start_time).total_seconds()
-            warnings.append(f"Processing failed: {str(e)}")
+            error_msg: str = f"Processing timeout after {duration:.1f}s (limit: {self.processing_timeout}s)"
+            self.logger.error(error_msg)
+            warnings.append(error_msg)
+            metadata: ProcessingMetadata = ProcessingMetadata(
+                processor_used="docling/1.0.0",
+                processing_timestamp=start_time,
+                processing_duration=duration,
+                conversion_warnings=warnings
+            )
+            return Path(""), metadata
+        except Exception as e:
+            if self.processing_timeout > 0 and old_handler:
+                signal.alarm(0)
+                signal.signal(signal.SIGALRM, old_handler)
+            duration: float = (datetime.now(timezone.utc) - start_time).total_seconds()
+            error_msg: str = f"Processing failed: {str(e)}"
+            self.logger.error(error_msg)
+            warnings.append(error_msg)
             metadata: ProcessingMetadata = ProcessingMetadata(
                 processor_used="docling/1.0.0",
                 processing_timestamp=start_time,

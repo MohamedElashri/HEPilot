@@ -125,3 +125,11 @@ class ConfigManager:
         """Get model cache directory."""
         embedding_config: Dict[str, Any] = self.config.model_dump().get('embedding_config', {})
         return embedding_config.get('cache_dir', '.model_cache')
+    
+    def get_processing_timeout(self) -> int:
+        """Get processing timeout in seconds (0 = no timeout)."""
+        return self.config.processing_config.get('processing_timeout', 600)
+    
+    def get_table_mode(self) -> str:
+        """Get table processing mode ('fast' or 'accurate')."""
+        return self.config.processing_config.get('table_mode', 'fast')
