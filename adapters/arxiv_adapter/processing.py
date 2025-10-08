@@ -9,6 +9,9 @@ import re
 import json
 import signal
 import logging
+import threading
+import time
+import os
 from typing import List, Tuple, Optional, Dict, Any
 from datetime import datetime, timezone
 from pathlib import Path
@@ -35,7 +38,7 @@ class ArxivProcessor:
         exclude_references: bool = True,
         exclude_acknowledgments: bool = True,
         exclude_author_lists: bool = True,
-        processing_timeout: int = 600
+        processing_timeout: int = 100
     ) -> None:
         """
         Initialize processing module with docling.
@@ -93,6 +96,20 @@ class ArxivProcessor:
         """Signal handler for processing timeout."""
         raise TimeoutException("PDF processing exceeded timeout limit")
     
+    def _progress_monitor(self, pdf_name: str, start_time: float, stop_event: threading.Event) -> None:
+        """
+        Monitor and log progress during conversion.
+        
+        Args:
+            pdf_name: Name of the PDF being processed
+            start_time: Start time of processing
+            stop_event: Event to signal monitoring should stop
+        """
+        interval: int = 30
+        while not stop_event.wait(interval):
+            elapsed: float = time.time() - start_time
+            self.logger.info(f"Still processing {pdf_name}... ({elapsed:.0f}s elapsed)")
+    
     def process(self, acquired: AcquiredDocument, output_dir: Path) -> Tuple[Path, ProcessingMetadata]:
         """
         Process single document to markdown using docling.
@@ -107,15 +124,29 @@ class ArxivProcessor:
         start_time: datetime = datetime.now(timezone.utc)
         warnings: List[str] = []
         old_handler = None
+        stop_event: threading.Event = threading.Event()
+        monitor_thread: Optional[threading.Thread] = None
         try:
             pdf_path: Path = Path(acquired.local_path)
-            self.logger.info(f"Starting PDF conversion for {pdf_path.name}")
+            pdf_size_mb: float = os.path.getsize(pdf_path) / (1024 * 1024)
+            self.logger.info(f"Starting PDF conversion for {pdf_path.name} ({pdf_size_mb:.1f} MB)")
+            if pdf_size_mb > 10:
+                self.logger.warning(f"Large PDF detected ({pdf_size_mb:.1f} MB) - processing may take several minutes")
             if self.processing_timeout > 0:
                 old_handler = signal.signal(signal.SIGALRM, self._timeout_handler)
                 signal.alarm(self.processing_timeout)
                 self.logger.info(f"Set processing timeout to {self.processing_timeout} seconds")
             self.logger.info("Running docling converter (this may take several minutes for complex PDFs)...")
+            monitor_thread = threading.Thread(
+                target=self._progress_monitor,
+                args=(pdf_path.name, time.time(), stop_event),
+                daemon=True
+            )
+            monitor_thread.start()
             result = self.converter.convert(str(pdf_path))
+            stop_event.set()
+            if monitor_thread:
+                monitor_thread.join(timeout=1)
             if self.processing_timeout > 0:
                 signal.alarm(0)
             self.logger.info("Docling conversion completed, exporting to markdown...")
@@ -139,6 +170,9 @@ class ArxivProcessor:
             )
             return md_path, metadata
         except TimeoutException as e:
+            stop_event.set()
+            if monitor_thread:
+                monitor_thread.join(timeout=1)
             if self.processing_timeout > 0 and old_handler:
                 signal.alarm(0)
                 signal.signal(signal.SIGALRM, old_handler)
@@ -154,6 +188,9 @@ class ArxivProcessor:
             )
             return Path(""), metadata
         except Exception as e:
+            stop_event.set()
+            if monitor_thread:
+                monitor_thread.join(timeout=1)
             if self.processing_timeout > 0 and old_handler:
                 signal.alarm(0)
                 signal.signal(signal.SIGALRM, old_handler)

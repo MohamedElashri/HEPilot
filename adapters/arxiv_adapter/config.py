@@ -128,7 +128,7 @@ class ConfigManager:
     
     def get_processing_timeout(self) -> int:
         """Get processing timeout in seconds (0 = no timeout)."""
-        return self.config.processing_config.get('processing_timeout', 600)
+        return self.config.processing_config.get('processing_timeout', 100)
     
     def get_table_mode(self) -> str:
         """Get table processing mode ('fast' or 'accurate')."""

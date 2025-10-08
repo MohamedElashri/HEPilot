@@ -157,7 +157,7 @@ Discovery → Acquisition → Processing → Chunking → Metadata
       "preserve_equations": true,
       "enrich_formulas": true,
       "table_mode": "fast",
-      "processing_timeout": 600
+      "processing_timeout": 100
     },
     "profile": "core",
     "config_hash": "<computed>"
@@ -179,8 +179,10 @@ Discovery → Acquisition → Processing → Chunking → Metadata
 - **table_mode**: Table processing mode - "fast" or "accurate" (default: "fast")
   - **fast**: Faster processing, good quality for most papers (recommended for large-scale processing)
   - **accurate**: Slower but more precise table structure detection (use for critical table-heavy papers)
-- **processing_timeout**: Maximum seconds to process a single PDF (default: 600, 0 = no timeout)
+- **processing_timeout**: Maximum seconds to process a single PDF (default: 100, 0 = no timeout)
   - Prevents indefinite hangs on problematic PDFs
+  - Progress updates logged every 30 seconds during conversion
+  - Large PDFs (>10 MB) trigger automatic warnings (for debugging purpose)
   - Failed documents are logged with timeout warnings
   - Increase for very complex papers with many tables/formulas
 - **exclude_references**: Remove references/bibliography sections (default: true)

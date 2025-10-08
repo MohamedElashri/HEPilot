@@ -14,7 +14,7 @@
       "exclude_acknowledgments": true,
       "exclude_author_lists": true,
       "include_authors_metadata": false,
-      "processing_timeout": 600
+      "processing_timeout": 100
     },
     "profile": "core",
     "config_hash": "08e944f75870772107584e3dafa2767f269d6c46c8d3fd5bc881540136bb58b1"
