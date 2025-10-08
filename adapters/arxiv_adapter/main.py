@@ -24,7 +24,7 @@ from models import DiscoveredDocument, AcquiredDocument, ChunkContent, DocumentM
 class ArxivAdapterPipeline:
     """Orchestrates the complete ArXiv adapter pipeline."""
     
-    def __init__(self, config_path: Path, output_dir: Path, max_results: Optional[int] = None, enable_cache: bool = True) -> None:
+    def __init__(self, config_path: Path, output_dir: Path, max_results: Optional[int] = None, enable_cache: bool = True, verbose: bool = False) -> None:
         """
         Initialize adapter pipeline.
         
@@ -33,12 +33,14 @@ class ArxivAdapterPipeline:
             output_dir: Directory for output files
             max_results: Maximum number of papers to process (None for unlimited)
             enable_cache: Whether to enable caching system
+            verbose: Enable verbose debug output (auto-enabled in dev mode)
         """
         self.config_manager: ConfigManager = ConfigManager(config_path)
         self.output_dir: Path = output_dir
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.max_results: Optional[int] = max_results
         self.enable_cache: bool = enable_cache
+        self.verbose: bool = verbose
         self.cache_manager: Optional[CacheManager] = None
         if enable_cache:
             self.cache_manager = CacheManager(output_dir / "cache")
@@ -90,7 +92,8 @@ class ArxivAdapterPipeline:
             if self.enable_cache and self.cache_manager:
                 cache_stats = self.cache_manager.get_cache_stats()
                 self.metadata_manager.log("INFO", "cache", f"Cache initialized with {cache_stats['total_papers']} existing entries")
-                print(f"\n[CACHE] Loaded cache with {cache_stats['total_papers']} existing papers")
+                if self.verbose:
+                    print(f"\n[CACHE] Loaded cache with {cache_stats['total_papers']} existing papers")
             discovered: List[DiscoveredDocument] = self._run_discovery(query)
             if not discovered:
                 self.metadata_manager.log("WARNING", "pipeline", "No documents discovered")
@@ -106,18 +109,23 @@ class ArxivAdapterPipeline:
                         continue
                     cached_entry = self.cache_manager.get_cached_entry(doc.arxiv_id)
                     if not cached_entry:
-                        print(f"[CACHE] → New paper: {doc.arxiv_id} {doc.arxiv_version}")
+                        if self.verbose:
+                            print(f"[CACHE] → New paper: {doc.arxiv_id} {doc.arxiv_version}")
                         to_download.append(doc)
                     elif cached_entry.version != (doc.arxiv_version or "v1"):
-                        print(f"[CACHE] → New version: {doc.arxiv_id} {cached_entry.version} → {doc.arxiv_version}")
+                        if self.verbose:
+                            print(f"[CACHE] → New version: {doc.arxiv_id} {cached_entry.version} → {doc.arxiv_version}")
                         to_download.append(doc)
                     elif cached_entry.processing_status != "success":
-                        print(f"[CACHE] → Retry ({cached_entry.processing_status}): {doc.arxiv_id} {doc.arxiv_version}")
+                        if self.verbose:
+                            print(f"[CACHE] → Retry ({cached_entry.processing_status}): {doc.arxiv_id} {doc.arxiv_version}")
                         to_process_from_cache.append(doc)
                     else:
-                        print(f"[CACHE] ✓ Cached: {doc.arxiv_id} {doc.arxiv_version}")
+                        if self.verbose:
+                            print(f"[CACHE] ✓ Cached: {doc.arxiv_id} {doc.arxiv_version}")
                         fully_cached.append(doc)
-                print(f"\n[CACHE] Summary: {len(fully_cached)} cached, {len(to_download)} new/updated, {len(to_process_from_cache)} retry\n")
+                if fully_cached or to_download or to_process_from_cache:
+                    print(f"\n[CACHE] {len(fully_cached)} cached, {len(to_download)} to download, {len(to_process_from_cache)} to retry\n")
                 for cached_doc in fully_cached:
                     cached_entry = self.cache_manager.get_cached_entry(cached_doc.arxiv_id)
                     if cached_entry:
@@ -142,8 +150,15 @@ class ArxivAdapterPipeline:
                                     download_status="success",
                                     processing_status="pending"
                                 )
-                                print(f"[CACHE] ✓ Downloaded: {disc.arxiv_id} {disc.arxiv_version}")
-                    for disc, acq in zip(to_download, acquired):
+                                if self.verbose:
+                                    print(f"[CACHE] ✓ Downloaded: {disc.arxiv_id} {disc.arxiv_version}")
+                    print(f"\nProcessing {len(acquired)} papers...\n")
+                    try:
+                        from tqdm import tqdm
+                        papers_iter = tqdm(zip(to_download, acquired), total=len(acquired), desc="Processing", disable=self.verbose)
+                    except ImportError:
+                        papers_iter = zip(to_download, acquired)
+                    for disc, acq in papers_iter:
                         if acq.download_status != "success":
                             continue
                         if self.enable_cache and self.cache_manager:
@@ -156,14 +171,20 @@ class ArxivAdapterPipeline:
                             if self.enable_cache and self.cache_manager and disc.arxiv_id:
                                 self.cache_manager.update_processing_status(disc.arxiv_id, "failed")
             if to_process_from_cache and self.enable_cache and self.cache_manager:
-                print(f"\n[CACHE] Retrying {len(to_process_from_cache)} previously failed papers\n")
-                for doc in to_process_from_cache:
+                print(f"\nRetrying {len(to_process_from_cache)} previously failed papers...\n")
+                try:
+                    from tqdm import tqdm
+                    retry_iter = tqdm(to_process_from_cache, desc="Retrying", disable=self.verbose)
+                except ImportError:
+                    retry_iter = to_process_from_cache
+                for doc in retry_iter:
                     cached_entry = self.cache_manager.get_cached_entry(doc.arxiv_id)
                     if not cached_entry:
                         continue
                     pdf_path: Path = self.output_dir / "downloads" / f"{cached_entry.document_id}.pdf"
                     if not pdf_path.exists():
-                        print(f"[CACHE] ✗ Missing PDF for retry: {doc.arxiv_id} {doc.arxiv_version}")
+                        if self.verbose:
+                            print(f"[CACHE] ✗ Missing PDF for retry: {doc.arxiv_id} {doc.arxiv_version}")
                         continue
                     acq = AcquiredDocument(
                         document_id=UUID(cached_entry.document_id),
@@ -178,7 +199,8 @@ class ArxivAdapterPipeline:
                         arxiv_id=doc.arxiv_id,
                         arxiv_version=doc.arxiv_version
                     )
-                    print(f"[CACHE] ⟳ Retry processing: {doc.arxiv_id} {doc.arxiv_version}")
+                    if self.verbose:
+                        print(f"[CACHE] ⟳ Retry processing: {doc.arxiv_id} {doc.arxiv_version}")
                     success: bool = self._process_document_with_cache(doc, acq, catalog_entries)
                     if not success:
                         self.metadata_manager.log("WARNING", "pipeline",
@@ -263,17 +285,20 @@ class ArxivAdapterPipeline:
         if not should_process:
             self.metadata_manager.log("INFO", "cache", 
                 f"Using cached version: {discovered.title} ({discovered.arxiv_id} {discovered.arxiv_version})")
-            print(f"[CACHE] ✓ Using cached: {discovered.arxiv_id} {discovered.arxiv_version} - {discovered.title[:60]}...")
+            if self.verbose:
+                print(f"[CACHE] ✓ Using cached: {discovered.arxiv_id} {discovered.arxiv_version} - {discovered.title[:60]}...")
             cached_entry = self.cache_manager.get_cached_entry(discovered.arxiv_id)
             if cached_entry:
                 return self._load_from_cache(cached_entry, catalog_entries)
-        print(f"[CACHE] ⟳ Processing: {discovered.arxiv_id} {discovered.arxiv_version} - {discovered.title[:60]}...")
+        if self.verbose:
+            print(f"[CACHE] ⟳ Processing: {discovered.arxiv_id} {discovered.arxiv_version} - {discovered.title[:60]}...")
         success: bool = self._process_document(discovered, acquired, catalog_entries)
         if success and discovered.arxiv_id:
             self.cache_manager.update_processing_status(discovered.arxiv_id, "success")
             self.metadata_manager.log("INFO", "cache", 
                 f"Cached: {discovered.title} ({discovered.arxiv_id} {discovered.arxiv_version})")
-            print(f"[CACHE] ✓ Processed: {discovered.arxiv_id} {discovered.arxiv_version}")
+            if self.verbose:
+                print(f"[CACHE] ✓ Processed: {discovered.arxiv_id} {discovered.arxiv_version}")
         elif not success and discovered.arxiv_id:
             self.cache_manager.update_processing_status(discovered.arxiv_id, "failed")
         return success
@@ -447,7 +472,8 @@ def main() -> int:
         config_path=args.config,
         output_dir=args.output,
         max_results=max_results,
-        enable_cache=not args.no_cache
+        enable_cache=not args.no_cache,
+        verbose=args.dev or args.max_results is not None
     )
     success: bool = pipeline.run(query=args.query)
     return 0 if success else 1
