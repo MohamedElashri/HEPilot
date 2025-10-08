@@ -399,13 +399,12 @@ python3 main.py --max-results 1
 
 ## Dependencies
 
-```
 
 The dependencies of the adapter live inside `requirements.txt` file
 
 **Key Points**:
 - **Docling**: ML-based formula extraction and advanced PDF processing
-- **sentence-transformers**: Uses BAAI/bge-large-en-v1.5 for accurate token counting that matches your RAG system's embedding model
+- **sentence-transformers**: Uses BAAI/bge-large-en-v1.5 for accurate token counting that matches our RAG system's embedding model
 - **Accurate Chunking**: Chunks are created using the same tokenizer as your target embedding model, ensuring no truncation issues
 
 ---
