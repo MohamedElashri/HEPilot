@@ -345,7 +345,7 @@ A paper is reprocessed if:
 - ArXiv ID not found in cache
 - Version number has changed (e.g., `v1` → `v2`)
 - File hash differs (content change detection)
-- Required output files are missing (`chunks.json`, `document_metadata.json`)
+- Required output files are missing (`document_metadata.json`, `chunks/` directory with chunk files)
 
 ### Disabling Cache
 
@@ -439,6 +439,3 @@ The dependencies of the adapter live inside `requirements.txt` file
 ## License
 
 This adapter is part of the HEPilot project.
-
----
-

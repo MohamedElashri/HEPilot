@@ -27,7 +27,9 @@ class CacheEntry:
         processing_timestamp: str,
         output_dir: str,
         source_url: str,
-        title: str
+        title: str,
+        download_status: str = "success",
+        processing_status: str = "success"
     ) -> None:
         """
         Initialize cache entry.
@@ -41,6 +43,8 @@ class CacheEntry:
             output_dir: Directory containing processed outputs
             source_url: Original ArXiv URL
             title: Paper title
+            download_status: Download status ('success', 'failed')
+            processing_status: Processing status ('success', 'failed', 'timeout', 'pending')
         """
         self.arxiv_id: str = arxiv_id
         self.version: str = version
@@ -50,6 +54,8 @@ class CacheEntry:
         self.output_dir: str = output_dir
         self.source_url: str = source_url
         self.title: str = title
+        self.download_status: str = download_status
+        self.processing_status: str = processing_status
     
     def to_dict(self) -> Dict[str, str]:
         """
@@ -66,7 +72,9 @@ class CacheEntry:
             'processing_timestamp': self.processing_timestamp,
             'output_dir': self.output_dir,
             'source_url': self.source_url,
-            'title': self.title
+            'title': self.title,
+            'download_status': self.download_status,
+            'processing_status': self.processing_status
         }
     
     @staticmethod
@@ -80,7 +88,12 @@ class CacheEntry:
         Returns:
             CacheEntry instance
         """
-        return CacheEntry(**data)
+        data_copy = dict(data)
+        if 'download_status' not in data_copy:
+            data_copy['download_status'] = 'success'
+        if 'processing_status' not in data_copy:
+            data_copy['processing_status'] = 'success'
+        return CacheEntry(**data_copy)
 
 
 class CacheManager:
@@ -168,6 +181,26 @@ class CacheManager:
         arxiv_url: str = f"https://arxiv.org/abs/{arxiv_id}"
         return uuid5(NAMESPACE_URL, arxiv_url)
     
+    def should_download(self, arxiv_id: str, version: str) -> bool:
+        """
+        Check if paper needs to be downloaded.
+        
+        Args:
+            arxiv_id: ArXiv paper ID
+            version: Version string
+            
+        Returns:
+            True if paper should be downloaded, False if already downloaded
+        """
+        if arxiv_id not in self.cache:
+            return True
+        cached_entry: CacheEntry = self.cache[arxiv_id]
+        if cached_entry.version != version:
+            return True
+        if cached_entry.download_status != "success":
+            return True
+        return False
+    
     def should_process(
         self,
         arxiv_id: str,
@@ -190,18 +223,18 @@ class CacheManager:
         cached_entry: CacheEntry = self.cache[arxiv_id]
         if cached_entry.version != version:
             return True
+        if cached_entry.processing_status != "success":
+            return True
         if file_hash and cached_entry.file_hash_sha256 != file_hash:
             return True
         cached_output_dir: Path = Path(cached_entry.output_dir)
         if not cached_output_dir.exists():
             return True
-        required_files: list[str] = [
-            'document_metadata.json',
-            'chunks.json'
-        ]
-        for filename in required_files:
-            if not (cached_output_dir / filename).exists():
-                return True
+        if not (cached_output_dir / 'document_metadata.json').exists():
+            return True
+        chunks_dir: Path = cached_output_dir / 'chunks'
+        if not chunks_dir.exists() or not any(chunks_dir.iterdir()):
+            return True
         return False
     
     def get_cached_entry(self, arxiv_id: str) -> Optional[CacheEntry]:
@@ -224,7 +257,9 @@ class CacheManager:
         file_hash_sha256: str,
         output_dir: Path,
         source_url: str,
-        title: str
+        title: str,
+        download_status: str = "success",
+        processing_status: str = "success"
     ) -> None:
         """
         Add or update cache entry.
@@ -237,6 +272,8 @@ class CacheManager:
             output_dir: Output directory path
             source_url: Original ArXiv URL
             title: Paper title
+            download_status: Download status
+            processing_status: Processing status
         """
         entry: CacheEntry = CacheEntry(
             arxiv_id=arxiv_id,
@@ -246,10 +283,29 @@ class CacheManager:
             processing_timestamp=datetime.now(timezone.utc).isoformat(),
             output_dir=str(output_dir),
             source_url=source_url,
-            title=title
+            title=title,
+            download_status=download_status,
+            processing_status=processing_status
         )
         self.cache[arxiv_id] = entry
         self._save_cache()
+    
+    def update_processing_status(
+        self,
+        arxiv_id: str,
+        processing_status: str
+    ) -> None:
+        """
+        Update processing status for existing cache entry.
+        
+        Args:
+            arxiv_id: ArXiv paper ID
+            processing_status: New processing status
+        """
+        if arxiv_id in self.cache:
+            self.cache[arxiv_id].processing_status = processing_status
+            self.cache[arxiv_id].processing_timestamp = datetime.now(timezone.utc).isoformat()
+            self._save_cache()
     
     def get_cache_stats(self) -> Dict[str, int]:
         """
