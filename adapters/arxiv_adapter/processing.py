@@ -23,6 +23,7 @@ class ArxivProcessor:
         self,
         preserve_tables: bool = True,
         preserve_equations: bool = True,
+        enrich_formulas: bool = True,
         exclude_references: bool = True,
         exclude_acknowledgments: bool = True,
         exclude_author_lists: bool = True
@@ -33,12 +34,14 @@ class ArxivProcessor:
         Args:
             preserve_tables: Whether to preserve tables in markdown
             preserve_equations: Whether to preserve LaTeX equations
+            enrich_formulas: Whether to enrich formulas with LaTeX extraction
             exclude_references: Whether to exclude references section
             exclude_acknowledgments: Whether to exclude acknowledgments
             exclude_author_lists: Whether to exclude author lists
         """
         self.preserve_tables: bool = preserve_tables
         self.preserve_equations: bool = preserve_equations
+        self.enrich_formulas: bool = enrich_formulas
         self.exclude_references: bool = exclude_references
         self.exclude_acknowledgments: bool = exclude_acknowledgments
         self.exclude_author_lists: bool = exclude_author_lists
@@ -54,6 +57,7 @@ class ArxivProcessor:
         pipeline_options: PdfPipelineOptions = PdfPipelineOptions()
         pipeline_options.do_table_structure = self.preserve_tables
         pipeline_options.table_structure_options.mode = TableFormerMode.ACCURATE
+        pipeline_options.do_formula_enrichment = self.enrich_formulas
         pipeline_options.do_ocr = False
         pipeline_options.generate_page_images = False
         pipeline_options.generate_picture_images = False

@@ -8,18 +8,6 @@
 
 This adapter implements a complete pipeline for processing arXiv papers according to the [HEPilot Data Acquisition Specification v1.0](../../standards/README.md). It is built from scratch with a focus on modularity, type safety, and compliance with all schema requirements.
 
-### Key Features
-
-✅ **Compliant**: Validates against all HEPilot JSON schemas  
-✅ **Modular**: Independent, testable components  
-✅ **Type-Safe**: Full type annotations throughout  
-✅ **Robust**: Exponential backoff retry, hash verification  
-✅ **ML-Powered Processing**: Uses docling's ML models for LaTeX formula extraction  
-✅ **Content-Aware**: Preserves equations, tables, section hierarchy  
-✅ **Content Filtering**: Removes references, acknowledgments, author lists  
-✅ **Safe Chunking**: Batched token counting prevents memory issues  
-✅ **Dev/Prod Modes**: Process 5 papers (dev) or unlimited (prod)
-
 ---
 
 ## Quick Start
@@ -97,6 +85,7 @@ Discovery → Acquisition → Processing → Chunking → Metadata
 
 #### `processing.py` - Processing Pipeline
 - Uses docling's ML models for advanced PDF processing
+- **Formula Enrichment**: ML-based LaTeX extraction from equations (resolves `<!-- formula-not-decoded -->` placeholders)
 - Comprehensive LaTeX math environment support (equation, align, gather, multline, split, matrix variants)
 - Intelligent content filtering (removes references, acknowledgments, author lists)
 - Preserves LaTeX equations with enhanced detection
@@ -138,7 +127,8 @@ Discovery → Acquisition → Processing → Chunking → Metadata
       "chunk_size": 512,
       "chunk_overlap": 0.1,
       "preserve_tables": true,
-      "preserve_equations": true
+      "preserve_equations": true,
+      "enrich_formulas": true
     },
     "profile": "core",
     "config_hash": "<computed>"
@@ -153,6 +143,10 @@ Discovery → Acquisition → Processing → Chunking → Metadata
 - **chunk_overlap** (0.0-0.99): Overlap fraction between chunks
 - **preserve_tables**: Convert tables to GFM format
 - **preserve_equations**: Preserve LaTeX equations with ML-based extraction
+- **enrich_formulas**: Enable ML-based formula enrichment to extract LaTeX from equations (default: true)
+  - When enabled, replaces `<!-- formula-not-decoded -->` placeholders with actual LaTeX representations
+  - Uses docling's CodeFormula model for advanced equation analysis
+  - Significantly improves mathematical content quality in RAG applications
 - **exclude_references**: Remove references/bibliography sections (default: true)
 - **exclude_acknowledgments**: Remove acknowledgments sections (default: true)
 - **exclude_author_lists**: Remove author lists and collaboration sections from content (default: true)

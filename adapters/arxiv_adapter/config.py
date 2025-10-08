@@ -91,6 +91,10 @@ class ConfigManager:
         """Get equation preservation setting."""
         return self.config.processing_config['preserve_equations']
     
+    def get_enrich_formulas(self) -> bool:
+        """Get formula enrichment setting."""
+        return self.config.processing_config.get('enrich_formulas', True)
+    
     def get_exclude_references(self) -> bool:
         """Get reference exclusion setting."""
         return self.config.processing_config.get('exclude_references', True)

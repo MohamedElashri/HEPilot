@@ -8,6 +8,7 @@
       "chunk_overlap": 0.1,
       "preserve_tables": true,
       "preserve_equations": true,
+      "enrich_formulas": true,
       "exclude_references": true,
       "exclude_acknowledgments": true,
       "exclude_author_lists": true,
