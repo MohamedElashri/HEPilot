@@ -1,0 +1,19 @@
+{
+  "adapter_config": {
+    "name": "arxiv_hep_adapter",
+    "version": "1.0.0",
+    "source_type": "arxiv",
+    "processing_config": {
+      "chunk_size": 512,
+      "chunk_overlap": 0.1,
+      "preserve_tables": true,
+      "preserve_equations": true,
+      "exclude_references": true,
+      "exclude_acknowledgments": true,
+      "exclude_author_lists": true,
+      "include_authors_metadata": false
+    },
+    "profile": "core",
+    "config_hash": "119f3b3ac0227c6f722938bda8bc0109738c9e094e22712bf4a79f0749dee2ec"
+  }
+}

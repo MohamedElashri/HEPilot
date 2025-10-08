@@ -1,7 +1,0 @@
-aiohttp
-feedparser
-docling
-sentence_transformers
-PyYAML
-colorama
-tqdm
