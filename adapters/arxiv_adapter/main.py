@@ -53,7 +53,8 @@ class ArxivAdapterPipeline:
             include_authors=self.config_manager.get_include_authors_metadata()
         )
         self.acquisition: ArxivAcquisition = ArxivAcquisition(
-            download_dir=output_dir / "downloads"
+            download_dir=output_dir / "downloads",
+            verbose=self.verbose
         )
         self.processor: ArxivProcessor = ArxivProcessor(
             preserve_tables=self.config_manager.get_preserve_tables(),
@@ -73,17 +74,23 @@ class ArxivAdapterPipeline:
             cache_dir=self.config_manager.get_model_cache_dir()
         )
     
-    def run(self, query: str = "cat:hep-ex OR cat:hep-ph") -> bool:
+    def run(self, query: str = "all:lhcb") -> bool:
         """
         Run the complete pipeline.
         
         Args:
-            query: arXiv search query
+            query: arXiv search query (default: all:lhcb for LHCb papers across all categories)
             
         Returns:
             True if pipeline succeeded, False otherwise
         """
         try:
+            import logging
+            if not self.verbose:
+                logging.getLogger().setLevel(logging.WARNING)
+                for handler in logging.getLogger().handlers:
+                    handler.setLevel(logging.WARNING)
+            
             self.metadata_manager.log("INFO", "pipeline", "Starting ArXiv adapter pipeline", {
                 "query": query,
                 "max_results": self.max_results,
@@ -116,9 +123,13 @@ class ArxivAdapterPipeline:
                         if self.verbose:
                             print(f"[CACHE] → New version: {doc.arxiv_id} {cached_entry.version} → {doc.arxiv_version}")
                         to_download.append(doc)
+                    elif cached_entry.download_status != "success":
+                        if self.verbose:
+                            print(f"[CACHE] → Need download: {doc.arxiv_id} {doc.arxiv_version}")
+                        to_download.append(doc)
                     elif cached_entry.processing_status != "success":
                         if self.verbose:
-                            print(f"[CACHE] → Retry ({cached_entry.processing_status}): {doc.arxiv_id} {doc.arxiv_version}")
+                            print(f"[CACHE] → Retry processing ({cached_entry.processing_status}): {doc.arxiv_id} {doc.arxiv_version}")
                         to_process_from_cache.append(doc)
                     else:
                         if self.verbose:
@@ -133,25 +144,29 @@ class ArxivAdapterPipeline:
             else:
                 to_download = discovered
             if to_download:
+                if not self.verbose:
+                    print(f"\nAcquiring {len(to_download)} papers...\n")
                 acquired: List[AcquiredDocument] = self._run_acquisition(to_download)
                 if acquired:
                     if self.enable_cache and self.cache_manager:
                         for disc, acq in zip(to_download, acquired):
                             if acq.download_status == "success" and disc.arxiv_id:
-                                doc_dir: Path = self.output_dir / "documents" / f"arxiv_{acq.document_id}"
-                                self.cache_manager.add_entry(
-                                    arxiv_id=disc.arxiv_id,
-                                    version=disc.arxiv_version or "v1",
-                                    document_id=acq.document_id,
-                                    file_hash_sha256=acq.file_hash_sha256,
-                                    output_dir=doc_dir,
-                                    source_url=disc.source_url,
-                                    title=disc.title,
-                                    download_status="success",
-                                    processing_status="pending"
-                                )
-                                if self.verbose:
-                                    print(f"[CACHE] ✓ Downloaded: {disc.arxiv_id} {disc.arxiv_version}")
+                                cached_entry = self.cache_manager.get_cached_entry(disc.arxiv_id)
+                                if not cached_entry or cached_entry.version != (disc.arxiv_version or "v1"):
+                                    doc_dir: Path = self.output_dir / "documents" / f"arxiv_{acq.document_id}"
+                                    self.cache_manager.add_entry(
+                                        arxiv_id=disc.arxiv_id,
+                                        version=disc.arxiv_version or "v1",
+                                        document_id=acq.document_id,
+                                        file_hash_sha256=acq.file_hash_sha256,
+                                        output_dir=doc_dir,
+                                        source_url=disc.source_url,
+                                        title=disc.title,
+                                        download_status="success",
+                                        processing_status="pending"
+                                    )
+                                    if self.verbose:
+                                        print(f"[CACHE] ✓ Downloaded: {disc.arxiv_id} {disc.arxiv_version}")
                     print(f"\nProcessing {len(acquired)} papers...\n")
                     try:
                         from tqdm import tqdm
@@ -445,8 +460,8 @@ def main() -> int:
     parser.add_argument(
         "--query",
         type=str,
-        default="cat:hep-ex OR cat:hep-ph",
-        help="arXiv search query"
+        default="all:lhcb",
+        help="arXiv search query (default: all:lhcb for LHCb papers)"
     )
     parser.add_argument(
         "--max-results",

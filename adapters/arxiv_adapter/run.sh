@@ -82,14 +82,14 @@ if [ "$MODE" = "dev" ]; then
     python3 main.py \
         --config adapter_config.json \
         --output arxiv_output \
-        --query "cat:hep-ex OR cat:hep-ph" \
+        --query "all:lhcb" \
         --dev
 elif [ "$MODE" = "prod" ]; then
     echo "Running in PRODUCTION mode (All papers)"
     python3 main.py \
         --config adapter_config.json \
         --output arxiv_output \
-        --query "cat:hep-ex OR cat:hep-ph"
+        --query "all:lhcb"
 else
     echo "ERROR: Invalid mode '$MODE'. Use 'dev' or 'prod'"
     exit 1

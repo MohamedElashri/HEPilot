@@ -36,7 +36,7 @@ class ArxivDiscovery:
         self.session: requests.Session = requests.Session()
         self.session.headers.update({"User-Agent": "HEPilot-ArXiv-Adapter/1.0"})
     
-    def search(self, query: str = "cat:hep-ex OR cat:hep-ph") -> List[DiscoveredDocument]:
+    def search(self, query: str = "all:lhcb") -> List[DiscoveredDocument]:
         """
         Search arXiv for papers matching query.
         

@@ -19,15 +19,17 @@ from models import DiscoveredDocument, AcquiredDocument
 class ArxivAcquisition:
     """Downloads and verifies ArXiv papers."""
     
-    def __init__(self, download_dir: Path) -> None:
+    def __init__(self, download_dir: Path, verbose: bool = False) -> None:
         """
         Initialize acquisition module.
         
         Args:
             download_dir: Directory to store downloaded PDFs
+            verbose: Enable verbose output
         """
         self.download_dir: Path = download_dir
         self.download_dir.mkdir(parents=True, exist_ok=True)
+        self.verbose: bool = verbose
         self.session: requests.Session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'HEPilot-ArXiv-Adapter/1.0 (mohamed.elashri@cern.ch)'
@@ -44,7 +46,13 @@ class ArxivAcquisition:
             List of acquisition results
         """
         acquired: List[AcquiredDocument] = []
-        for doc in documents:
+        try:
+            from tqdm import tqdm
+            docs_iter = tqdm(documents, desc="Acquiring", disable=self.verbose)
+        except ImportError:
+            docs_iter = documents
+        
+        for doc in docs_iter:
             result: AcquiredDocument = self._download_document(doc)
             acquired.append(result)
         return acquired
@@ -60,6 +68,31 @@ class ArxivAcquisition:
             Acquisition result
         """
         local_path: Path = self.download_dir / f"{doc.document_id}.pdf"
+        
+        # Check if file already exists (skip re-download)
+        if local_path.exists():
+            try:
+                file_size: int = local_path.stat().st_size
+                if file_size > 0:
+                    sha256_hash: str = self._compute_hash(local_path, 'sha256')
+                    sha512_hash: str = self._compute_hash(local_path, 'sha512')
+                    validation_status: str = self._validate_file(local_path, file_size)
+                    return AcquiredDocument(
+                        document_id=doc.document_id,
+                        local_path=str(local_path),
+                        file_hash_sha256=sha256_hash,
+                        file_hash_sha512=sha512_hash,
+                        file_size=file_size,
+                        download_timestamp=datetime.now(timezone.utc),
+                        download_status="success",
+                        retry_count=0,
+                        validation_status=validation_status,
+                        arxiv_id=doc.arxiv_id,
+                        arxiv_version=doc.arxiv_version
+                    )
+            except Exception:
+                pass  # If there's an error reading the file, re-download it
+        
         retry_count: int = 0
         max_retries: int = 5
         start_time: datetime = datetime.now(timezone.utc)
