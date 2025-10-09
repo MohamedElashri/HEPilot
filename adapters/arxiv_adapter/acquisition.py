@@ -19,17 +19,20 @@ from models import DiscoveredDocument, AcquiredDocument
 class ArxivAcquisition:
     """Downloads and verifies ArXiv papers."""
     
-    def __init__(self, download_dir: Path, verbose: bool = False) -> None:
+    def __init__(self, download_dir: Path, verbose: bool = False, delay_seconds: float = 3.0) -> None:
         """
         Initialize acquisition module.
         
         Args:
             download_dir: Directory to store downloaded PDFs
             verbose: Enable verbose output
+            delay_seconds: Delay between downloads to avoid rate limiting (default: 3.0s)
         """
         self.download_dir: Path = download_dir
         self.download_dir.mkdir(parents=True, exist_ok=True)
         self.verbose: bool = verbose
+        self.delay_seconds: float = delay_seconds
+        self.last_request_time: float = 0.0  # Track last request time for rate limiting
         self.session: requests.Session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'HEPilot-ArXiv-Adapter/1.0 (mohamed.elashri@cern.ch)'
@@ -52,7 +55,7 @@ class ArxivAcquisition:
         except ImportError:
             docs_iter = documents
         
-        for doc in docs_iter:
+        for i, doc in enumerate(docs_iter):
             result: AcquiredDocument = self._download_document(doc)
             acquired.append(result)
         return acquired
@@ -100,9 +103,17 @@ class ArxivAcquisition:
             try:
                 self._download_with_backoff(doc.source_url, local_path, retry_count)
                 file_size: int = local_path.stat().st_size
+                
+                # Validate file immediately after download - delete if HTML
+                validation_status: str = self._validate_file(local_path, file_size)
+                if validation_status == "failed":
+                    # Delete corrupted file (HTML reCAPTCHA page)
+                    if local_path.exists():
+                        local_path.unlink()
+                    raise ValueError(f"Downloaded HTML instead of PDF (rate limited or blocked)")
+                
                 sha256_hash: str = self._compute_hash(local_path, 'sha256')
                 sha512_hash: str = self._compute_hash(local_path, 'sha512')
-                validation_status: str = self._validate_file(local_path, file_size)
                 return AcquiredDocument(
                     document_id=doc.document_id,
                     local_path=str(local_path),
@@ -118,10 +129,18 @@ class ArxivAcquisition:
                 )
             except Exception as e:
                 retry_count += 1
+                if self.verbose:
+                    print(f"[WARNING] Download attempt {retry_count} failed for {doc.arxiv_id}: {str(e)}")
+                # Clean up any partial/corrupted file
+                if local_path.exists():
+                    try:
+                        local_path.unlink()
+                    except Exception:
+                        pass
                 if retry_count >= max_retries:
                     return AcquiredDocument(
                         document_id=doc.document_id,
-                        local_path=str(local_path),
+                        local_path="",
                         file_hash_sha256="",
                         file_hash_sha512="",
                         file_size=0,
@@ -136,16 +155,32 @@ class ArxivAcquisition:
     
     def _download_with_backoff(self, url: str, local_path: Path, retry_count: int) -> None:
         """
-        Download file with exponential backoff.
+        Download file with rate limiting - ensures minimum 3 seconds between requests.
         
         Args:
             url: URL to download from
             local_path: Local path to save file
             retry_count: Current retry attempt number
         """
+        # Enforce minimum delay between ANY requests (initial or retry)
+        current_time: float = time.time()
+        time_since_last_request: float = current_time - self.last_request_time
+        
+        if self.delay_seconds > 0 and time_since_last_request < self.delay_seconds:
+            sleep_time: float = self.delay_seconds - time_since_last_request
+            if self.verbose:
+                print(f"[RATE LIMIT] Waiting {sleep_time:.1f}s before request...")
+            time.sleep(sleep_time)
+        
+        # Additional backoff for retries (on top of rate limit)
         if retry_count > 0:
-            wait_time: float = min(2 ** retry_count, 60)
-            time.sleep(wait_time)
+            backoff_time: float = min(2 ** retry_count, 30)
+            if self.verbose:
+                print(f"[RETRY] Additional {backoff_time:.1f}s backoff for retry {retry_count}...")
+            time.sleep(backoff_time)
+        
+        # Make the request and update timestamp
+        self.last_request_time = time.time()
         response: requests.Response = self.session.get(url, timeout=300, stream=True)
         response.raise_for_status()
         with open(local_path, 'wb') as f:
@@ -166,8 +201,10 @@ class ArxivAcquisition:
         """
         hash_obj: Any = hashlib.new(algorithm)
         with open(file_path, 'rb') as f:
-            while chunk := f.read(8192):
+            chunk: bytes = f.read(8192)
+            while chunk:
                 hash_obj.update(chunk)
+                chunk = f.read(8192)
         return hash_obj.hexdigest()
     
     def _validate_file(self, file_path: Path, file_size: int) -> str:
@@ -188,8 +225,15 @@ class ArxivAcquisition:
         if not file_path.suffix == '.pdf':
             return "warning"
         with open(file_path, 'rb') as f:
-            header: bytes = f.read(4)
+            header: bytes = f.read(1024)
+            # Check for PDF signature
             if not header.startswith(b'%PDF'):
+                # Check if it's an HTML page (reCAPTCHA or error page)
+                if b'<html' in header.lower() or b'<!DOCTYPE' in header.lower() or b'recaptcha' in header.lower():
+                    if self.verbose:
+                        print(f"[ERROR] Downloaded HTML instead of PDF (rate limited by ArXiv): {file_path.name}")
+                    return "failed"
+                # Unknown format
                 return "failed"
         return "passed"
     
