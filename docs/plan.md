@@ -1,9 +1,10 @@
 # HEPilot Embedding Layer Implementation Plan
 
-**Version:** 1.2  
+**Version:** 1.2.1  
 **Date:** October 20, 2025  
 **Branch:** `embedding-dev`  
-**Status:** 🚀 Steps 1-2 Complete - DocStore Implementation Next
+**Status:** 🚀 Steps 1-2 Complete - DocStore Implementation Next  
+**Note:** Migration infrastructure moved to `src/embedding/` for better modularity
 
 ---
 
@@ -24,15 +25,23 @@
 **Project Structure:**
 ```
 src/embedding/
-├── __init__.py           # ✅ Module exports with config classes
-├── config.py             # ✅ Configuration system (NEW)
-├── ports.py              # ✅ Protocol interfaces defined
-├── registry.py           # ✅ Adapter discovery system  
-├── exceptions.py         # ✅ Custom exceptions
-├── README.md             # ✅ Configuration documentation (NEW)
-├── examples/
-│   └── load_config.py    # ✅ Config usage example (NEW)
-└── adapters/             # ← We'll add implementations here
+├── __init__.py               # ✅ Module exports with config classes
+├── config.py                 # ✅ Configuration system
+├── ports.py                  # ✅ Protocol interfaces defined
+├── registry.py               # ✅ Adapter discovery system  
+├── exceptions.py             # ✅ Custom exceptions
+├── README.md                 # ✅ Configuration documentation
+├── alembic.ini               # ✅ Database migration config (NEW)
+├── alembic/                  # ✅ Database migrations (NEW)
+│   ├── env.py                # ✅ Migration environment
+│   ├── README.md             # ✅ Migration documentation
+│   └── versions/
+│       └── 67906781f81e_*.py # ✅ Initial schema migration
+├── adapters/
+│   ├── db_models.py          # ✅ SQLAlchemy models (NEW)
+│   └── __init__.py
+└── examples/
+    └── load_config.py        # ✅ Config usage example
 ```
 
 **Configuration System:** ✅ COMPLETED
@@ -42,6 +51,13 @@ src/embedding/
 - `PipelineConfig` - Ingestion pipeline settings
 - `load_config()` - TOML configuration loader
 - All validated with Pydantic (21 passing unit tests)
+
+**Database Schema:** ✅ COMPLETED
+- `documents` table - Paper/source metadata with JSONB fields
+- `doc_segments` table - Text chunks with position tracking
+- Alembic migrations with async support
+- Self-contained in `src/embedding/alembic/`
+- Complete upgrade/downgrade paths
 
 **Port Interfaces Defined:**
 - `Encoder` - Text → Vector transformation
@@ -306,12 +322,15 @@ checkpoint_interval = 1000
 **Status:** ✅ **COMPLETED** (October 20, 2025)
 
 **Files Created:**
-- ✅ `alembic.ini` - Alembic configuration
-- ✅ `alembic/env.py` - Migration environment (configured with async support)
-- ✅ `alembic/versions/67906781f81e_initial_schema_for_embedding_layer.py` - Initial migration
+- ✅ `src/embedding/alembic.ini` - Alembic configuration
+- ✅ `src/embedding/alembic/env.py` - Migration environment (configured with async support)
+- ✅ `src/embedding/alembic/versions/67906781f81e_initial_schema_for_embedding_layer.py` - Initial migration
 - ✅ `src/embedding/adapters/db_models.py` - SQLAlchemy models
-- ✅ `alembic/README.md` - Migration documentation
+- ✅ `src/embedding/alembic/README.md` - Migration documentation
 - ✅ `tests/unit/embedding/test_migration.py` - Migration validation tests
+
+**Migration Location:**
+All migration infrastructure is self-contained within `src/embedding/` for better modularity and portability.
 
 **What Was Implemented:**
 
@@ -346,10 +365,10 @@ checkpoint_interval = 1000
 
 **Usage:**
 ```bash
-# When PostgreSQL is available:
-alembic upgrade head    # Apply migrations
-alembic current        # Show current version
-alembic downgrade -1   # Rollback one version
+# When PostgreSQL is available (run from project root):
+alembic -c src/embedding/alembic.ini upgrade head    # Apply migrations
+alembic -c src/embedding/alembic.ini current         # Show current version
+alembic -c src/embedding/alembic.ini downgrade -1    # Rollback one version
 ```
 
 **✅ Validation Checklist:**

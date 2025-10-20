@@ -2,6 +2,11 @@
 
 This directory contains Alembic database migrations for the HEPilot embedding layer.
 
+**Location:** `src/embedding/alembic/`  
+**Config:** `src/embedding/alembic.ini`
+
+This migration system is self-contained within the embedding module for better modularity and portability.
+
 ## Schema Overview
 
 The embedding layer uses two main tables:
@@ -71,36 +76,36 @@ Stores text chunks/segments from documents.
 cd /data/home/melashri/LLM/HEPilot
 
 # Upgrade to latest
-alembic upgrade head
+alembic -c src/embedding/alembic.ini upgrade head
 
 # Check current version
-alembic current
+alembic -c src/embedding/alembic.ini current
 
 # Show migration history
-alembic history --verbose
+alembic -c src/embedding/alembic.ini history --verbose
 ```
 
 ### Rollback Migrations
 
 ```bash
 # Downgrade one version
-alembic downgrade -1
+alembic -c src/embedding/alembic.ini downgrade -1
 
 # Downgrade to base (empty database)
-alembic downgrade base
+alembic -c src/embedding/alembic.ini downgrade base
 
 # Downgrade to specific revision
-alembic downgrade 67906781f81e
+alembic -c src/embedding/alembic.ini downgrade 67906781f81e
 ```
 
 ### Creating New Migrations
 
 ```bash
 # Auto-generate migration from model changes
-alembic revision --autogenerate -m "Description of changes"
+alembic -c src/embedding/alembic.ini revision --autogenerate -m "Description of changes"
 
 # Create empty migration
-alembic revision -m "Description of changes"
+alembic -c src/embedding/alembic.ini revision -m "Description of changes"
 ```
 
 ## Testing Migrations
@@ -127,13 +132,13 @@ When PostgreSQL is available:
 createdb -h localhost -U hep hepilot_test
 
 # Run migration
-HEPILOT_DB_URL="postgresql+asyncpg://hep:hep@localhost/hepilot_test" alembic upgrade head
+HEPILOT_DB_URL="postgresql+asyncpg://hep:hep@localhost/hepilot_test" alembic -c src/embedding/alembic.ini upgrade head
 
 # Verify tables
 psql -h localhost -U hep hepilot_test -c "\dt"
 
 # Test rollback
-alembic downgrade base
+alembic -c src/embedding/alembic.ini downgrade base
 
 # Clean up
 dropdb -h localhost -U hep hepilot_test
@@ -157,9 +162,9 @@ Current migrations:
 - Set PYTHONPATH: `export PYTHONPATH=/data/home/melashri/LLM/HEPilot`
 
 ### Migration conflicts
-- Check current version: `alembic current`
-- View history: `alembic history`
-- Stamp database if needed: `alembic stamp head`
+- Check current version: `alembic -c src/embedding/alembic.ini current`
+- View history: `alembic -c src/embedding/alembic.ini history`
+- Stamp database if needed: `alembic -c src/embedding/alembic.ini stamp head`
 
 ## References
 
