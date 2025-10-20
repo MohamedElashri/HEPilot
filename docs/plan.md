@@ -1,9 +1,9 @@
 # HEPilot Embedding Layer Implementation Plan
 
-**Version:** 1.3.0  
+**Version:** 1.4.0  
 **Date:** October 20, 2025  
 **Branch:** `embedding-dev`  
-**Status:** 🚀 Steps 1-3 Complete - Decoder Implementation Next  
+**Status:** 🚀 Steps 1-4 Complete - Encoder Implementation Next  
 **Note:** Migration infrastructure moved to `src/embedding/` for better modularity
 
 ---
@@ -39,7 +39,8 @@ src/embedding/
 │       └── 67906781f81e_*.py # ✅ Initial schema migration
 ├── adapters/
 │   ├── db_models.py          # ✅ SQLAlchemy models
-│   ├── postgres_docstore.py  # ✅ PostgreSQL DocStore (NEW)
+│   ├── postgres_docstore.py  # ✅ PostgreSQL DocStore
+│   ├── postgres_decoder.py   # ✅ PostgreSQL Decoder (NEW)
 │   └── __init__.py
 └── examples/
     └── load_config.py        # ✅ Config usage example
@@ -69,10 +70,20 @@ src/embedding/
 - Async context manager support
 - 25 passing unit tests with comprehensive coverage
 
+**PostgreSQL Decoder:** ✅ COMPLETED
+- Async chunk retrieval by vector IDs
+- Batch lookup with order preservation
+- Document chunk retrieval with ordering
+- JOIN queries for complete chunk metadata
+- UUID validation and error handling
+- Health check and connection management
+- Async context manager support
+- 22 passing unit tests with comprehensive coverage
+
 **Port Interfaces Defined:**
 - `Encoder` - Text → Vector transformation
 - `VectorDB` - Vector storage and similarity search
-- `Decoder` - Vector ID → Original text retrieval
+- `Decoder` - Vector ID → Original text retrieval ✅ IMPLEMENTED
 
 **Prerequisites Ready:**
 - arXiv adapter producing chunk outputs
@@ -91,13 +102,13 @@ src/embedding/
 | 1 | **Configuration System** | Load/validate settings from TOML | Low | ✅ **DONE** |
 | 2 | **Database Schema** | PostgreSQL tables for chunks/docs | Medium | ✅ **DONE** |
 | 3 | **PostgreSQL DocStore** | Store original text chunks | Medium | ✅ **DONE** |
-| 4 | **PostgreSQL Decoder** | Retrieve chunks by ID | Medium | ⏭️ Next |
-| 5 | **ONNX BGE Encoder** | Convert text to vectors | High | 📋 Pending |
+| 4 | **PostgreSQL Decoder** | Retrieve chunks by ID | Medium | ✅ **DONE** |
+| 5 | **ONNX BGE Encoder** | Convert text to vectors | High | ⏭️ Next |
 | 6 | **ChromaDB Adapter** | Store and search vectors | Medium | 📋 Pending |
 | 7 | **Pipeline Orchestrator** | Coordinate ingestion/retrieval | High | 📋 Pending |
 
-**Completed:** 3/7 steps (43%)  
-**Estimated Remaining:** ~5 days
+**Completed:** 4/7 steps (57%)  
+**Estimated Remaining:** ~4 days
 
 ### Architecture Overview
 
@@ -801,7 +812,149 @@ class PostgresDocStore:
 
 ---
 
-### Step 4: PostgreSQL Decoder 🔍
+---
+
+### Step 4: PostgreSQL Decoder 🔍 ✅ COMPLETED
+
+**Goal:** Retrieve chunks by ID from database
+
+**Status:** ✅ **COMPLETED** (October 20, 2025)
+
+**Files Created:**
+- ✅ `src/embedding/adapters/postgres_decoder.py` - PostgreSQL Decoder implementation
+- ✅ `tests/unit/embedding/test_decoder.py` - 22 passing unit tests
+
+**What Was Implemented:**
+- `PostgresDecoder` class with async connection pooling using asyncpg
+- Chunk lookup operations:
+  - `lookup()` - Batch retrieve chunks by UUIDs with order preservation
+  - Returns List[Optional[ChunkContent]] maintaining input order
+  - Handles missing chunks gracefully (returns None in position)
+  - Validates UUID format with clear error messages
+- Document operations:
+  - `get_document_chunks()` - Retrieve all chunks for a document
+  - Returns chunks ordered by position_in_doc
+  - Optional limit parameter for pagination
+- Connection management:
+  - `connect()` - Initialize connection pool
+  - `close()` - Close connection pool
+  - `health_check()` - Verify database connectivity
+  - Async context manager support (`async with`)
+- Data transformation:
+  - `_row_to_chunk_content()` - Convert DB rows to ChunkContent dataclass
+  - JOIN queries combining doc_segments + documents tables
+  - JSON parsing for section_path and metadata
+  - Complete metadata inclusion (chunk + document metadata)
+
+**Test Results:**
+```
+22 passed in 0.64s
+```
+
+**Test Coverage:**
+- Initialization and configuration
+- Connection lifecycle management
+- Lookup operations (single, multiple, missing chunks)
+- Empty list and invalid UUID handling
+- get_document_chunks (success, with limit, empty results)
+- Error handling (not connected, database errors, invalid UUIDs)
+- Health checks (healthy, unhealthy, not connected)
+- Async context manager protocol
+
+**Key Features:**
+- **Order Preservation**: lookup() maintains input chunk_ids order
+- **Graceful Degradation**: Missing chunks return None (not error)
+- **Complete Metadata**: JOINs documents table for full context
+- **UUID Validation**: Clear errors for malformed IDs
+- **Efficient Batching**: Uses PostgreSQL ANY() for batch lookups
+
+**✅ Validation Checklist:**
+- [x] PostgresDecoder class implemented
+- [x] lookup() method with order preservation
+- [x] get_document_chunks() with sorting
+- [x] Connection pooling configured
+- [x] Health check functionality
+- [x] Async context manager support
+- [x] Unit tests pass (22/22)
+- [x] No linting errors
+- [x] Comprehensive error handling
+- [x] UUID validation
+- [x] JSON metadata parsing
+
+---
+
+### Step 4 Implementation Reference (COMPLETED)
+
+<details>
+<summary><b>Key Implementation Details</b> (click to view)</summary>
+
+**Batch Lookup with Order Preservation:**
+```python
+async def lookup(self, chunk_ids: List[str]) -> List[Optional[ChunkContent]]:
+    """Retrieve chunks maintaining input order."""
+    # Query with ANY for efficiency
+    query = "SELECT ... FROM doc_segments s JOIN documents d ... WHERE s.id = ANY($1::uuid[])"
+    
+    async with self.pool.acquire() as conn:
+        rows = await conn.fetch(query, uuid_ids)
+        
+        # Create mapping for quick lookup
+        row_map = {str(row['id']): row for row in rows}
+        
+        # Build result maintaining input order
+        results = []
+        for chunk_id in chunk_ids:
+            row = row_map.get(chunk_id)
+            if row is None:
+                results.append(None)  # Missing chunk
+            else:
+                results.append(self._row_to_chunk_content(row))
+    
+    return results
+```
+
+**Document Chunks with Ordering:**
+```python
+async def get_document_chunks(self, document_id: str, limit: Optional[int] = None):
+    """Get all chunks for a document, ordered by position."""
+    query = """
+    SELECT ... FROM doc_segments s
+    JOIN documents d ON s.doc_id = d.id
+    WHERE s.doc_id = $1
+    ORDER BY s.position_in_doc ASC
+    """
+    if limit:
+        query += f" LIMIT {int(limit)}"
+    
+    async with self.pool.acquire() as conn:
+        rows = await conn.fetch(query, doc_uuid)
+        return [self._row_to_chunk_content(row) for row in rows]
+```
+
+**ChunkContent Transformation:**
+```python
+def _row_to_chunk_content(self, row: asyncpg.Record) -> ChunkContent:
+    """Convert DB row to ChunkContent with full metadata."""
+    section_path = json.loads(row['section_path']) if row['section_path'] else []
+    chunk_meta = json.loads(row['meta']) if row['meta'] else {}
+    doc_meta = json.loads(row['doc_meta']) if row['doc_meta'] else {}
+    
+    additional_metadata = {
+        'chunk_metadata': chunk_meta,
+        'document_metadata': doc_meta,
+        'title': row['title'],
+        'authors': json.loads(row['authors']) if row['authors'] else [],
+        # ... more fields
+    }
+    
+    return ChunkContent(chunk_id=str(row['id']), text=row['text'], ...)
+```
+
+</details>
+
+---
+
+### Step 4: PostgreSQL Decoder 🔍 (OLD - FOR REFERENCE)
 
 **Goal:** Retrieve chunks by ID from database
 
@@ -1529,10 +1682,16 @@ pytest tests/integration/embedding/ -v
   - [x] Implemented connection management and health checks
   - [x] Added async context manager support
   - [x] Wrote 25 passing unit tests with comprehensive coverage
-- [ ] Step 4: PostgreSQL Decoder ⏭️ NEXT
+- [x] **Step 4: PostgreSQL Decoder** ✅ COMPLETED (Oct 20, 2025)
+  - [x] Implemented `PostgresDecoder` with async connection pooling
+  - [x] Created lookup() method with order preservation
+  - [x] Created get_document_chunks() method with sorting
+  - [x] Implemented JOIN queries for complete metadata
+  - [x] Added UUID validation and error handling
+  - [x] Wrote 22 passing unit tests with comprehensive coverage
 
 **Phase 2: ML Components** 📋 PENDING (Next Week)
-- [ ] Step 5: ONNX BGE Encoder
+- [ ] Step 5: ONNX BGE Encoder ⏭️ NEXT
 - [ ] Step 6: ChromaDB Adapter
 
 **Phase 3: Integration** 📋 PENDING (Week After)
@@ -1613,7 +1772,8 @@ This plan provides:
 - ✅ **Step 1 COMPLETED** - Configuration system fully implemented and tested (21 tests passing)
 - ✅ **Step 2 COMPLETED** - Database schema and migrations with async support
 - ✅ **Step 3 COMPLETED** - PostgreSQL DocStore with async operations (25 tests passing)
-- ⏭️ **Step 4 NEXT** - PostgreSQL Decoder for chunk retrieval
+- ✅ **Step 4 COMPLETED** - PostgreSQL Decoder for chunk retrieval (22 tests passing)
+- ⏭️ **Step 5 NEXT** - ONNX BGE Encoder for text-to-vector transformation
 
 **Recent Updates (Oct 20, 2025):**
 - ✅ Implemented configuration system with Pydantic validation
@@ -1623,10 +1783,13 @@ This plan provides:
 - ✅ Implemented PostgresDocStore with async connection pooling
 - ✅ Created comprehensive CRUD operations for documents and chunks
 - ✅ Wrote 25 passing unit tests for DocStore
-- ✅ Added async context manager support
-- ✅ Ready to proceed with Decoder implementation
+- ✅ Implemented PostgresDecoder with batch lookup and order preservation
+- ✅ Created JOIN queries for complete chunk metadata
+- ✅ Wrote 22 passing unit tests for Decoder
+- ✅ Added async context manager support to both DocStore and Decoder
+- ✅ All 70 embedding tests passing (21 config + 22 decoder + 25 docstore + 2 migration)
 
-**Ready to continue?** → **Proceed to Step 4: PostgreSQL Decoder**
+**Ready to continue?** → **Proceed to Step 5: ONNX BGE Encoder**
 
 ---
 
