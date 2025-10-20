@@ -1,374 +1,101 @@
-# HEPilot Implementation Plan: Modular Embedding Layer
+# HEPilot Embedding Layer Implementation Plan
 
-**Version:** 0.1  
+**Version:** 1.0  
 **Date:** October 20, 2025  
-**Status:** Planning Phase  
-**Previous Milestone:** ✅ arXiv Adapter (Data Acquisition Layer)  
-**Current Milestone:** 🎯 Embedding Engine (Embedding Layer)  
+**Branch:** `embedding-dev`  
+**Status:** 🎯 Ready to Implement
 
 ---
 
-## Table of Contents
+## Quick Navigation
 
-1. [Executive Summary](#1-executive-summary)
-2. [Architecture Overview](#2-architecture-overview)
-3. [Component Specifications](#3-component-specifications)
-4. [Implementation Phases](#4-implementation-phases)
-5. [Directory Structure](#5-directory-structure)
-6. [Technical Specifications](#6-technical-specifications)
-7. [Integration Points](#7-integration-points)
-8. [Testing Strategy](#8-testing-strategy)
-9. [Success Criteria](#9-success-criteria)
-10. [Timeline & Dependencies](#10-timeline--dependencies)
+- [What We Have](#what-we-have) - Current state
+- [What We're Building](#what-were-building) - Goals and components
+- [Step-by-Step Implementation](#step-by-step-implementation) - Detailed guide
+- [Testing](#testing-strategy) - How to verify everything works
+- [Progress Tracking](#progress-tracking) - Current status
 
 ---
 
-## 1. Executive Summary
+## What We Have
 
-### Context
-The arXiv adapter (Data Acquisition Layer) is now functional and producing standardized outputs:
-- Discovery → Acquisition → Processing → Chunking pipeline complete
-- Output: Markdown chunks with comprehensive metadata
-- Ready for embedding and vector storage
+### ✅ Completed Foundation
 
-### Objective
-Build the **Modular Embedding Engine** that transforms processed document chunks into searchable vector representations while maintaining full traceability back to source content.
+**Project Structure:**
+```
+src/embedding/
+├── __init__.py
+├── ports.py          # ✅ Protocol interfaces defined
+├── registry.py       # ✅ Adapter discovery system  
+├── exceptions.py     # ✅ Custom exceptions
+└── adapters/         # ← We'll add implementations here
+```
 
-### Key Design Principles
-1. **Adapter Pattern**: Pluggable encoders and vector stores
-2. **Separation of Concerns**: Content retrieval independent of vector storage
-3. **Full Traceability**: Every vector maps to exact source chunk
-4. **Performance**: Batch processing, async operations, caching
-5. **Observability**: Metrics, logging, health checks
+**Port Interfaces Defined:**
+- `Encoder` - Text → Vector transformation
+- `VectorDB` - Vector storage and similarity search
+- `Decoder` - Vector ID → Original text retrieval
+
+**Prerequisites Ready:**
+- arXiv adapter producing chunk outputs
+- Data format standards defined (JSON schemas)
+- Architecture documented (reference.md)
+- Dependencies identified (requirements*.txt)
 
 ---
 
-## 2. Architecture Overview
+## What We're Building
 
-### 2.1 High-Level Flow
+### The 7 Components
+
+| Step | Component | Purpose | Complexity | Time |
+|------|-----------|---------|------------|------|
+| 1 | **Configuration System** | Load/validate settings from TOML | Low | 0.5 day |
+| 2 | **Database Schema** | PostgreSQL tables for chunks/docs | Medium | 0.5 day |
+| 3 | **PostgreSQL DocStore** | Store original text chunks | Medium | 1 day |
+| 4 | **PostgreSQL Decoder** | Retrieve chunks by ID | Medium | 1 day |
+| 5 | **ONNX BGE Encoder** | Convert text to vectors | High | 1-2 days |
+| 6 | **ChromaDB Adapter** | Store and search vectors | Medium | 1 day |
+| 7 | **Pipeline Orchestrator** | Coordinate ingestion/retrieval | High | 1-2 days |
+
+**Total:** ~7 days for core implementation
+
+### Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                     Source Collector                            │
-│          (arXiv Adapter + Future Adapters)                      │
-│                                                                  │
-│  Output: chunk_NNNN.md + chunk_NNNN_metadata.json              │
-└────────────────┬────────────────────────────────────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   Embedding Engine                              │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐         │
-│  │   Encoder    │  │  Vector DB   │  │   Decoder    │         │
-│  │  (Adapter)   │  │  (Adapter)   │  │  (Adapter)   │         │
-│  └──────────────┘  └──────────────┘  └──────────────┘         │
-│         │                  │                  │                 │
-│         │                  │                  │                 │
-│  Text → Vector      Store + Index      Vector ID → Text        │
-└─────────┴──────────────────┴──────────────────┴─────────────────┘
-                 │                  │                  │
-                 ▼                  ▼                  ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                    Storage Layer                                │
-│  ┌─────────────────────┐      ┌──────────────────────┐         │
-│  │   PostgreSQL        │      │   Vector Store       │         │
-│  │   (DocStore)        │      │   (Chroma/Qdrant)    │         │
-│  │                     │      │                      │         │
-│  │ • doc_segments      │      │ • vectors            │         │
-│  │ • documents         │      │ • metadata refs      │         │
-│  │ • processing_meta   │      │ • similarity index   │         │
-│  └─────────────────────┘      └──────────────────────┘         │
-└─────────────────────────────────────────────────────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                      API Layer                                  │
-│           (Future Phase - Not in Current Scope)                 │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│  Adapter Output (chunks/*.md + metadata.json files)    │
+└───────────────────┬─────────────────────────────────────┘
+                    ↓
+┌───────────────────────────────────────────────────────────┐
+│  INGESTION PIPELINE                                       │
+│  1. Read chunks from files                                │
+│  2. Store in PostgreSQL (DocStore)                        │
+│  3. Generate embeddings (Encoder)                         │
+│  4. Store vectors in ChromaDB (VectorDB)                  │
+└───────────────────────────────────────────────────────────┘
+                    ↓
+┌───────────────────────────────────────────────────────────┐
+│  STORAGE LAYER                                            │
+│  ┌──────────────────┐     ┌──────────────────┐           │
+│  │  PostgreSQL      │     │  ChromaDB         │           │
+│  │  • documents     │     │  • vectors (384d) │           │
+│  │  • doc_segments  │     │  • chunk_id refs  │           │
+│  └──────────────────┘     └──────────────────┘           │
+└───────────────────────────────────────────────────────────┘
+                    ↓
+┌───────────────────────────────────────────────────────────┐
+│  RETRIEVAL PIPELINE                                       │
+│  1. Encode query (Encoder)                                │
+│  2. Search vectors (VectorDB)                             │
+│  3. Get chunk IDs + scores                                │
+│  4. Lookup content (Decoder → PostgreSQL)                 │
+│  5. Return ranked results                                 │
+└───────────────────────────────────────────────────────────┘
 ```
 
-### 2.2 Component Responsibilities
+### Database Schema
 
-| Component | Role | Input | Output |
-|-----------|------|-------|--------|
-| **Encoder** | Text → Vector transformation | List of text strings | numpy.ndarray of vectors |
-| **VectorDB** | Vector storage & similarity search | Vectors + IDs | Query results (IDs + scores) |
-| **DocStore** | Plain text persistence & retrieval | Chunks + metadata | Original text chunks |
-| **Decoder** | Vector ID → Original text | Vector IDs from query | Full chunk content + metadata |
-| **Registry** | Adapter discovery & instantiation | Adapter name + config | Initialized adapter instance |
-
-### 2.3 Data Flow
-
-**Ingestion Pipeline:**
-```
-1. Read chunk files from adapter output
-2. Extract text content from .md files
-3. Load metadata from .json files
-4. Store chunks in PostgreSQL (DocStore)
-5. Generate embeddings via Encoder
-6. Upsert vectors to VectorDB with chunk IDs
-7. Log processing metrics
-```
-
-**Retrieval Pipeline:**
-```
-1. User query (text string)
-2. Encode query via Encoder
-3. Similarity search in VectorDB (top-k)
-4. Get vector IDs + similarity scores
-5. Lookup full chunks via Decoder → PostgreSQL
-6. Return ranked results with content + metadata
-```
-
----
-
-## 3. Component Specifications
-
-### 3.1 Port Interfaces (Abstract Protocols)
-
-#### 3.1.1 Encoder Protocol
-
-**File:** `src/embedding/ports.py`
-
-```python
-from typing import Protocol, List
-import numpy as np
-from numpy.typing import NDArray
-
-class Encoder(Protocol):
-    """
-    Text-to-vector encoding interface.
-    
-    Implementations MUST:
-    - Return normalized vectors (unit length)
-    - Support batch processing
-    - Be deterministic (same text → same vector)
-    - Handle long texts gracefully (truncate or error)
-    """
-    
-    async def embed(self, texts: List[str]) -> NDArray[np.float32]:
-        """
-        Encode text strings to vectors.
-        
-        Args:
-            texts: List of text strings to encode
-            
-        Returns:
-            2D array of shape (len(texts), embedding_dim)
-            
-        Raises:
-            EncoderError: If encoding fails
-        """
-        ...
-    
-    @property
-    def dimension(self) -> int:
-        """Vector dimensionality (e.g., 384, 768, 1024)."""
-        ...
-    
-    @property
-    def max_tokens(self) -> int:
-        """Maximum token length supported."""
-        ...
-    
-    async def health_check(self) -> bool:
-        """Verify encoder is operational."""
-        ...
-```
-
-#### 3.1.2 VectorDB Protocol
-
-**File:** `src/embedding/ports.py`
-
-```python
-from typing import Protocol, List, Dict, Any, Optional
-from dataclasses import dataclass
-import numpy as np
-from numpy.typing import NDArray
-
-@dataclass
-class QueryResult:
-    """Single similarity search result."""
-    chunk_id: str
-    score: float
-    metadata: Dict[str, Any]
-
-class VectorDB(Protocol):
-    """
-    Vector storage and similarity search interface.
-    
-    Implementations MUST:
-    - Store vectors with associated IDs
-    - Support similarity search (cosine or dot-product)
-    - Handle batch upserts efficiently
-    - Maintain index consistency
-    """
-    
-    async def upsert(
-        self,
-        ids: List[str],
-        vectors: NDArray[np.float32],
-        metadata: Optional[List[Dict[str, Any]]] = None
-    ) -> None:
-        """
-        Insert or update vectors.
-        
-        Args:
-            ids: Unique identifiers (chunk UUIDs)
-            vectors: 2D array of shape (len(ids), dimension)
-            metadata: Optional metadata dicts (NOT content!)
-        """
-        ...
-    
-    async def query(
-        self,
-        vector: NDArray[np.float32],
-        top_k: int = 10,
-        filter_dict: Optional[Dict[str, Any]] = None
-    ) -> List[QueryResult]:
-        """
-        Find most similar vectors.
-        
-        Args:
-            vector: Query vector (1D array)
-            top_k: Number of results to return
-            filter_dict: Optional metadata filters
-            
-        Returns:
-            Ranked list of QueryResult objects
-        """
-        ...
-    
-    async def delete(self, ids: List[str]) -> None:
-        """Remove vectors by ID."""
-        ...
-    
-    async def count(self) -> int:
-        """Total number of vectors in store."""
-        ...
-    
-    async def health_check(self) -> bool:
-        """Verify vector store is operational."""
-        ...
-```
-
-#### 3.1.3 Decoder Protocol
-
-**File:** `src/embedding/ports.py`
-
-```python
-from typing import Protocol, List, Optional
-from dataclasses import dataclass
-
-@dataclass
-class ChunkContent:
-    """Decoded chunk with full content and metadata."""
-    chunk_id: str
-    text: str
-    document_id: str
-    source_type: str
-    section_path: List[str]
-    position_in_doc: int
-    token_count: int
-    overlap_start: int
-    overlap_end: int
-    source_url: str
-    created_at: str
-    additional_metadata: Dict[str, Any]
-
-class Decoder(Protocol):
-    """
-    Vector ID to original content retrieval.
-    
-    CRITICAL: Decoder MUST fetch content from PostgreSQL,
-    NOT from vector store payloads. This ensures traceability.
-    """
-    
-    async def lookup(self, chunk_ids: List[str]) -> List[ChunkContent]:
-        """
-        Retrieve full chunk content by IDs.
-        
-        Args:
-            chunk_ids: List of chunk UUIDs
-            
-        Returns:
-            List of ChunkContent objects in same order
-            Missing IDs return None in that position
-        """
-        ...
-    
-    async def get_document_chunks(
-        self,
-        document_id: str,
-        limit: Optional[int] = None
-    ) -> List[ChunkContent]:
-        """Get all chunks for a document."""
-        ...
-    
-    async def health_check(self) -> bool:
-        """Verify database connection."""
-        ...
-```
-
-### 3.2 Default Adapter Implementations
-
-#### 3.2.1 ONNXBGEEncoder
-
-**File:** `src/embedding/adapters/onnx_bge_encoder.py`
-
-**Technology:**
-- ONNX Runtime (CPU optimized)
-- BGE-base-en-v1.5 model (384 dimensions)
-- Sentence transformers tokenizer
-
-**Features:**
-- ✅ No GPU required (runs on CPU)
-- ✅ Fast inference (~50-100 chunks/sec on CPU)
-- ✅ Normalized embeddings
-- ✅ Batch processing support
-- ✅ Model caching
-
-**Configuration:**
-```toml
-[embedding.encoder]
-type = "onnx_bge"
-model_name = "BAAI/bge-base-en-v1.5"
-batch_size = 32
-device = "cpu"
-normalize = true
-cache_dir = ".cache/models"
-```
-
-#### 3.2.2 ChromaDB Adapter
-
-**File:** `src/embedding/adapters/chroma_vectordb.py`
-
-**Technology:**
-- ChromaDB (embedded mode)
-- HNSW index for similarity search
-- Persistent storage
-
-**Features:**
-- ✅ No external service required
-- ✅ Fast similarity search
-- ✅ Metadata filtering
-- ✅ Persistent storage on disk
-- ✅ Collection management
-
-**Configuration:**
-```toml
-[embedding.vectordb]
-type = "chroma"
-persist_directory = ".data/chroma"
-collection_name = "hepilot"
-distance_metric = "cosine"
-```
-
-#### 3.2.3 PostgreSQL DocStore
-
-**File:** `src/embedding/adapters/postgres_docstore.py`
-
-**Schema:**
 ```sql
 -- Documents table
 CREATE TABLE documents (
@@ -381,241 +108,118 @@ CREATE TABLE documents (
     source_url TEXT,
     metadata JSONB,
     created_at TIMESTAMPTZ DEFAULT NOW(),
-    updated_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(source_type, source_id)
 );
 
--- Document segments (chunks) table
+-- Chunks table
 CREATE TABLE doc_segments (
     id UUID PRIMARY KEY,
     doc_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
     text TEXT NOT NULL,
-    section_path JSONB,  -- ["Introduction", "Methods", ...]
+    section_path JSONB,
     position_in_doc INTEGER NOT NULL,
     token_count INTEGER NOT NULL,
     overlap_start INTEGER NOT NULL,
     overlap_end INTEGER NOT NULL,
-    meta JSONB,  -- chunk-specific metadata
-    created_at TIMESTAMPTZ DEFAULT NOW(),
-    CONSTRAINT fk_document FOREIGN KEY (doc_id) REFERENCES documents(id)
+    meta JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- Indexes for performance
 CREATE INDEX idx_segments_doc_id ON doc_segments(doc_id);
 CREATE INDEX idx_segments_position ON doc_segments(doc_id, position_in_doc);
 CREATE INDEX idx_documents_source ON documents(source_type, source_id);
-CREATE INDEX idx_segments_text_trgm ON doc_segments USING gin(text gin_trgm_ops);
-
--- Processing metadata table
-CREATE TABLE processing_runs (
-    id UUID PRIMARY KEY,
-    doc_id UUID REFERENCES documents(id) ON DELETE CASCADE,
-    adapter_type VARCHAR(50),
-    adapter_version VARCHAR(20),
-    config_hash VARCHAR(64),
-    status VARCHAR(20),  -- pending, processing, completed, failed
-    started_at TIMESTAMPTZ,
-    completed_at TIMESTAMPTZ,
-    error_message TEXT,
-    metrics JSONB
-);
-```
-
-**Features:**
-- ✅ Full text search (pg_trgm)
-- ✅ Document hierarchy preservation
-- ✅ Efficient chunk retrieval
-- ✅ Processing audit trail
-
-#### 3.2.4 PostgreSQL Decoder
-
-**File:** `src/embedding/adapters/postgres_decoder.py`
-
-**Features:**
-- ✅ Async database queries (asyncpg)
-- ✅ Batch retrieval optimization
-- ✅ Connection pooling
-- ✅ Full metadata reconstruction
-
----
-
-## 4. Implementation Phases
-
-### Phase 1: Core Infrastructure (Week 1)
-
-**Deliverables:**
-- [ ] Port interfaces defined (`src/embedding/ports.py`)
-- [ ] Adapter registry implementation (`src/embedding/registry.py`)
-- [ ] Database schema and migrations (Alembic)
-- [ ] Base configuration management
-- [ ] Unit tests for protocols
-
-**Files to Create:**
-```
-src/embedding/
-├── __init__.py
-├── ports.py              # Protocol definitions
-├── registry.py           # Adapter discovery & registration
-├── exceptions.py         # Custom exceptions
-└── config.py             # Configuration models
-```
-
-### Phase 2: PostgreSQL Layer (Week 1-2)
-
-**Deliverables:**
-- [ ] DocStore implementation
-- [ ] Decoder implementation
-- [ ] Database migrations
-- [ ] Integration tests with test database
-- [ ] Fixture data for testing
-
-**Files to Create:**
-```
-src/embedding/adapters/
-├── __init__.py
-├── postgres_docstore.py
-├── postgres_decoder.py
-└── db_models.py
-
-alembic/
-└── versions/
-    └── 001_initial_schema.py
-```
-
-### Phase 3: Encoder Implementation (Week 2)
-
-**Deliverables:**
-- [ ] ONNX BGE encoder adapter
-- [ ] Model download and caching
-- [ ] Batch processing logic
-- [ ] Performance benchmarks
-- [ ] Unit tests
-
-**Files to Create:**
-```
-src/embedding/adapters/
-├── onnx_bge_encoder.py
-└── base_encoder.py        # Shared encoder utilities
-```
-
-### Phase 4: Vector Store Implementation (Week 2-3)
-
-**Deliverables:**
-- [ ] ChromaDB adapter
-- [ ] Collection management
-- [ ] Similarity search implementation
-- [ ] Integration tests
-- [ ] Performance benchmarks
-
-**Files to Create:**
-```
-src/embedding/adapters/
-└── chroma_vectordb.py
-```
-
-### Phase 5: Ingestion Pipeline (Week 3)
-
-**Deliverables:**
-- [ ] Pipeline orchestrator
-- [ ] Batch processing logic
-- [ ] Progress tracking
-- [ ] Error handling and retry logic
-- [ ] CLI tool for ingestion
-
-**Files to Create:**
-```
-src/embedding/
-├── pipeline.py           # Ingestion orchestration
-├── ingestion.py          # Chunk reading and processing
-└── cli.py                # Command-line interface
-
-scripts/
-└── ingest_adapter_output.py
-```
-
-### Phase 6: Retrieval Pipeline (Week 3-4)
-
-**Deliverables:**
-- [ ] Query processing
-- [ ] Retrieval implementation
-- [ ] Result ranking
-- [ ] Integration tests
-- [ ] CLI tool for search
-
-**Files to Create:**
-```
-src/embedding/
-├── retrieval.py          # Query and retrieval logic
-└── ranking.py            # Result scoring and reranking
-
-scripts/
-└── search.py
-```
-
-### Phase 7: Integration & Testing (Week 4)
-
-**Deliverables:**
-- [ ] End-to-end integration tests
-- [ ] Performance benchmarks
-- [ ] Documentation
-- [ ] Example workflows
-- [ ] CI/CD pipeline updates
-
-**Files to Create:**
-```
-tests/
-├── unit/
-│   └── embedding/
-│       ├── test_encoders.py
-│       ├── test_vectordb.py
-│       └── test_decoder.py
-├── integration/
-│   └── embedding/
-│       ├── test_pipeline.py
-│       └── test_retrieval.py
-└── fixtures/
-    └── sample_chunks/
-
-docs/
-└── embedding_guide.md
 ```
 
 ---
 
-## 5. Directory Structure
+## Step-by-Step Implementation
 
-### 5.1 Complete Source Layout
+### Step 1: Configuration System ⚙️
 
+**Goal:** Load and validate configuration from TOML files
+
+**Files to create:**
+- `src/embedding/config.py`
+- `config/embedding.toml`
+- `tests/unit/embedding/test_config.py`
+
+**Implementation:**
+
+<details>
+<summary><b>src/embedding/config.py</b> (click to expand)</summary>
+
+```python
+"""Configuration management for embedding layer."""
+
+from pydantic import BaseModel, Field, field_validator
+from pathlib import Path
+import tomllib
+from typing import Optional
+
+
+class EncoderConfig(BaseModel):
+    """Text encoder configuration."""
+    type: str = "onnx_bge"
+    model_name: str = "BAAI/bge-base-en-v1.5"
+    batch_size: int = Field(default=32, ge=1, le=256)
+    device: str = Field(default="cpu", pattern="^(cpu|cuda)$")
+    normalize: bool = True
+    cache_dir: Path = Path(".cache/models")
+
+
+class VectorDBConfig(BaseModel):
+    """Vector database configuration."""
+    type: str = "chroma"
+    persist_directory: Path = Path(".data/chroma")
+    collection_name: str = "hepilot"
+    distance_metric: str = Field(default="cosine", pattern="^(cosine|l2|ip)$")
+
+
+class DocStoreConfig(BaseModel):
+    """Document storage configuration."""
+    type: str = "postgres"
+    database_url: str
+    pool_size: int = Field(default=10, ge=1, le=100)
+    max_overflow: int = Field(default=20, ge=0, le=100)
+    
+    @field_validator('database_url')
+    @classmethod
+    def validate_db_url(cls, v: str) -> str:
+        """Ensure valid PostgreSQL URL."""
+        if not v.startswith(('postgresql://', 'postgresql+asyncpg://')):
+            raise ValueError("Database URL must start with postgresql:// or postgresql+asyncpg://")
+        return v
+
+
+class PipelineConfig(BaseModel):
+    """Ingestion pipeline configuration."""
+    batch_size: int = Field(default=100, ge=1, le=1000)
+    max_workers: int = Field(default=4, ge=1, le=32)
+    checkpoint_interval: int = Field(default=1000, ge=100)
+
+
+class EmbeddingConfig(BaseModel):
+    """Main embedding engine configuration."""
+    encoder: EncoderConfig
+    vectordb: VectorDBConfig
+    docstore: DocStoreConfig
+    pipeline: PipelineConfig
+
+
+def load_config(config_path: Path) -> EmbeddingConfig:
+    """Load configuration from TOML file."""
+    with open(config_path, 'rb') as f:
+        data = tomllib.load(f)
+    return EmbeddingConfig(**data)
 ```
-src/
-└── embedding/
-    ├── __init__.py
-    ├── ports.py                    # Protocol definitions
-    ├── registry.py                 # Adapter registry
-    ├── config.py                   # Configuration models
-    ├── exceptions.py               # Custom exceptions
-    ├── pipeline.py                 # Ingestion orchestration
-    ├── ingestion.py                # Chunk reading
-    ├── retrieval.py                # Query processing
-    ├── ranking.py                  # Result scoring
-    ├── cli.py                      # CLI interface
-    └── adapters/
-        ├── __init__.py
-        ├── postgres_docstore.py
-        ├── postgres_decoder.py
-        ├── db_models.py
-        ├── onnx_bge_encoder.py
-        ├── base_encoder.py
-        └── chroma_vectordb.py
-```
+</details>
 
-### 5.2 Configuration Structure
+<details>
+<summary><b>config/embedding.toml</b> (click to expand)</summary>
 
-```
-config/
-└── embedding.toml
-
-[embedding.encoder]
+```toml
+[encoder]
 type = "onnx_bge"
 model_name = "BAAI/bge-base-en-v1.5"
 batch_size = 32
@@ -623,423 +227,1073 @@ device = "cpu"
 normalize = true
 cache_dir = ".cache/models"
 
-[embedding.vectordb]
+[vectordb]
 type = "chroma"
 persist_directory = ".data/chroma"
 collection_name = "hepilot"
 distance_metric = "cosine"
 
-[embedding.docstore]
+[docstore]
 type = "postgres"
 database_url = "postgresql+asyncpg://hep:hep@localhost/hepilot"
 pool_size = 10
 max_overflow = 20
 
-[embedding.pipeline]
+[pipeline]
 batch_size = 100
 max_workers = 4
 checkpoint_interval = 1000
 ```
+</details>
+
+**✅ Validation Checklist:**
+- [ ] Configuration loads without errors
+- [ ] Invalid values raise ValidationError
+- [ ] Default values work
+- [ ] Unit tests pass
 
 ---
 
-## 6. Technical Specifications
+### Step 2: Database Schema & Migrations 🗄️
 
-### 6.1 Performance Requirements
+**Goal:** Create PostgreSQL schema with Alembic
 
-| Metric | Target | Measurement |
-|--------|--------|-------------|
-| **Encoding Speed** | > 50 chunks/sec (CPU) | Batch of 1000 chunks |
-| **Ingestion Throughput** | > 1000 chunks/min | Full pipeline |
-| **Query Latency** | < 100ms (p95) | Top-10 similarity search |
-| **Memory Usage** | < 2GB RAM | 100K chunks indexed |
-| **Storage Efficiency** | < 1KB/chunk overhead | Metadata + indexes |
+**Files to create:**
+- `alembic.ini`
+- `alembic/env.py`
+- `alembic/versions/001_initial_schema.py`
+- `src/embedding/adapters/db_models.py`
 
-### 6.2 Quality Requirements
+**Setup Instructions:**
 
-| Aspect | Requirement | Validation |
-|--------|-------------|------------|
-| **Determinism** | Same text → same vector | Unit test |
-| **Traceability** | 100% vector → source mapping | Integration test |
-| **Consistency** | Vector count = chunk count | Health check |
-| **Reliability** | < 0.1% ingestion failure rate | Monitoring |
-| **Reproducibility** | Config hash tracks parameters | Metadata check |
-
-### 6.3 Technology Stack
-
-**Core Dependencies:**
-```toml
-[tool.poetry.dependencies]
-python = "^3.11"
-numpy = "^1.26.0"
-asyncpg = "^0.29.0"
-psycopg2-binary = "^2.9.9"
-chromadb = "^0.4.24"
-onnxruntime = "^1.17.0"
-transformers = "^4.38.0"
-sentence-transformers = "^2.5.0"
-alembic = "^1.13.0"
-pydantic = "^2.6.0"
-pydantic-settings = "^2.2.0"
-rich = "^13.7.0"          # CLI formatting
-typer = "^0.9.0"          # CLI framework
-tqdm = "^4.66.0"          # Progress bars
-```
-
-**Dev Dependencies:**
-```toml
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.0.0"
-pytest-asyncio = "^0.23.0"
-pytest-cov = "^4.1.0"
-mypy = "^1.8.0"
-ruff = "^0.2.0"
-```
-
----
-
-## 7. Integration Points
-
-### 7.1 Adapter Output Integration
-
-**Input:** Adapter output directory structure
-```
-adapters/arxiv_adapter/arxiv_output/
-├── documents/
-│   └── arxiv_2301.12345/
-│       ├── chunks/
-│       │   ├── chunk_0001.md
-│       │   ├── chunk_0001_metadata.json
-│       │   ├── chunk_0002.md
-│       │   └── chunk_0002_metadata.json
-│       ├── full_document.md
-│       ├── document_metadata.json
-│       └── processing_metadata.json
-└── catalog.json
-```
-
-**Processing Flow:**
-1. Read `catalog.json` to get document list
-2. For each document:
-   - Read `document_metadata.json` → Insert into `documents` table
-   - Read `processing_metadata.json` → Insert into `processing_runs` table
-   - For each chunk:
-     - Read `chunk_NNNN.md` → Extract text
-     - Read `chunk_NNNN_metadata.json` → Extract metadata
-     - Insert into `doc_segments` table
-     - Generate embedding
-     - Upsert to vector store
-
-### 7.2 API Layer Integration (Future)
-
-**Embedding Engine Exposes:**
-```python
-class EmbeddingService:
-    async def ingest_adapter_output(self, output_dir: Path) -> IngestResult
-    async def query(self, text: str, top_k: int = 10) -> List[ChunkContent]
-    async def get_chunk(self, chunk_id: str) -> ChunkContent
-    async def health_check() -> HealthStatus
-```
-
-**API Layer Will Use:**
-- `query()` for `/rag/search` endpoint
-- `get_chunk()` for chunk detail retrieval
-- `health_check()` for `/healthz` endpoint
-
-### 7.3 Configuration Integration
-
-**Global Config:**
-```toml
-# config/hepilot.toml
-[project]
-name = "hepilot"
-version = "0.1.0"
-
-[database]
-url = "postgresql+asyncpg://hep:hep@localhost/hepilot"
-
-[embedding]
-config_file = "config/embedding.toml"
-
-[adapters]
-output_dir = "adapters/*/*/output"
-```
-
----
-
-## 8. Testing Strategy
-
-### 8.1 Unit Tests
-
-**Coverage Requirements:** > 90%
-
-**Test Categories:**
-- Protocol compliance tests
-- Adapter initialization tests
-- Configuration validation tests
-- Error handling tests
-- Edge case tests
-
-**Example Test Structure:**
-```python
-# tests/unit/embedding/test_encoder.py
-@pytest.mark.asyncio
-async def test_onnx_encoder_batch():
-    encoder = ONNXBGEEncoder(config)
-    texts = ["test1", "test2", "test3"]
-    vectors = await encoder.embed(texts)
-    assert vectors.shape == (3, 384)
-    assert np.allclose(np.linalg.norm(vectors, axis=1), 1.0)
-
-@pytest.mark.asyncio
-async def test_encoder_determinism():
-    encoder = ONNXBGEEncoder(config)
-    text = "reproducible test"
-    v1 = await encoder.embed([text])
-    v2 = await encoder.embed([text])
-    assert np.allclose(v1, v2)
-```
-
-### 8.2 Integration Tests
-
-**Test Scenarios:**
-1. **End-to-End Ingestion:**
-   - Load sample adapter output
-   - Process through pipeline
-   - Verify database state
-   - Verify vector store state
-   - Check chunk count consistency
-
-2. **Retrieval Accuracy:**
-   - Ingest known chunks
-   - Query with expected matches
-   - Verify result ranking
-   - Check metadata completeness
-
-3. **Error Recovery:**
-   - Simulate failures at each stage
-   - Verify retry logic
-   - Check partial completion handling
-   - Validate rollback behavior
-
-### 8.3 Performance Tests
-
-**Benchmarks:**
-```python
-# tests/performance/test_throughput.py
-def test_ingestion_throughput():
-    # Measure chunks/second for 1000 chunks
-    assert throughput > 1000  # chunks/minute
-
-def test_query_latency():
-    # Measure p95 latency for 100 queries
-    assert p95_latency < 0.1  # seconds
-```
-
-### 8.4 Contract Tests
-
-**Vector Store Contract:**
-- Verify CRUD operations
-- Check consistency guarantees
-- Validate search results
-
-**Decoder Contract:**
-- Verify ID → content mapping
-- Check metadata completeness
-- Validate ordering preservation
-
----
-
-## 9. Success Criteria
-
-### 9.1 Functional Requirements
-
-- [x] **F1:** All port interfaces defined and documented
-- [ ] **F2:** At least one working adapter per component type
-- [ ] **F3:** Full ingestion pipeline functional
-- [ ] **F4:** Retrieval pipeline returns correct results
-- [ ] **F5:** 100% traceability: every vector maps to source chunk
-- [ ] **F6:** Database schema supports all required metadata
-- [ ] **F7:** CLI tools for ingestion and search
-- [ ] **F8:** Configuration-based adapter selection
-
-### 9.2 Non-Functional Requirements
-
-- [ ] **NF1:** > 90% test coverage
-- [ ] **NF2:** < 100ms p95 query latency
-- [ ] **NF3:** > 1000 chunks/minute ingestion rate
-- [ ] **NF4:** < 2GB memory usage for 100K chunks
-- [ ] **NF5:** Comprehensive logging and error messages
-- [ ] **NF6:** Type hints and mypy compliance
-- [ ] **NF7:** Documentation for all public APIs
-
-### 9.3 Integration Requirements
-
-- [ ] **I1:** Successfully ingest arxiv adapter output
-- [ ] **I2:** Database migrations run cleanly
-- [ ] **I3:** Health checks for all components
-- [ ] **I4:** Graceful degradation on component failure
-- [ ] **I5:** Configuration validation and error messages
-
-### 9.4 Demonstration Scenarios
-
-**Scenario 1: Ingest ArXiv Papers**
 ```bash
-# Ingest adapter output
-python -m hepilot.embedding ingest \
-    --input adapters/arxiv_adapter/arxiv_output \
-    --config config/embedding.toml
+# Initialize Alembic
+cd /data/home/melashri/LLM/HEPilot
+alembic init alembic
 
-# Expected: All chunks in database and vector store
+# Edit alembic.ini to set database URL
+# sqlalchemy.url = postgresql+asyncpg://hep:hep@localhost/hepilot
 ```
 
-**Scenario 2: Semantic Search**
+<details>
+<summary><b>alembic/versions/001_initial_schema.py</b> (click to expand)</summary>
+
+```python
+"""Initial schema for embedding layer
+
+Revision ID: 001
+Create Date: 2025-10-20
+"""
+from alembic import op
+import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
+
+revision = '001'
+down_revision = None
+branch_labels = None
+depends_on = None
+
+
+def upgrade():
+    # Create documents table
+    op.create_table(
+        'documents',
+        sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
+        sa.Column('source_type', sa.String(50), nullable=False),
+        sa.Column('source_id', sa.String(500), nullable=False),
+        sa.Column('title', sa.Text),
+        sa.Column('authors', postgresql.JSONB),
+        sa.Column('publication_date', sa.TIMESTAMP),
+        sa.Column('source_url', sa.Text),
+        sa.Column('metadata', postgresql.JSONB),
+        sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.func.now())
+    )
+    
+    # Create doc_segments table
+    op.create_table(
+        'doc_segments',
+        sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True),
+        sa.Column('doc_id', postgresql.UUID(as_uuid=True), nullable=False),
+        sa.Column('text', sa.Text, nullable=False),
+        sa.Column('section_path', postgresql.JSONB),
+        sa.Column('position_in_doc', sa.Integer, nullable=False),
+        sa.Column('token_count', sa.Integer, nullable=False),
+        sa.Column('overlap_start', sa.Integer, nullable=False),
+        sa.Column('overlap_end', sa.Integer, nullable=False),
+        sa.Column('meta', postgresql.JSONB),
+        sa.Column('created_at', sa.TIMESTAMP(timezone=True), server_default=sa.func.now()),
+        sa.ForeignKeyConstraint(['doc_id'], ['documents.id'], ondelete='CASCADE')
+    )
+    
+    # Create indexes
+    op.create_index('idx_segments_doc_id', 'doc_segments', ['doc_id'])
+    op.create_index('idx_segments_position', 'doc_segments', ['doc_id', 'position_in_doc'])
+    op.create_index('idx_documents_source', 'documents', ['source_type', 'source_id'])
+    
+    # Create unique constraint
+    op.create_unique_constraint('uq_documents_source', 'documents', ['source_type', 'source_id'])
+
+
+def downgrade():
+    op.drop_table('doc_segments')
+    op.drop_table('documents')
+```
+</details>
+
+**Run Migration:**
 ```bash
-# Search for relevant chunks
-python -m hepilot.embedding search \
-    --query "quantum chromodynamics lattice calculations" \
-    --top-k 10
+# Apply migration
+alembic upgrade head
 
-# Expected: Ranked results with scores and full content
+# Verify tables created
+psql -h localhost -U hep hepilot -c "\dt"
 ```
 
-**Scenario 3: Health Check**
+**✅ Validation Checklist:**
+- [ ] `alembic upgrade head` succeeds
+- [ ] Tables `documents` and `doc_segments` exist
+- [ ] Indexes created
+- [ ] `alembic downgrade base` works
+
+---
+
+### Step 3: PostgreSQL DocStore 💾
+
+**Goal:** Implement document and chunk storage
+
+**File to create:**
+- `src/embedding/adapters/postgres_docstore.py`
+- `tests/unit/embedding/test_docstore.py`
+
+<details>
+<summary><b>src/embedding/adapters/postgres_docstore.py</b> (click to expand)</summary>
+
+```python
+"""PostgreSQL-based document storage."""
+
+import asyncpg
+from typing import List, Dict, Any, Optional
+from uuid import UUID
+from datetime import datetime
+import json
+
+from src.embedding.exceptions import DocStoreError
+
+
+class PostgresDocStore:
+    """Store documents and chunks in PostgreSQL."""
+    
+    def __init__(self, database_url: str, pool_size: int = 10):
+        self.database_url = database_url
+        self.pool_size = pool_size
+        self.pool: Optional[asyncpg.Pool] = None
+    
+    async def connect(self):
+        """Establish database connection pool."""
+        try:
+            self.pool = await asyncpg.create_pool(
+                self.database_url,
+                min_size=1,
+                max_size=self.pool_size
+            )
+        except Exception as e:
+            raise DocStoreError(f"Failed to connect to database: {e}")
+    
+    async def close(self):
+        """Close database connection pool."""
+        if self.pool:
+            await self.pool.close()
+    
+    async def add_document(
+        self,
+        doc_id: UUID,
+        source_type: str,
+        source_id: str,
+        title: Optional[str] = None,
+        authors: Optional[List[Dict]] = None,
+        publication_date: Optional[datetime] = None,
+        source_url: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> UUID:
+        """Insert or update a document."""
+        query = """
+        INSERT INTO documents (id, source_type, source_id, title, authors, 
+                              publication_date, source_url, metadata)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ON CONFLICT (source_type, source_id) 
+        DO UPDATE SET 
+            title = EXCLUDED.title,
+            authors = EXCLUDED.authors,
+            publication_date = EXCLUDED.publication_date,
+            source_url = EXCLUDED.source_url,
+            metadata = EXCLUDED.metadata
+        RETURNING id
+        """
+        
+        try:
+            async with self.pool.acquire() as conn:
+                result = await conn.fetchval(
+                    query,
+                    doc_id,
+                    source_type,
+                    source_id,
+                    title,
+                    json.dumps(authors) if authors else None,
+                    publication_date,
+                    source_url,
+                    json.dumps(metadata) if metadata else None
+                )
+            return result
+        except Exception as e:
+            raise DocStoreError(f"Failed to add document: {e}")
+    
+    async def add_chunk(
+        self,
+        chunk_id: UUID,
+        doc_id: UUID,
+        text: str,
+        position: int,
+        token_count: int,
+        section_path: Optional[List[str]] = None,
+        overlap_start: int = 0,
+        overlap_end: int = 0,
+        metadata: Optional[Dict[str, Any]] = None
+    ) -> UUID:
+        """Insert a text chunk."""
+        query = """
+        INSERT INTO doc_segments (id, doc_id, text, section_path, position_in_doc,
+                                 token_count, overlap_start, overlap_end, meta)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        RETURNING id
+        """
+        
+        try:
+            async with self.pool.acquire() as conn:
+                result = await conn.fetchval(
+                    query,
+                    chunk_id,
+                    doc_id,
+                    text,
+                    json.dumps(section_path) if section_path else None,
+                    position,
+                    token_count,
+                    overlap_start,
+                    overlap_end,
+                    json.dumps(metadata) if metadata else None
+                )
+            return result
+        except Exception as e:
+            raise DocStoreError(f"Failed to add chunk: {e}")
+    
+    async def health_check(self) -> bool:
+        """Check if database connection is healthy."""
+        try:
+            async with self.pool.acquire() as conn:
+                await conn.fetchval("SELECT 1")
+            return True
+        except Exception:
+            return False
+```
+</details>
+
+**✅ Validation Checklist:**
+- [ ] Can connect to PostgreSQL
+- [ ] Can insert documents
+- [ ] Can insert chunks
+- [ ] Upsert works (ON CONFLICT)
+- [ ] Health check works
+- [ ] Unit tests pass
+
+---
+
+### Step 4: PostgreSQL Decoder 🔍
+
+**Goal:** Retrieve chunks by ID from database
+
+**File to create:**
+- `src/embedding/adapters/postgres_decoder.py`
+- `tests/unit/embedding/test_decoder.py`
+
+<details>
+<summary><b>src/embedding/adapters/postgres_decoder.py</b> (click to expand)</summary>
+
+```python
+"""Retrieve original content from PostgreSQL."""
+
+import asyncpg
+from typing import List, Optional
+from uuid import UUID
+import json
+
+from src.embedding.ports import ChunkContent
+from src.embedding.exceptions import DecoderError
+
+
+class PostgresDecoder:
+    """Decode vector IDs to original text content."""
+    
+    def __init__(self, database_url: str, pool_size: int = 10):
+        self.database_url = database_url
+        self.pool_size = pool_size
+        self.pool: Optional[asyncpg.Pool] = None
+    
+    async def connect(self):
+        """Establish database connection pool."""
+        try:
+            self.pool = await asyncpg.create_pool(
+                self.database_url,
+                min_size=1,
+                max_size=self.pool_size
+            )
+        except Exception as e:
+            raise DecoderError(f"Failed to connect to database: {e}")
+    
+    async def lookup(self, chunk_ids: List[str]) -> List[Optional[ChunkContent]]:
+        """Retrieve chunks by IDs, maintaining order."""
+        query = """
+        SELECT 
+            s.id::text as chunk_id,
+            s.text,
+            s.doc_id::text as document_id,
+            d.source_type,
+            s.section_path,
+            s.position_in_doc,
+            s.token_count,
+            s.overlap_start,
+            s.overlap_end,
+            d.source_url,
+            s.created_at,
+            s.meta
+        FROM doc_segments s
+        JOIN documents d ON s.doc_id = d.id
+        WHERE s.id = ANY($1::uuid[])
+        """
+        
+        try:
+            # Convert string IDs to UUIDs
+            uuids = [UUID(cid) for cid in chunk_ids]
+            
+            async with self.pool.acquire() as conn:
+                rows = await conn.fetch(query, uuids)
+            
+            # Create lookup map
+            results_map = {}
+            for row in rows:
+                section_path = json.loads(row['section_path']) if row['section_path'] else []
+                meta = json.loads(row['meta']) if row['meta'] else {}
+                
+                chunk_content = ChunkContent(
+                    chunk_id=row['chunk_id'],
+                    text=row['text'],
+                    document_id=row['document_id'],
+                    source_type=row['source_type'],
+                    section_path=section_path,
+                    position_in_doc=row['position_in_doc'],
+                    token_count=row['token_count'],
+                    overlap_start=row['overlap_start'],
+                    overlap_end=row['overlap_end'],
+                    source_url=row['source_url'] or "",
+                    created_at=str(row['created_at']),
+                    additional_metadata=meta
+                )
+                results_map[row['chunk_id']] = chunk_content
+            
+            # Return in same order as input, None for missing
+            return [results_map.get(cid) for cid in chunk_ids]
+            
+        except Exception as e:
+            raise DecoderError(f"Failed to lookup chunks: {e}")
+    
+    async def get_document_chunks(
+        self,
+        document_id: str,
+        limit: Optional[int] = None
+    ) -> List[ChunkContent]:
+        """Get all chunks for a document."""
+        query = """
+        SELECT 
+            s.id::text as chunk_id,
+            s.text,
+            s.doc_id::text as document_id,
+            d.source_type,
+            s.section_path,
+            s.position_in_doc,
+            s.token_count,
+            s.overlap_start,
+            s.overlap_end,
+            d.source_url,
+            s.created_at,
+            s.meta
+        FROM doc_segments s
+        JOIN documents d ON s.doc_id = d.id
+        WHERE s.doc_id = $1
+        ORDER BY s.position_in_doc
+        """
+        
+        if limit:
+            query += f" LIMIT {limit}"
+        
+        try:
+            async with self.pool.acquire() as conn:
+                rows = await conn.fetch(query, UUID(document_id))
+            
+            return [
+                ChunkContent(
+                    chunk_id=row['chunk_id'],
+                    text=row['text'],
+                    document_id=row['document_id'],
+                    source_type=row['source_type'],
+                    section_path=json.loads(row['section_path']) if row['section_path'] else [],
+                    position_in_doc=row['position_in_doc'],
+                    token_count=row['token_count'],
+                    overlap_start=row['overlap_start'],
+                    overlap_end=row['overlap_end'],
+                    source_url=row['source_url'] or "",
+                    created_at=str(row['created_at']),
+                    additional_metadata=json.loads(row['meta']) if row['meta'] else {}
+                )
+                for row in rows
+            ]
+            
+        except Exception as e:
+            raise DecoderError(f"Failed to get document chunks: {e}")
+    
+    async def health_check(self) -> bool:
+        """Check database connection."""
+        try:
+            async with self.pool.acquire() as conn:
+                await conn.fetchval("SELECT 1")
+            return True
+        except Exception:
+            return False
+```
+</details>
+
+**✅ Validation Checklist:**
+- [ ] Can retrieve chunks by ID
+- [ ] Batch retrieval works
+- [ ] Returns None for missing IDs
+- [ ] Order preserved
+- [ ] Document chunks retrieval works
+- [ ] Tests pass
+
+---
+
+### Step 5: ONNX BGE Encoder 🧮
+
+**Goal:** Convert text to embeddings using BGE model
+
+**File to create:**
+- `src/embedding/adapters/onnx_bge_encoder.py`
+- `tests/unit/embedding/test_encoder.py`
+
+<details>
+<summary><b>src/embedding/adapters/onnx_bge_encoder.py</b> (click to expand)</summary>
+
+```python
+"""ONNX-based BGE encoder for text embeddings."""
+
+import numpy as np
+from numpy.typing import NDArray
+from typing import List
+from pathlib import Path
+from sentence_transformers import SentenceTransformer
+
+from src.embedding.exceptions import EncoderError
+
+
+class ONNXBGEEncoder:
+    """BGE encoder using SentenceTransformers."""
+    
+    def __init__(
+        self,
+        model_name: str = "BAAI/bge-base-en-v1.5",
+        cache_dir: Path = Path(".cache/models"),
+        batch_size: int = 32,
+        normalize: bool = True
+    ):
+        self.model_name = model_name
+        self.cache_dir = cache_dir
+        self.batch_size = batch_size
+        self.normalize = normalize
+        
+        self.model = None
+        self._dimension = 384  # BGE-base dimension
+        self._max_tokens = 512
+    
+    async def setup(self):
+        """Initialize model."""
+        try:
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+            
+            self.model = SentenceTransformer(
+                self.model_name,
+                cache_folder=str(self.cache_dir)
+            )
+            
+        except Exception as e:
+            raise EncoderError(f"Failed to load encoder: {e}")
+    
+    async def embed(self, texts: List[str]) -> NDArray[np.float32]:
+        """Encode texts to vectors."""
+        if not self.model:
+            await self.setup()
+        
+        try:
+            # Encode in batches
+            all_embeddings = []
+            for i in range(0, len(texts), self.batch_size):
+                batch = texts[i:i + self.batch_size]
+                embeddings = self.model.encode(
+                    batch,
+                    normalize_embeddings=self.normalize,
+                    show_progress_bar=False,
+                    convert_to_numpy=True
+                )
+                all_embeddings.append(embeddings)
+            
+            # Combine batches
+            result = np.vstack(all_embeddings).astype(np.float32)
+            return result
+            
+        except Exception as e:
+            raise EncoderError(f"Encoding failed: {e}")
+    
+    @property
+    def dimension(self) -> int:
+        """Embedding dimension."""
+        return self._dimension
+    
+    @property
+    def max_tokens(self) -> int:
+        """Maximum token length."""
+        return self._max_tokens
+    
+    async def health_check(self) -> bool:
+        """Verify encoder is operational."""
+        try:
+            if not self.model:
+                await self.setup()
+            test_vec = await self.embed(["test"])
+            return test_vec.shape == (1, self._dimension)
+        except Exception:
+            return False
+```
+</details>
+
+**✅ Validation Checklist:**
+- [ ] Model downloads successfully
+- [ ] Can encode single text
+- [ ] Can encode batch
+- [ ] Vectors are normalized (if enabled)
+- [ ] Dimension is correct (384)
+- [ ] Health check works
+- [ ] Tests pass
+
+---
+
+### Step 6: ChromaDB Adapter 🗂️
+
+**Goal:** Store and search vectors in ChromaDB
+
+**File to create:**
+- `src/embedding/adapters/chroma_vectordb.py`
+- `tests/unit/embedding/test_vectordb.py`
+
+<details>
+<summary><b>src/embedding/adapters/chroma_vectordb.py</b> (click to expand)</summary>
+
+```python
+"""ChromaDB-based vector storage."""
+
+import chromadb
+from chromadb.config import Settings
+from typing import List, Dict, Any, Optional
+import numpy as np
+from numpy.typing import NDArray
+from pathlib import Path
+
+from src.embedding.ports import QueryResult
+from src.embedding.exceptions import VectorDBError
+
+
+class ChromaVectorDB:
+    """Vector storage using ChromaDB."""
+    
+    def __init__(
+        self,
+        persist_directory: Path = Path(".data/chroma"),
+        collection_name: str = "hepilot",
+        distance_metric: str = "cosine"
+    ):
+        self.persist_directory = persist_directory
+        self.collection_name = collection_name
+        self.distance_metric = distance_metric
+        
+        self.client = None
+        self.collection = None
+    
+    async def setup(self):
+        """Initialize ChromaDB client and collection."""
+        try:
+            self.persist_directory.mkdir(parents=True, exist_ok=True)
+            
+            self.client = chromadb.PersistentClient(
+                path=str(self.persist_directory),
+                settings=Settings(
+                    anonymized_telemetry=False,
+                    allow_reset=False
+                )
+            )
+            
+            self.collection = self.client.get_or_create_collection(
+                name=self.collection_name,
+                metadata={"hnsw:space": self.distance_metric}
+            )
+            
+        except Exception as e:
+            raise VectorDBError(f"Failed to initialize ChromaDB: {e}")
+    
+    async def upsert(
+        self,
+        ids: List[str],
+        vectors: NDArray[np.float32],
+        metadata: Optional[List[Dict[str, Any]]] = None
+    ) -> None:
+        """Insert or update vectors."""
+        if not self.collection:
+            await self.setup()
+        
+        try:
+            embeddings = vectors.tolist()
+            
+            if metadata is None:
+                metadata = [{} for _ in ids]
+            
+            self.collection.upsert(
+                ids=ids,
+                embeddings=embeddings,
+                metadatas=metadata
+            )
+            
+        except Exception as e:
+            raise VectorDBError(f"Upsert failed: {e}")
+    
+    async def query(
+        self,
+        vector: NDArray[np.float32],
+        top_k: int = 10,
+        filter_dict: Optional[Dict[str, Any]] = None
+    ) -> List[QueryResult]:
+        """Find most similar vectors."""
+        if not self.collection:
+            await self.setup()
+        
+        try:
+            results = self.collection.query(
+                query_embeddings=[vector.tolist()],
+                n_results=top_k,
+                where=filter_dict
+            )
+            
+            query_results = []
+            if results['ids'] and results['ids'][0]:
+                for i, chunk_id in enumerate(results['ids'][0]):
+                    # Convert distance to similarity score
+                    distance = results['distances'][0][i] if results['distances'] else 0
+                    score = 1.0 - distance if self.distance_metric == "cosine" else distance
+                    
+                    query_results.append(QueryResult(
+                        chunk_id=chunk_id,
+                        score=score,
+                        metadata=results['metadatas'][0][i] if results['metadatas'] else {}
+                    ))
+            
+            return query_results
+            
+        except Exception as e:
+            raise VectorDBError(f"Query failed: {e}")
+    
+    async def delete(self, ids: List[str]) -> None:
+        """Remove vectors by ID."""
+        if not self.collection:
+            await self.setup()
+        
+        try:
+            self.collection.delete(ids=ids)
+        except Exception as e:
+            raise VectorDBError(f"Delete failed: {e}")
+    
+    async def count(self) -> int:
+        """Total number of vectors."""
+        if not self.collection:
+            await self.setup()
+        
+        try:
+            return self.collection.count()
+        except Exception as e:
+            raise VectorDBError(f"Count failed: {e}")
+    
+    async def health_check(self) -> bool:
+        """Verify vector store is operational."""
+        try:
+            if not self.collection:
+                await self.setup()
+            await self.count()
+            return True
+        except Exception:
+            return False
+```
+</details>
+
+**✅ Validation Checklist:**
+- [ ] ChromaDB initializes
+- [ ] Collection created
+- [ ] Can upsert vectors
+- [ ] Can query vectors
+- [ ] Can delete vectors
+- [ ] Count works
+- [ ] Tests pass
+
+---
+
+### Step 7: Pipeline & CLI 🔄
+
+**Goal:** Tie everything together with ingestion/retrieval pipelines
+
+**Files to create:**
+- `src/embedding/pipeline.py`
+- `src/embedding/cli.py`
+- `tests/integration/embedding/test_pipeline.py`
+
+<details>
+<summary><b>src/embedding/pipeline.py</b> (basic structure)</summary>
+
+```python
+"""Ingestion and retrieval pipelines."""
+
+from pathlib import Path
+from typing import Dict, Any, List
+import json
+from uuid import UUID
+from tqdm import tqdm
+
+from src.embedding.config import EmbeddingConfig
+from src.embedding.adapters.postgres_docstore import PostgresDocStore
+from src.embedding.adapters.postgres_decoder import PostgresDecoder
+from src.embedding.adapters.onnx_bge_encoder import ONNXBGEEncoder
+from src.embedding.adapters.chroma_vectordb import ChromaVectorDB
+
+
+class IngestionPipeline:
+    """Ingest documents from adapter output."""
+    
+    def __init__(self, config: EmbeddingConfig):
+        self.config = config
+        self.docstore = PostgresDocStore(
+            config.docstore.database_url,
+            config.docstore.pool_size
+        )
+        self.encoder = ONNXBGEEncoder(
+            model_name=config.encoder.model_name,
+            cache_dir=config.encoder.cache_dir,
+            batch_size=config.encoder.batch_size,
+            normalize=config.encoder.normalize
+        )
+        self.vectordb = ChromaVectorDB(
+            persist_directory=config.vectordb.persist_directory,
+            collection_name=config.vectordb.collection_name,
+            distance_metric=config.vectordb.distance_metric
+        )
+    
+    async def setup(self):
+        """Initialize all components."""
+        await self.docstore.connect()
+        await self.encoder.setup()
+        await self.vectordb.setup()
+    
+    async def ingest_directory(self, output_dir: Path) -> Dict[str, Any]:
+        """Ingest all documents from adapter output."""
+        await self.setup()
+        
+        # Read catalog
+        catalog_path = output_dir / "catalog.json"
+        with open(catalog_path) as f:
+            catalog = json.load(f)
+        
+        stats = {
+            'documents_processed': 0,
+            'chunks_processed': 0,
+            'vectors_created': 0
+        }
+        
+        # Process each document
+        for doc_entry in tqdm(catalog.get('documents', []), desc="Processing documents"):
+            # Implementation continues...
+            # (Read chunks, store in DB, generate embeddings, etc.)
+            pass
+        
+        return stats
+
+
+class RetrievalPipeline:
+    """Search and retrieve documents."""
+    
+    def __init__(self, config: EmbeddingConfig):
+        self.config = config
+        self.encoder = ONNXBGEEncoder(
+            model_name=config.encoder.model_name,
+            cache_dir=config.encoder.cache_dir
+        )
+        self.vectordb = ChromaVectorDB(
+            persist_directory=config.vectordb.persist_directory,
+            collection_name=config.vectordb.collection_name
+        )
+        self.decoder = PostgresDecoder(
+            database_url=config.docstore.database_url,
+            pool_size=config.docstore.pool_size
+        )
+    
+    async def setup(self):
+        """Initialize components."""
+        await self.encoder.setup()
+        await self.vectordb.setup()
+        await self.decoder.connect()
+    
+    async def search(self, query: str, top_k: int = 10):
+        """Semantic search."""
+        await self.setup()
+        
+        # Encode query
+        query_vector = await self.encoder.embed([query])
+        
+        # Search vectors
+        results = await self.vectordb.query(query_vector[0], top_k)
+        
+        # Retrieve full content
+        chunk_ids = [r.chunk_id for r in results]
+        chunks = await self.decoder.lookup(chunk_ids)
+        
+        # Combine results
+        return [(chunk, result.score) for chunk, result in zip(chunks, results) if chunk]
+```
+</details>
+
+<details>
+<summary><b>src/embedding/cli.py</b> (basic structure)</summary>
+
+```python
+"""Command-line interface for embedding engine."""
+
+import typer
+import asyncio
+from pathlib import Path
+from rich.console import Console
+
+from src.embedding.config import load_config
+from src.embedding.pipeline import IngestionPipeline, RetrievalPipeline
+
+app = typer.Typer()
+console = Console()
+
+
+@app.command()
+def ingest(
+    input_dir: Path = typer.Argument(..., help="Adapter output directory"),
+    config_file: Path = typer.Option("config/embedding.toml", help="Config file")
+):
+    """Ingest documents from adapter output."""
+    console.print(f"[bold]Loading config from {config_file}...[/bold]")
+    config = load_config(config_file)
+    
+    console.print(f"[bold]Ingesting from {input_dir}...[/bold]")
+    pipeline = IngestionPipeline(config)
+    
+    stats = asyncio.run(pipeline.ingest_directory(input_dir))
+    
+    console.print("\n[bold green]✓ Complete![/bold green]")
+    console.print(f"Documents: {stats['documents_processed']}")
+    console.print(f"Chunks: {stats['chunks_processed']}")
+
+
+@app.command()
+def search(
+    query: str = typer.Argument(..., help="Search query"),
+    top_k: int = typer.Option(10, help="Number of results"),
+    config_file: Path = typer.Option("config/embedding.toml")
+):
+    """Search for relevant chunks."""
+    config = load_config(config_file)
+    pipeline = RetrievalPipeline(config)
+    
+    results = asyncio.run(pipeline.search(query, top_k))
+    
+    console.print(f"\n[bold]Results for: {query}[/bold]\n")
+    for i, (chunk, score) in enumerate(results, 1):
+        console.print(f"{i}. [cyan]Score: {score:.3f}[/cyan]")
+        console.print(f"   {chunk.text[:200]}...")
+        console.print()
+
+
+if __name__ == "__main__":
+    app()
+```
+</details>
+
+**Usage:**
 ```bash
-# Check system health
-python -m hepilot.embedding health
+# Ingest
+python -m src.embedding.cli ingest src/collector/adapters/arxiv/arxiv_output
 
-# Expected: Status of encoder, vectordb, database
+# Search
+python -m src.embedding.cli search "quantum chromodynamics" --top-k 5
+```
+
+**✅ Validation Checklist:**
+- [ ] Can read adapter output
+- [ ] Ingestion works end-to-end
+- [ ] Retrieval works end-to-end
+- [ ] CLI commands work
+- [ ] Integration tests pass
+
+---
+
+## Testing Strategy
+
+### Unit Tests
+
+**Test each component in isolation:**
+
+```
+tests/unit/embedding/
+├── test_config.py          # Config loading/validation
+├── test_docstore.py        # Database operations (mocked DB)
+├── test_decoder.py         # Chunk retrieval (mocked DB)
+├── test_encoder.py         # Embedding generation
+├── test_vectordb.py        # Vector operations (mocked ChromaDB)
+└── test_pipeline.py        # Pipeline logic (all mocked)
+```
+
+**Run unit tests:**
+```bash
+pytest tests/unit/embedding/ -v
+```
+
+### Integration Tests
+
+**Test with real databases:**
+
+```bash
+# Start test database
+docker run -d --name hepilot-test-db \
+  -e POSTGRES_PASSWORD=test \
+  -e POSTGRES_DB=hepilot_test \
+  -p 5433:5432 \
+  postgres:15
+
+# Run integration tests
+pytest tests/integration/embedding/ -v
+```
+
+### Performance Tests
+
+**Benchmark key operations:**
+- Encoding speed (chunks/second)
+- Ingestion throughput
+- Query latency (p50, p95, p99)
+
+---
+
+## Progress Tracking
+
+### Current Status
+
+**Phase 0: Foundation** ✅
+- [x] Project structure
+- [x] Port interfaces
+- [x] Registry system
+- [x] Exception classes
+- [x] Documentation
+
+**Phase 1: Core Components** (This Week)
+- [ ] Step 1: Configuration system
+- [ ] Step 2: Database schema
+- [ ] Step 3: PostgreSQL DocStore
+- [ ] Step 4: PostgreSQL Decoder
+
+**Phase 2: ML Components** (Next Week)
+- [ ] Step 5: ONNX BGE Encoder
+- [ ] Step 6: ChromaDB Adapter
+
+**Phase 3: Integration** (Week After)
+- [ ] Step 7: Pipeline Orchestrator
+- [ ] Step 8: CLI Interface
+- [ ] Integration testing
+
+### Next Immediate Actions
+
+**Today:**
+1. Create `src/embedding/config.py`
+2. Create `config/embedding.toml`
+3. Write config tests
+4. Set up PostgreSQL database
+
+**This Week:**
+1. Complete Steps 1-4 (Config + Database)
+2. Run migrations
+3. Test DocStore and Decoder
+
+**Blockers:** None currently
+
+---
+
+## Quick Commands Reference
+
+```bash
+# Setup environment
+uv venv
+source .venv/bin/activate
+uv pip install -r requirements.txt
+uv pip install -r requirements-embedding.txt
+uv pip install -r requirements-dev.txt
+
+# Database migrations
+alembic upgrade head
+alembic downgrade -1
+
+# Run tests
+pytest tests/unit/embedding/ -v
+pytest tests/integration/embedding/ -v
+
+# Ingest documents
+python -m src.embedding.cli ingest <output_dir>
+
+# Search
+python -m src.embedding.cli search "query" --top-k 10
+
+# Format code
+ruff format src/
+ruff check src/
+
+# Type checking
+mypy src/embedding/
 ```
 
 ---
 
-## 10. Timeline & Dependencies
+## Summary
 
-### 10.1 Milestone Schedule
+This plan provides:
+- ✅ Clear **7-step implementation path**
+- ✅ **Complete code examples** for each step
+- ✅ **Validation checklists** to verify progress
+- ✅ **Testing strategy** for quality assurance
+- ✅ **Progress tracking** to stay on schedule
 
-| Phase | Duration | Start | End | Dependencies |
-|-------|----------|-------|-----|--------------|
-| **Phase 1: Core Infrastructure** | 5 days | Day 1 | Day 5 | None |
-| **Phase 2: PostgreSQL Layer** | 5 days | Day 3 | Day 7 | Phase 1 (partial) |
-| **Phase 3: Encoder** | 5 days | Day 6 | Day 10 | Phase 1 |
-| **Phase 4: Vector Store** | 5 days | Day 8 | Day 12 | Phase 1 |
-| **Phase 5: Ingestion** | 5 days | Day 11 | Day 15 | Phases 2, 3, 4 |
-| **Phase 6: Retrieval** | 5 days | Day 13 | Day 17 | Phases 2, 4 |
-| **Phase 7: Integration** | 5 days | Day 16 | Day 20 | All phases |
-
-**Total Duration:** ~4 weeks (20 working days)
-
-### 10.2 Critical Path
-
-1. Port definitions (Phase 1) → Blocks all adapter development
-2. Database schema (Phase 2) → Blocks ingestion and retrieval
-3. Encoder + VectorDB (Phases 3-4) → Blocks pipeline testing
-4. Integration testing (Phase 7) → Validates entire system
-
-### 10.3 Parallel Workstreams
-
-**Week 1:**
-- Stream A: Port interfaces + Registry
-- Stream B: Database schema + Migrations
-
-**Week 2:**
-- Stream A: Encoder implementation
-- Stream B: VectorDB implementation
-- Stream C: DocStore + Decoder
-
-**Week 3:**
-- Stream A: Ingestion pipeline
-- Stream B: Retrieval pipeline
-
-**Week 4:**
-- Integration testing
-- Documentation
-- Performance tuning
-
-### 10.4 External Dependencies
-
-| Dependency | Status | Impact | Mitigation |
-|------------|--------|--------|------------|
-| **PostgreSQL** | Available | CRITICAL | Use Docker for dev |
-| **ONNX Runtime** | Available | HIGH | Pre-download models |
-| **ChromaDB** | Available | HIGH | Fallback to Qdrant |
-| **ArXiv Adapter** | ✅ Complete | HIGH | Already functional |
-| **Future Adapters** | In Progress | MEDIUM | Design for compatibility |
+**Start with Step 1 today** and work through systematically. Each step has everything you need: code, tests, and validation.
 
 ---
 
-## Next Steps
+**Questions?** Check `docs/DEVELOPMENT.md` for workflow or `docs/reference.md` for architecture details.
 
-### Immediate Actions (This Week)
-
-1. **Set up development environment:**
-   ```bash
-   # Create src directory structure
-   mkdir -p src/embedding/adapters
-   
-   # Initialize poetry project
-   cd src
-   poetry init
-   poetry add asyncpg chromadb onnxruntime transformers
-   ```
-
-2. **Create port definitions:**
-   - Define Encoder, VectorDB, Decoder protocols
-   - Document interface contracts
-   - Add type hints
-
-3. **Set up database:**
-   - Create PostgreSQL database
-   - Write Alembic migrations
-   - Test schema creation
-
-4. **Begin encoder implementation:**
-   - Download BGE model
-   - Implement ONNX wrapper
-   - Write unit tests
-
-### Review Points
-
-- **End of Week 1:** Core interfaces + database schema review
-- **End of Week 2:** Adapter implementations code review
-- **End of Week 3:** Pipeline integration review
-- **End of Week 4:** Final system demonstration
-
----
-
-## Appendix
-
-### A. Glossary
-
-| Term | Definition |
-|------|------------|
-| **Chunk** | Fixed-size text segment from document (512-4096 tokens) |
-| **Embedding** | Dense vector representation of text (typically 384-1024 dimensions) |
-| **Vector Store** | Database optimized for similarity search over embeddings |
-| **DocStore** | Relational database storing original text content |
-| **Encoder** | Model that transforms text to embeddings |
-| **Decoder** | Component that retrieves original text from IDs |
-| **Port** | Abstract interface (Python Protocol) |
-| **Adapter** | Concrete implementation of a port |
-| **Registry** | System for discovering and instantiating adapters |
-
-### B. References
-
-- [HEPilot Reference Architecture](./reference.md)
-- [Data Acquisition Specification](../standards/README.md)
-- [BGE Embeddings](https://huggingface.co/BAAI/bge-base-en-v1.5)
-- [ChromaDB Documentation](https://docs.trychroma.com/)
-- [ONNX Runtime](https://onnxruntime.ai/)
-
-### C. Change Log
-
-| Date | Version | Changes |
-|------|---------|---------|
-| 2025-10-20 | 0.1 | Initial plan created |
-
----
-
-**Status:** 📋 Planning Complete — Ready for Implementation  
-**Next Milestone:** Phase 1 - Core Infrastructure  
-**Owner:** Development Team  
-**Reviewers:** Architecture Team
+**Ready to start?** → **Begin with Step 1: Configuration System** ⚙️
