@@ -1,9 +1,9 @@
 # HEPilot Embedding Layer Implementation Plan
 
-**Version:** 1.4.0  
+**Version:** 1.5.0  
 **Date:** October 20, 2025  
 **Branch:** `embedding-dev`  
-**Status:** 🚀 Steps 1-4 Complete - Encoder Implementation Next  
+**Status:** 🚀 Steps 1-5 Complete - ChromaDB Adapter Implementation Next  
 **Note:** Migration infrastructure moved to `src/embedding/` for better modularity
 
 ---
@@ -40,7 +40,8 @@ src/embedding/
 ├── adapters/
 │   ├── db_models.py          # ✅ SQLAlchemy models
 │   ├── postgres_docstore.py  # ✅ PostgreSQL DocStore
-│   ├── postgres_decoder.py   # ✅ PostgreSQL Decoder (NEW)
+│   ├── postgres_decoder.py   # ✅ PostgreSQL Decoder
+│   ├── onnx_bge_encoder.py   # ✅ ONNX BGE Encoder (NEW)
 │   └── __init__.py
 └── examples/
     └── load_config.py        # ✅ Config usage example
@@ -80,8 +81,19 @@ src/embedding/
 - Async context manager support
 - 22 passing unit tests with comprehensive coverage
 
+**ONNX BGE Encoder:** ✅ COMPLETED
+- Text-to-vector transformation using sentence-transformers
+- Configurable model name (no hardcoding) from config.toml
+- Automatic tokenization, context length, padding, truncation
+- Async model loading to avoid blocking
+- Batch encoding support
+- Optional L2 normalization
+- CUDA resource cleanup
+- Health check and lifecycle management
+- 26 passing unit tests with comprehensive coverage
+
 **Port Interfaces Defined:**
-- `Encoder` - Text → Vector transformation
+- `Encoder` - Text → Vector transformation ✅ IMPLEMENTED
 - `VectorDB` - Vector storage and similarity search
 - `Decoder` - Vector ID → Original text retrieval ✅ IMPLEMENTED
 
@@ -103,12 +115,12 @@ src/embedding/
 | 2 | **Database Schema** | PostgreSQL tables for chunks/docs | Medium | ✅ **DONE** |
 | 3 | **PostgreSQL DocStore** | Store original text chunks | Medium | ✅ **DONE** |
 | 4 | **PostgreSQL Decoder** | Retrieve chunks by ID | Medium | ✅ **DONE** |
-| 5 | **ONNX BGE Encoder** | Convert text to vectors | High | ⏭️ Next |
-| 6 | **ChromaDB Adapter** | Store and search vectors | Medium | 📋 Pending |
+| 5 | **ONNX BGE Encoder** | Convert text to vectors | High | ✅ **DONE** |
+| 6 | **ChromaDB Adapter** | Store and search vectors | Medium | ⏭️ Next |
 | 7 | **Pipeline Orchestrator** | Coordinate ingestion/retrieval | High | 📋 Pending |
 
-**Completed:** 4/7 steps (57%)  
-**Estimated Remaining:** ~4 days
+**Completed:** 5/7 steps (71%)  
+**Estimated Remaining:** ~2 days
 
 ### Architecture Overview
 
@@ -948,6 +960,157 @@ def _row_to_chunk_content(self, row: asyncpg.Record) -> ChunkContent:
     }
     
     return ChunkContent(chunk_id=str(row['id']), text=row['text'], ...)
+```
+
+</details>
+
+---
+
+### Step 5: ONNX BGE Encoder 🧠 ✅ COMPLETED
+
+**Goal:** Convert text to vector embeddings
+
+**Status:** ✅ **COMPLETED** (October 20, 2025)
+
+**Files Created:**
+- ✅ `src/embedding/adapters/onnx_bge_encoder.py` - Encoder implementation using sentence-transformers
+- ✅ `tests/unit/embedding/test_encoder.py` - 26 passing unit tests
+
+**What Was Implemented:**
+- `ONNXBGEEncoder` class with configurable model support (no hardcoded model names)
+- Model loading:
+  - `load_model()` - Async model initialization using sentence-transformers
+  - Automatic model download and caching
+  - Device selection (CPU/CUDA) via configuration
+  - Reads `model_name` from config.toml (e.g., "BAAI/bge-base-en-v1.5")
+- Text embedding:
+  - `embed(texts)` - Batch text-to-vector conversion with automatic:
+    - Tokenization (handled by sentence-transformers)
+    - Context length enforcement (max_seq_length)
+    - Padding and truncation
+    - Optional L2 normalization
+  - Returns numpy arrays with float32 precision
+- Model properties:
+  - `dimension` - Embedding dimensionality (e.g., 384 for BGE-base)
+  - `max_tokens` - Maximum sequence length
+- Lifecycle management:
+  - `health_check()` - Verifies model is loaded and operational
+  - `close()` - Cleanup CUDA resources when using GPU
+  - Async context manager support
+
+**Configuration-Driven Design:**
+- Model name configurable in `config/embedding.toml`: `encoder.model_name = "BAAI/bge-base-en-v1.5"`
+- No hardcoded model names in code
+- All encoder settings (device, batch_size, normalize, cache_dir) read from configuration
+- Supports any sentence-transformers compatible model
+
+**Test Results:**
+```
+26 passed in 3.95s
+
+Test Coverage:
+- Initialization (default/custom config)
+- Model loading (success, already loaded, failure)
+- Embedding operations (single/multiple texts, empty list, auto-loading, batching, normalization)
+- Properties (dimension, max_tokens before/after load)
+- Health checks (success, model loading, validation, error handling)
+- Cleanup (CPU/CUDA, no model)
+- Context manager (async with support)
+```
+
+**✅ Validation Checklist:**
+- [x] Model configurable via config.toml (not hardcoded)
+- [x] sentence-transformers handles tokenization automatically
+- [x] Context length enforcement (max_seq_length from model config)
+- [x] Padding/truncation handled by library
+- [x] Async model loading to avoid blocking
+- [x] Batch encoding support
+- [x] Optional L2 normalization
+- [x] CUDA resource cleanup
+- [x] Comprehensive error handling
+- [x] 26 unit tests all passing
+
+---
+
+### Step 5 Implementation Reference (COMPLETED)
+
+<details>
+<summary><b>Key Implementation Details</b> (click to view)</summary>
+
+**Async Model Loading:**
+```python
+async def load_model(self) -> None:
+    """Load model asynchronously in executor to avoid blocking."""
+    if self.model is not None:
+        return
+    
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, self._load_model_sync)
+    
+def _load_model_sync(self) -> None:
+    """Synchronous model loading (runs in executor)."""
+    self.model = SentenceTransformer(
+        self.model_name,
+        cache_folder=str(self.cache_dir),
+        device=self.device
+    )
+    self._dimension = self.model.get_sentence_embedding_dimension()
+    self._max_tokens = self.model.max_seq_length
+```
+
+**Batch Embedding with Auto-Tokenization:**
+```python
+async def embed(self, texts: List[str]) -> NDArray[np.float32]:
+    """Encode texts to vectors (sentence-transformers handles tokenization)."""
+    if not texts:
+        return np.array([], dtype=np.float32).reshape(0, self.dimension)
+    
+    if self.model is None:
+        await self.load_model()
+    
+    # Run in executor to avoid blocking
+    loop = asyncio.get_running_loop()
+    embeddings = await loop.run_in_executor(None, self._encode_sync, texts)
+    
+    return embeddings
+
+def _encode_sync(self, texts: List[str]) -> NDArray[np.float32]:
+    """Synchronous encoding (runs in executor)."""
+    # sentence-transformers handles:
+    # - Tokenization
+    # - Context length (max_seq_length)
+    # - Padding/truncation
+    # - Batch processing
+    embeddings = self.model.encode(
+        texts,
+        batch_size=self.batch_size,
+        normalize_embeddings=self.normalize,
+        convert_to_numpy=True,
+        show_progress_bar=False
+    )
+    return embeddings.astype(np.float32)
+```
+
+**Configuration Integration:**
+```python
+# config/embedding.toml
+[encoder]
+model_name = "BAAI/bge-base-en-v1.5"  # Configurable, not hardcoded!
+device = "cpu"
+batch_size = 32
+normalize = true
+cache_dir = ".cache/models"
+
+# Usage in code
+from src.embedding.config import load_config
+config = load_config()
+encoder = ONNXBGEEncoder(
+    model_name=config.encoder.model_name,  # Read from config
+    device=config.encoder.device,
+    batch_size=config.encoder.batch_size,
+    normalize=config.encoder.normalize,
+    cache_dir=Path(config.encoder.cache_dir)
+)
 ```
 
 </details>
