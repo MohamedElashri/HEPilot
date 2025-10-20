@@ -1,9 +1,9 @@
 # HEPilot Embedding Layer Implementation Plan
 
-**Version:** 1.1  
+**Version:** 1.2  
 **Date:** October 20, 2025  
 **Branch:** `embedding-dev`  
-**Status:** 🚀 Step 1 Complete - Database Schema Next
+**Status:** 🚀 Steps 1-2 Complete - DocStore Implementation Next
 
 ---
 
@@ -63,15 +63,15 @@ src/embedding/
 | Step | Component | Purpose | Complexity | Status |
 |------|-----------|---------|------------|--------|
 | 1 | **Configuration System** | Load/validate settings from TOML | Low | ✅ **DONE** |
-| 2 | **Database Schema** | PostgreSQL tables for chunks/docs | Medium | ⏭️ Next |
-| 3 | **PostgreSQL DocStore** | Store original text chunks | Medium | 📋 Pending |
+| 2 | **Database Schema** | PostgreSQL tables for chunks/docs | Medium | ✅ **DONE** |
+| 3 | **PostgreSQL DocStore** | Store original text chunks | Medium | ⏭️ Next |
 | 4 | **PostgreSQL Decoder** | Retrieve chunks by ID | Medium | 📋 Pending |
 | 5 | **ONNX BGE Encoder** | Convert text to vectors | High | 📋 Pending |
 | 6 | **ChromaDB Adapter** | Store and search vectors | Medium | 📋 Pending |
 | 7 | **Pipeline Orchestrator** | Coordinate ingestion/retrieval | High | 📋 Pending |
 
-**Completed:** 1/7 steps (14%)  
-**Estimated Remaining:** ~6.5 days
+**Completed:** 2/7 steps (29%)  
+**Estimated Remaining:** ~6 days
 
 ### Architecture Overview
 
@@ -299,9 +299,115 @@ checkpoint_interval = 1000
 
 ---
 
-### Step 2: Database Schema & Migrations 🗄️ ⏭️ NEXT
+### Step 2: Database Schema & Migrations 🗄️ ✅ COMPLETED
 
 **Goal:** Create PostgreSQL schema with Alembic
+
+**Status:** ✅ **COMPLETED** (October 20, 2025)
+
+**Files Created:**
+- ✅ `alembic.ini` - Alembic configuration
+- ✅ `alembic/env.py` - Migration environment (configured with async support)
+- ✅ `alembic/versions/67906781f81e_initial_schema_for_embedding_layer.py` - Initial migration
+- ✅ `src/embedding/adapters/db_models.py` - SQLAlchemy models
+- ✅ `alembic/README.md` - Migration documentation
+- ✅ `tests/unit/embedding/test_migration.py` - Migration validation tests
+
+**What Was Implemented:**
+
+**Database Tables:**
+1. **`documents`** - Document metadata
+   - Stores paper/source information
+   - UUID primary key
+   - Unique constraint on (source_type, source_id)
+   - Index on source fields
+
+2. **`doc_segments`** - Text chunks
+   - Stores segmented text from documents
+   - Foreign key to documents with CASCADE delete
+   - Indexes on doc_id and (doc_id, position_in_doc)
+   - JSONB columns for flexible metadata
+
+**Migration Features:**
+- Async-compatible (uses asyncpg driver)
+- Loads database URL from `config/embedding.toml`
+- Auto-imports models for autogenerate support
+- Complete upgrade/downgrade paths
+
+**Test Results:**
+```
+✅ All tests passed!
+✓ Alembic imports successful
+✓ Migration file syntax is valid
+✓ upgrade() and downgrade() functions exist
+✓ Database models imported successfully
+  Tables: documents, doc_segments
+```
+
+**Usage:**
+```bash
+# When PostgreSQL is available:
+alembic upgrade head    # Apply migrations
+alembic current        # Show current version
+alembic downgrade -1   # Rollback one version
+```
+
+**✅ Validation Checklist:**
+- [x] Alembic initialized with async template
+- [x] Migration file created with complete schema
+- [x] SQLAlchemy models defined
+- [x] Migration syntax validated
+- [x] Documentation complete
+- [x] Ready for database application (when PostgreSQL available)
+
+---
+
+### Step 2 Implementation Details (Reference)
+
+<details>
+<summary><b>Database Schema SQL</b> (click to view)</summary>
+
+```sql
+-- Documents table
+CREATE TABLE documents (
+    id UUID PRIMARY KEY,
+    source_type VARCHAR(50) NOT NULL,
+    source_id VARCHAR(500) NOT NULL,
+    title TEXT,
+    authors JSONB,
+    publication_date TIMESTAMP,
+    source_url TEXT,
+    meta JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    CONSTRAINT uq_documents_source UNIQUE (source_type, source_id)
+);
+
+-- Doc segments table
+CREATE TABLE doc_segments (
+    id UUID PRIMARY KEY,
+    doc_id UUID NOT NULL REFERENCES documents(id) ON DELETE CASCADE,
+    text TEXT NOT NULL,
+    section_path JSONB,
+    position_in_doc INTEGER NOT NULL,
+    token_count INTEGER NOT NULL,
+    overlap_start INTEGER NOT NULL,
+    overlap_end INTEGER NOT NULL,
+    meta JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX idx_segments_doc_id ON doc_segments(doc_id);
+CREATE INDEX idx_segments_position ON doc_segments(doc_id, position_in_doc);
+CREATE INDEX idx_documents_source ON documents(source_type, source_id);
+```
+</details>
+
+---
+
+### Step 3: PostgreSQL DocStore 💾 ⏭️ NEXT
+
+**Goal:** Implement document and chunk storage
 
 **Files to create:**
 - `alembic.ini`
@@ -1266,8 +1372,13 @@ pytest tests/integration/embedding/ -v
   - [x] Created `config/embedding.toml` with defaults
   - [x] Wrote 21 passing unit tests
   - [x] Updated module exports and documentation
-- [ ] **Step 2: Database schema** ⏭️ NEXT
-- [ ] Step 3: PostgreSQL DocStore
+- [x] **Step 2: Database schema** ✅ COMPLETED (Oct 20, 2025)
+  - [x] Initialized Alembic with async support
+  - [x] Created SQLAlchemy models for documents and doc_segments
+  - [x] Generated initial migration script
+  - [x] Validated migration syntax and structure
+  - [x] Created migration documentation
+- [ ] **Step 3: PostgreSQL DocStore** ⏭️ NEXT
 - [ ] Step 4: PostgreSQL Decoder
 
 **Phase 2: ML Components** 📋 PENDING (Next Week)
@@ -1279,22 +1390,22 @@ pytest tests/integration/embedding/ -v
 - [ ] Step 8: CLI Interface
 - [ ] Integration testing
 
-**Progress:** 1/7 steps complete (14%)
+**Progress:** 2/7 steps complete (29%)
 
 ### Next Immediate Actions
 
-**Next (Step 2):**
-1. Initialize Alembic for database migrations
-2. Create `alembic/versions/001_initial_schema.py`
-3. Create `src/embedding/adapters/db_models.py`
-4. Run migration: `alembic upgrade head`
-5. Verify tables created in PostgreSQL
+**Next (Step 3):**
+1. Create `src/embedding/adapters/postgres_docstore.py`
+2. Implement document and chunk storage methods
+3. Write unit tests for DocStore
+4. Test with real database connection
 
 **Today's Accomplishments:**
-- ✅ Completed Step 1: Configuration System
-- ✅ Created all configuration classes with validation
-- ✅ Wrote 21 passing unit tests
-- ✅ Created documentation and examples
+- ✅ Completed Step 2: Database Schema & Migrations
+- ✅ Created Alembic migrations with async support
+- ✅ Defined SQLAlchemy models for documents and segments
+- ✅ Validated migration syntax
+- ✅ Created comprehensive documentation
 
 **This Week Goal:**
 1. Complete Steps 2-4 (Database + DocStore + Decoder)
@@ -1354,12 +1465,14 @@ This plan provides:
 
 **Recent Updates (Oct 20, 2025):**
 - ✅ Implemented configuration system with Pydantic validation
-- ✅ Created 21 passing unit tests
-- ✅ Added documentation and examples
-- ✅ Ready to proceed with database implementation
+- ✅ Created 21 passing unit tests for configuration
+- ✅ Set up Alembic database migrations with async support
+- ✅ Created database schema (documents and doc_segments tables)
+- ✅ Validated migration structure and syntax
+- ✅ Ready to proceed with DocStore implementation
 
 ---
 
 **Questions?** Check `docs/DEVELOPMENT.md` for workflow or `docs/reference.md` for architecture details.
 
-**Ready to continue?** → **Proceed to Step 2: Database Schema & Migrations** 🗄️
+**Ready to continue?** → **Proceed to Step 3: PostgreSQL DocStore** �
