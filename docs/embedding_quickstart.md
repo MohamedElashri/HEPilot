@@ -55,16 +55,14 @@ mkdir -p alembic/versions
 ### 2. Initialize Python Environment
 
 ```bash
-# Create pyproject.toml
-cd src
-poetry init --name hepilot-embedding --python "^3.11"
+# Create virtual environment
+uv venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 
-# Add dependencies
-poetry add asyncpg chromadb onnxruntime transformers sentence-transformers
-poetry add alembic pydantic pydantic-settings rich typer tqdm numpy
-
-# Add dev dependencies
-poetry add --group dev pytest pytest-asyncio pytest-cov mypy ruff
+# Install dependencies
+uv pip install -r requirements.txt
+uv pip install -r requirements-embedding.txt
+uv pip install -r requirements-dev.txt
 ```
 
 ### 3. First Files to Create
