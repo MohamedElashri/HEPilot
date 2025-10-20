@@ -1,9 +1,9 @@
-## md planning
-Agent.md
-Adapter.md
-Adapter_config.md
-Adapter_plan.md
-plan.md
+## md planning (exclude from root, but allow in docs/)
+/Agent.md
+/Adapter.md
+/Adapter_config.md
+/Adapter_plan.md
+/plan.md
 
 ## logs
 logs
