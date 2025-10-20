@@ -11,3 +11,11 @@ logs
 
 ## output
 *_output
+
+
+## python cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ipynb_checkpoints

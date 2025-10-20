@@ -1,0 +1,31 @@
+# HEPilot Embedding Layer Configuration
+# ======================================
+
+[encoder]
+# Text encoder settings
+type = "onnx_bge"
+model_name = "BAAI/bge-base-en-v1.5"
+batch_size = 32
+device = "cpu"  # Options: "cpu" or "cuda"
+normalize = true
+cache_dir = ".cache/models"
+
+[vectordb]
+# Vector database settings
+type = "chroma"
+persist_directory = ".data/chroma"
+collection_name = "hepilot"
+distance_metric = "cosine"  # Options: "cosine", "l2", "ip"
+
+[docstore]
+# Document storage settings
+type = "postgres"
+database_url = "postgresql+asyncpg://hep:hep@localhost/hepilot"
+pool_size = 10
+max_overflow = 20
+
+[pipeline]
+# Ingestion pipeline settings
+batch_size = 100
+max_workers = 4
+checkpoint_interval = 1000

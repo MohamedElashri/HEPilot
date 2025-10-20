@@ -1,9 +1,9 @@
 # HEPilot Embedding Layer Implementation Plan
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Date:** October 20, 2025  
 **Branch:** `embedding-dev`  
-**Status:** 🎯 Ready to Implement
+**Status:** 🚀 Step 1 Complete - Database Schema Next
 
 ---
 
@@ -24,12 +24,24 @@
 **Project Structure:**
 ```
 src/embedding/
-├── __init__.py
-├── ports.py          # ✅ Protocol interfaces defined
-├── registry.py       # ✅ Adapter discovery system  
-├── exceptions.py     # ✅ Custom exceptions
-└── adapters/         # ← We'll add implementations here
+├── __init__.py           # ✅ Module exports with config classes
+├── config.py             # ✅ Configuration system (NEW)
+├── ports.py              # ✅ Protocol interfaces defined
+├── registry.py           # ✅ Adapter discovery system  
+├── exceptions.py         # ✅ Custom exceptions
+├── README.md             # ✅ Configuration documentation (NEW)
+├── examples/
+│   └── load_config.py    # ✅ Config usage example (NEW)
+└── adapters/             # ← We'll add implementations here
 ```
+
+**Configuration System:** ✅ COMPLETED
+- `EncoderConfig` - Text encoder settings with validation
+- `VectorDBConfig` - Vector database settings with validation
+- `DocStoreConfig` - PostgreSQL settings with validation
+- `PipelineConfig` - Ingestion pipeline settings
+- `load_config()` - TOML configuration loader
+- All validated with Pydantic (21 passing unit tests)
 
 **Port Interfaces Defined:**
 - `Encoder` - Text → Vector transformation
@@ -48,17 +60,18 @@ src/embedding/
 
 ### The 7 Components
 
-| Step | Component | Purpose | Complexity | Time |
-|------|-----------|---------|------------|------|
-| 1 | **Configuration System** | Load/validate settings from TOML | Low | 0.5 day |
-| 2 | **Database Schema** | PostgreSQL tables for chunks/docs | Medium | 0.5 day |
-| 3 | **PostgreSQL DocStore** | Store original text chunks | Medium | 1 day |
-| 4 | **PostgreSQL Decoder** | Retrieve chunks by ID | Medium | 1 day |
-| 5 | **ONNX BGE Encoder** | Convert text to vectors | High | 1-2 days |
-| 6 | **ChromaDB Adapter** | Store and search vectors | Medium | 1 day |
-| 7 | **Pipeline Orchestrator** | Coordinate ingestion/retrieval | High | 1-2 days |
+| Step | Component | Purpose | Complexity | Status |
+|------|-----------|---------|------------|--------|
+| 1 | **Configuration System** | Load/validate settings from TOML | Low | ✅ **DONE** |
+| 2 | **Database Schema** | PostgreSQL tables for chunks/docs | Medium | ⏭️ Next |
+| 3 | **PostgreSQL DocStore** | Store original text chunks | Medium | 📋 Pending |
+| 4 | **PostgreSQL Decoder** | Retrieve chunks by ID | Medium | 📋 Pending |
+| 5 | **ONNX BGE Encoder** | Convert text to vectors | High | 📋 Pending |
+| 6 | **ChromaDB Adapter** | Store and search vectors | Medium | 📋 Pending |
+| 7 | **Pipeline Orchestrator** | Coordinate ingestion/retrieval | High | 📋 Pending |
 
-**Total:** ~7 days for core implementation
+**Completed:** 1/7 steps (14%)  
+**Estimated Remaining:** ~6.5 days
 
 ### Architecture Overview
 
@@ -135,19 +148,57 @@ CREATE INDEX idx_documents_source ON documents(source_type, source_id);
 
 ## Step-by-Step Implementation
 
-### Step 1: Configuration System ⚙️
+### Step 1: Configuration System ⚙️ ✅ COMPLETED
 
 **Goal:** Load and validate configuration from TOML files
 
-**Files to create:**
-- `src/embedding/config.py`
-- `config/embedding.toml`
-- `tests/unit/embedding/test_config.py`
+**Status:** ✅ **COMPLETED** (October 20, 2025)
 
-**Implementation:**
+**Files Created:**
+- ✅ `src/embedding/config.py` - Configuration classes with Pydantic validation
+- ✅ `config/embedding.toml` - Default configuration file
+- ✅ `tests/unit/embedding/test_config.py` - 21 passing unit tests
+- ✅ `src/embedding/__init__.py` - Updated with exports
+- ✅ `src/embedding/README.md` - Configuration documentation
+- ✅ `src/embedding/examples/load_config.py` - Usage example
+
+**What Was Implemented:**
+- `EncoderConfig` - Text encoder settings (batch_size: 1-256, device: cpu/cuda)
+- `VectorDBConfig` - Vector database settings (metric: cosine/l2/ip)
+- `DocStoreConfig` - PostgreSQL settings with URL validation
+- `PipelineConfig` - Pipeline settings (batch_size: 1-1000, workers: 1-32)
+- `EmbeddingConfig` - Main configuration container
+- `load_config()` - TOML loader with comprehensive validation
+
+**Test Results:**
+```
+21 passed in 0.13s
+```
+
+**Usage Example:**
+```python
+from pathlib import Path
+from src.embedding import load_config
+
+config = load_config(Path("config/embedding.toml"))
+print(f"Model: {config.encoder.model_name}")
+print(f"Database: {config.docstore.database_url}")
+```
+
+**✅ Validation Checklist:**
+- [x] Configuration loads without errors
+- [x] Invalid values raise ValidationError
+- [x] Default values work correctly
+- [x] Unit tests pass (21/21)
+- [x] No linting errors
+- [x] Documentation complete
+
+---
+
+### Step 1 Implementation Details (Reference)
 
 <details>
-<summary><b>src/embedding/config.py</b> (click to expand)</summary>
+<summary><b>src/embedding/config.py</b> (click to view)</summary>
 
 ```python
 """Configuration management for embedding layer."""
@@ -246,15 +297,9 @@ checkpoint_interval = 1000
 ```
 </details>
 
-**✅ Validation Checklist:**
-- [ ] Configuration loads without errors
-- [ ] Invalid values raise ValidationError
-- [ ] Default values work
-- [ ] Unit tests pass
-
 ---
 
-### Step 2: Database Schema & Migrations 🗄️
+### Step 2: Database Schema & Migrations 🗄️ ⏭️ NEXT
 
 **Goal:** Create PostgreSQL schema with Alembic
 
@@ -1208,40 +1253,53 @@ pytest tests/integration/embedding/ -v
 
 ### Current Status
 
-**Phase 0: Foundation** ✅
+**Phase 0: Foundation** ✅ COMPLETED
 - [x] Project structure
 - [x] Port interfaces
 - [x] Registry system
 - [x] Exception classes
 - [x] Documentation
 
-**Phase 1: Core Components** (This Week)
-- [ ] Step 1: Configuration system
-- [ ] Step 2: Database schema
+**Phase 1: Core Components** 🚧 IN PROGRESS (This Week)
+- [x] **Step 1: Configuration system** ✅ COMPLETED (Oct 20, 2025)
+  - [x] Created `src/embedding/config.py` with Pydantic models
+  - [x] Created `config/embedding.toml` with defaults
+  - [x] Wrote 21 passing unit tests
+  - [x] Updated module exports and documentation
+- [ ] **Step 2: Database schema** ⏭️ NEXT
 - [ ] Step 3: PostgreSQL DocStore
 - [ ] Step 4: PostgreSQL Decoder
 
-**Phase 2: ML Components** (Next Week)
+**Phase 2: ML Components** 📋 PENDING (Next Week)
 - [ ] Step 5: ONNX BGE Encoder
 - [ ] Step 6: ChromaDB Adapter
 
-**Phase 3: Integration** (Week After)
+**Phase 3: Integration** 📋 PENDING (Week After)
 - [ ] Step 7: Pipeline Orchestrator
 - [ ] Step 8: CLI Interface
 - [ ] Integration testing
 
+**Progress:** 1/7 steps complete (14%)
+
 ### Next Immediate Actions
 
-**Today:**
-1. Create `src/embedding/config.py`
-2. Create `config/embedding.toml`
-3. Write config tests
-4. Set up PostgreSQL database
+**Next (Step 2):**
+1. Initialize Alembic for database migrations
+2. Create `alembic/versions/001_initial_schema.py`
+3. Create `src/embedding/adapters/db_models.py`
+4. Run migration: `alembic upgrade head`
+5. Verify tables created in PostgreSQL
 
-**This Week:**
-1. Complete Steps 1-4 (Config + Database)
-2. Run migrations
-3. Test DocStore and Decoder
+**Today's Accomplishments:**
+- ✅ Completed Step 1: Configuration System
+- ✅ Created all configuration classes with validation
+- ✅ Wrote 21 passing unit tests
+- ✅ Created documentation and examples
+
+**This Week Goal:**
+1. Complete Steps 2-4 (Database + DocStore + Decoder)
+2. Full database integration tested
+3. Ready for ML components next week
 
 **Blockers:** None currently
 
@@ -1290,10 +1348,18 @@ This plan provides:
 - ✅ **Testing strategy** for quality assurance
 - ✅ **Progress tracking** to stay on schedule
 
-**Start with Step 1 today** and work through systematically. Each step has everything you need: code, tests, and validation.
+**Current Progress:**
+- ✅ **Step 1 COMPLETED** - Configuration system fully implemented and tested
+- ⏭️ **Step 2 NEXT** - Database schema and migrations
+
+**Recent Updates (Oct 20, 2025):**
+- ✅ Implemented configuration system with Pydantic validation
+- ✅ Created 21 passing unit tests
+- ✅ Added documentation and examples
+- ✅ Ready to proceed with database implementation
 
 ---
 
 **Questions?** Check `docs/DEVELOPMENT.md` for workflow or `docs/reference.md` for architecture details.
 
-**Ready to start?** → **Begin with Step 1: Configuration System** ⚙️
+**Ready to continue?** → **Proceed to Step 2: Database Schema & Migrations** 🗄️
