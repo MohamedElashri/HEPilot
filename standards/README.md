@@ -73,10 +73,10 @@ output/
 ```
 
 **Critical Rules:**
-- ✅ **MUST**: Content in `.md` files, metadata in `.json` files
-- ✅ **MUST**: `chunk_NNNN.md` files are self-contained for RAG embedding
-- ✅ **MUST**: `full_document.md` for provenance/archival, SHOULD NOT be used for retrieval
-- ❌ **MUST NOT**: Embed document or chunk content in JSON metadata files
+- **MUST**: Content in `.md` files, metadata in `.json` files
+- **MUST**: `chunk_NNNN.md` files are self-contained for RAG embedding
+- **MUST**: `full_document.md` for provenance/archival, SHOULD NOT be used for retrieval
+- **MUST NOT**: Embed document or chunk content in JSON metadata files
 
 **Why Separate Content from Metadata?**
 - **Efficiency:** Query metadata without loading large content files
@@ -98,10 +98,10 @@ cat schemas/chunk_output.schema.json | jq '.properties.chunk_id.description'
 ```
 
 **Each schema includes:**
-- ✅ Field-level descriptions with MUST/SHOULD/MAY requirements
-- ✅ Algorithm specifications and implementation guidance
-- ✅ Cross-references to related schemas and concepts
-- ✅ Validation rules and constraints
+- Field-level descriptions with MUST/SHOULD/MAY requirements
+- Algorithm specifications and implementation guidance
+- Cross-references to related schemas and concepts
+- Validation rules and constraints
 
 ---
 
@@ -129,7 +129,7 @@ See [`adapter_config.schema.json`](./schemas/adapter_config.schema.json) for com
 ### Credentials
 See [`credentials.schema.json`](./schemas/credentials.schema.json) for authentication.
 
-**⚠️ Security:** `credentials.json` **MUST NOT** be committed to version control.
+** Security:** `credentials.json` **MUST NOT** be committed to version control.
 
 Supported methods: API keys, bearer tokens, OAuth2 client credentials, x509 certificates.
 
