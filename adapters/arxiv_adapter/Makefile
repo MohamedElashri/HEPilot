@@ -1,7 +1,7 @@
 # HEPilot ArXiv Adapter Makefile
 # Alternative interface for common tasks (complements run.sh)
 
-.PHONY: help dev prod clean clean-cache clean-venv clean-all clean-full quick-clean reset nuke
+.PHONY: help dev prod download process clean clean-cache clean-venv clean-all clean-full quick-clean reset nuke
 
 # Default target
 .DEFAULT_GOAL := help
@@ -31,6 +31,14 @@ dev: ## Run pipeline in development mode (5 papers)
 prod: ## Run pipeline in production mode
 	@echo "Running in production mode via run.sh..."
 	@./run.sh prod
+
+download: ## Download papers only (no processing) in production mode
+	@echo "Running download-only mode via run.sh..."
+	@./run.sh download
+
+process: ## Process already downloaded PDFs
+	@echo "Running process-only mode via run.sh..."
+	@./run.sh process
 
 ##@ Cleanup
 

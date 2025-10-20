@@ -209,12 +209,14 @@ class ArxivAdapterPipeline:
         
         return to_download, to_process_from_cache, fully_cached
     
-    def run(self, query: str = "all:lhcb") -> bool:
+    def run(self, query: str = "all:lhcb", download_only: bool = False, process_only: bool = False) -> bool:
         """
         Run the complete pipeline.
         
         Args:
             query: arXiv search query (default: all:lhcb for LHCb papers across all categories)
+            download_only: If True, only download PDFs without processing
+            process_only: If True, only process already downloaded PDFs
             
         Returns:
             True if pipeline succeeded, False otherwise
@@ -229,13 +231,20 @@ class ArxivAdapterPipeline:
             self.metadata_manager.log("INFO", "pipeline", "Starting ArXiv adapter pipeline", {
                 "query": query,
                 "max_results": self.max_results,
-                "cache_enabled": self.enable_cache
+                "cache_enabled": self.enable_cache,
+                "download_only": download_only,
+                "process_only": process_only
             })
             if self.enable_cache and self.cache_manager:
                 cache_stats = self.cache_manager.get_cache_stats()
                 self.metadata_manager.log("INFO", "cache", f"Cache initialized with {cache_stats['total_papers']} existing entries")
                 if self.verbose:
                     print(f"\n[CACHE] Loaded cache with {cache_stats['total_papers']} existing papers")
+            
+            # Process-only mode: skip discovery, only process downloaded PDFs
+            if process_only:
+                return self._run_process_only_mode()
+            
             discovered: List[DiscoveredDocument] = self._run_discovery(query)
             if not discovered:
                 print_status("WARNING", "No documents discovered")
@@ -300,25 +309,33 @@ class ArxivAdapterPipeline:
                                     )
                                     if self.verbose:
                                         print(f"[CACHE] ✓ Updated download status: {disc.arxiv_id} {disc.arxiv_version}")
-                    print(f"\nProcessing {len(acquired)} papers...\n")
-                    try:
-                        from tqdm import tqdm
-                        papers_iter = tqdm(zip(to_download, acquired), total=len(acquired), desc="Processing", disable=self.verbose)
-                    except ImportError:
-                        papers_iter = zip(to_download, acquired)
-                    for disc, acq in papers_iter:
-                        if acq.download_status != "success":
-                            continue
-                        if self.enable_cache and self.cache_manager:
-                            success: bool = self._process_document_with_cache(disc, acq, catalog_entries)
-                        else:
-                            success: bool = self._process_document(disc, acq, catalog_entries)
-                        if not success:
-                            self.metadata_manager.log("WARNING", "pipeline", 
-                                f"Failed to process document: {disc.title}")
-                            if self.enable_cache and self.cache_manager and disc.arxiv_id:
-                                self.cache_manager.update_processing_status(disc.arxiv_id, "failed")
-            if to_process_from_cache and self.enable_cache and self.cache_manager:
+                    
+                    # Skip processing in download-only mode
+                    if download_only:
+                        print(f"\n{Colors.GREEN}✓ Downloaded {len(acquired)} papers (processing skipped){Colors.RESET}\n")
+                        self.metadata_manager.log("INFO", "pipeline", "Download-only mode: processing skipped")
+                    else:
+                        print(f"\nProcessing {len(acquired)} papers...\n")
+                        try:
+                            from tqdm import tqdm
+                            papers_iter = tqdm(zip(to_download, acquired), total=len(acquired), desc="Processing", disable=self.verbose)
+                        except ImportError:
+                            papers_iter = zip(to_download, acquired)
+                        for disc, acq in papers_iter:
+                            if acq.download_status != "success":
+                                continue
+                            if self.enable_cache and self.cache_manager:
+                                success: bool = self._process_document_with_cache(disc, acq, catalog_entries)
+                            else:
+                                success: bool = self._process_document(disc, acq, catalog_entries)
+                            if not success:
+                                self.metadata_manager.log("WARNING", "pipeline", 
+                                    f"Failed to process document: {disc.title}")
+                                if self.enable_cache and self.cache_manager and disc.arxiv_id:
+                                    self.cache_manager.update_processing_status(disc.arxiv_id, "failed")
+            
+            # Skip retry processing in download-only mode
+            if to_process_from_cache and self.enable_cache and self.cache_manager and not download_only:
                 print(f"\n{Colors.CYAN}Processing {len(to_process_from_cache)} papers from cache...{Colors.RESET}\n")
                 try:
                     from tqdm import tqdm
@@ -368,6 +385,149 @@ class ArxivAdapterPipeline:
             return True
         except Exception as e:
             self.metadata_manager.log("ERROR", "pipeline", f"Pipeline failed: {str(e)}")
+            self._save_log()
+            return False
+    
+    def _run_process_only_mode(self) -> bool:
+        """
+        Process-only mode: Find and process all downloaded PDFs that haven't been processed yet.
+        
+        Returns:
+            True if processing succeeded, False otherwise
+        """
+        try:
+            print_header("Process-Only Mode")
+            print(f"{Colors.CYAN}Scanning for unprocessed PDFs...{Colors.RESET}\n")
+            
+            downloads_dir = self.output_dir / "downloads"
+            if not downloads_dir.exists():
+                print_status("WARNING", "Downloads directory not found. No PDFs to process.")
+                return False
+            
+            # Find all downloaded PDFs
+            pdf_files = list(downloads_dir.glob("*.pdf"))
+            if not pdf_files:
+                print_status("WARNING", "No PDF files found in downloads directory")
+                return False
+            
+            catalog_entries: List[Dict[str, Any]] = []
+            unprocessed_count = 0
+            
+            # Check each PDF to see if it needs processing
+            for pdf_path in pdf_files:
+                # Extract document_id from filename (format: arxiv_<uuid>.pdf)
+                filename = pdf_path.stem
+                if not filename.startswith("arxiv_"):
+                    continue
+                
+                document_id_str = filename.replace("arxiv_", "")
+                try:
+                    document_id = UUID(document_id_str)
+                except ValueError:
+                    if self.verbose:
+                        print(f"{Colors.YELLOW}[SKIP]{Colors.RESET} Invalid UUID in filename: {filename}")
+                    continue
+                
+                # Check if already processed (has chunks directory with content)
+                output_dir = self.output_dir / "documents" / f"arxiv_{document_id}"
+                chunks_dir = output_dir / "chunks"
+                has_chunks = chunks_dir.exists() and any(chunks_dir.glob("chunk_*.md"))
+                
+                if has_chunks:
+                    # Already processed, load into catalog
+                    if self.verbose:
+                        print(f"[SKIP] Already processed: {filename}")
+                    # Load existing catalog entry if available
+                    doc_metadata_path = output_dir / "document_metadata.json"
+                    if doc_metadata_path.exists():
+                        import json
+                        with open(doc_metadata_path, 'r', encoding='utf-8') as f:
+                            doc_metadata = json.load(f)
+                        catalog_entries.append({
+                            "document_id": str(document_id),
+                            "title": doc_metadata.get("title", "Unknown"),
+                            "arxiv_id": doc_metadata.get("arxiv_id"),
+                            "source_url": doc_metadata.get("source_url", ""),
+                            "document_dir": str(output_dir)
+                        })
+                    continue
+                
+                # Need to process this PDF
+                unprocessed_count += 1
+                
+                # Check cache for metadata
+                arxiv_id = None
+                arxiv_version = None
+                source_url = None
+                title = f"Document {document_id_str[:8]}"
+                
+                if self.enable_cache and self.cache_manager:
+                    # Try to find this document in cache by document_id
+                    cache_stats = self.cache_manager.get_cache_stats()
+                    for cached_arxiv_id, cached_entry in self.cache_manager.cache.items():
+                        if cached_entry.document_id == document_id_str:
+                            arxiv_id = cached_arxiv_id
+                            arxiv_version = cached_entry.version
+                            source_url = cached_entry.source_url
+                            title = cached_entry.title
+                            break
+                
+                # Create minimal DiscoveredDocument for processing
+                discovered_doc = DiscoveredDocument(
+                    document_id=document_id,
+                    title=title,
+                    source_url=source_url or f"file://{pdf_path}",
+                    discovery_timestamp=datetime.now(timezone.utc),
+                    estimated_size=pdf_path.stat().st_size,
+                    arxiv_id=arxiv_id,
+                    arxiv_version=arxiv_version
+                )
+                
+                # Create AcquiredDocument from existing file
+                acquired_doc = AcquiredDocument(
+                    document_id=document_id,
+                    local_path=str(pdf_path),
+                    file_hash_sha256="",  # Will be calculated if needed
+                    file_hash_sha512="",
+                    file_size=pdf_path.stat().st_size,
+                    download_timestamp=datetime.now(timezone.utc),
+                    download_status="success",
+                    retry_count=0,
+                    validation_status="passed",
+                    arxiv_id=arxiv_id,
+                    arxiv_version=arxiv_version
+                )
+                
+                # Process the document
+                print(f"{Colors.CYAN}Processing:{Colors.RESET} {title}")
+                if self.enable_cache and self.cache_manager and arxiv_id:
+                    success = self._process_document_with_cache(discovered_doc, acquired_doc, catalog_entries)
+                else:
+                    success = self._process_document(discovered_doc, acquired_doc, catalog_entries)
+                
+                if not success:
+                    self.metadata_manager.log("WARNING", "processing", 
+                        f"Failed to process: {title}")
+            
+            # Save outputs
+            self._save_catalog(catalog_entries)
+            self._save_log()
+            
+            print(f"\n{Colors.GREEN}✓ Process-only mode completed{Colors.RESET}")
+            print(f"  Processed: {unprocessed_count}")
+            print(f"  Skipped (already processed): {len(pdf_files) - unprocessed_count}")
+            print(f"  Total catalog entries: {len(catalog_entries)}\n")
+            
+            self.metadata_manager.log("INFO", "pipeline", "Process-only mode completed", {
+                "processed": unprocessed_count,
+                "skipped": len(pdf_files) - unprocessed_count,
+                "total_catalog_entries": len(catalog_entries)
+            })
+            
+            return True
+            
+        except Exception as e:
+            self.metadata_manager.log("ERROR", "pipeline", f"Process-only mode failed: {str(e)}")
             self._save_log()
             return False
     
@@ -619,7 +779,23 @@ def main() -> int:
         action="store_true",
         help="Disable caching system (reprocess all papers)"
     )
+    parser.add_argument(
+        "--download-only",
+        action="store_true",
+        help="Download PDFs only, skip processing"
+    )
+    parser.add_argument(
+        "--process-only",
+        action="store_true",
+        help="Process already downloaded PDFs only, skip discovery and download"
+    )
     args = parser.parse_args()
+    
+    # Validate mutually exclusive options
+    if args.download_only and args.process_only:
+        print("ERROR: --download-only and --process-only cannot be used together")
+        return 1
+    
     max_results: Optional[int] = args.max_results
     if args.dev:
         max_results = 5
@@ -630,7 +806,11 @@ def main() -> int:
         enable_cache=not args.no_cache,
         verbose=args.dev or args.max_results is not None
     )
-    success: bool = pipeline.run(query=args.query)
+    success: bool = pipeline.run(
+        query=args.query,
+        download_only=args.download_only,
+        process_only=args.process_only
+    )
     return 0 if success else 1
 
 

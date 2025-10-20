@@ -32,7 +32,8 @@ class ArxivDiscovery:
         self.include_authors: bool = include_authors
         self.api_url: str = "https://export.arxiv.org/api/query"
         self.page_size: int = 100
-        self.delay_seconds: float = 3.0
+        self.delay_seconds: float = 4.0
+        self.last_request_time: float = 0.0  # Track last request time for rate limiting
         self.session: requests.Session = requests.Session()
         self.session.headers.update({"User-Agent": "HEPilot-ArXiv-Adapter/1.0"})
     
@@ -75,7 +76,7 @@ class ArxivDiscovery:
             if start >= total_results:
                 break
             
-            time.sleep(self.delay_seconds)
+            # Rate limiting is now handled in _fetch_page() before each request
         
         return discovered
     
@@ -103,7 +104,18 @@ class ArxivDiscovery:
         
         logger.info(f"Requesting page (start: {start}, max: {self.page_size}): {self.api_url}")
         
+        # Enforce rate limiting before making request
+        current_time: float = time.time()
+        time_since_last_request: float = current_time - self.last_request_time
+        
+        if self.last_request_time > 0 and time_since_last_request < self.delay_seconds:
+            sleep_time: float = self.delay_seconds - time_since_last_request
+            logger.info(f"Rate limiting: waiting {sleep_time:.1f}s before request...")
+            time.sleep(sleep_time)
+        
         try:
+            # Update timestamp before making request
+            self.last_request_time = time.time()
             response: requests.Response = self.session.get(self.api_url, params=params, timeout=30)
             response.raise_for_status()
             

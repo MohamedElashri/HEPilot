@@ -4,8 +4,10 @@
 ## ArXiv Adapter Control Script
 ##
 ## Usage:
-##   ./run.sh dev    - Development mode (5 papers)
-##   ./run.sh prod   - Production mode (All papers)
+##   ./run.sh dev       - Development mode (5 papers)
+##   ./run.sh prod      - Production mode (All papers)
+##   ./run.sh download  - Download papers only (no processing)
+##   ./run.sh process   - Process already downloaded PDFs
 ##
 
 set -e
@@ -90,8 +92,21 @@ elif [ "$MODE" = "prod" ]; then
         --config adapter_config.json \
         --output arxiv_output \
         --query "all:lhcb"
+elif [ "$MODE" = "download" ]; then
+    echo "Running in DOWNLOAD-ONLY mode (All papers, no processing)"
+    python3 main.py \
+        --config adapter_config.json \
+        --output arxiv_output \
+        --query "all:lhcb" \
+        --download-only
+elif [ "$MODE" = "process" ]; then
+    echo "Running in PROCESS-ONLY mode (Process downloaded PDFs)"
+    python3 main.py \
+        --config adapter_config.json \
+        --output arxiv_output \
+        --process-only
 else
-    echo "ERROR: Invalid mode '$MODE'. Use 'dev' or 'prod'"
+    echo "ERROR: Invalid mode '$MODE'. Use 'dev', 'prod', 'download', or 'process'"
     exit 1
 fi
 

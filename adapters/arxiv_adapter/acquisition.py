@@ -19,14 +19,14 @@ from models import DiscoveredDocument, AcquiredDocument
 class ArxivAcquisition:
     """Downloads and verifies ArXiv papers."""
     
-    def __init__(self, download_dir: Path, verbose: bool = False, delay_seconds: float = 3.0) -> None:
+    def __init__(self, download_dir: Path, verbose: bool = False, delay_seconds: float = 4.0) -> None:
         """
         Initialize acquisition module.
         
         Args:
             download_dir: Directory to store downloaded PDFs
             verbose: Enable verbose output
-            delay_seconds: Delay between downloads to avoid rate limiting (default: 3.0s)
+            delay_seconds: Delay between downloads to avoid rate limiting (default: 4.0s)
         """
         self.download_dir: Path = download_dir
         self.download_dir.mkdir(parents=True, exist_ok=True)
@@ -155,7 +155,7 @@ class ArxivAcquisition:
     
     def _download_with_backoff(self, url: str, local_path: Path, retry_count: int) -> None:
         """
-        Download file with rate limiting - ensures minimum 3 seconds between requests.
+        Download file with rate limiting - ensures minimum 4 seconds between requests.
         
         Args:
             url: URL to download from

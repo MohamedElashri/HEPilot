@@ -59,6 +59,8 @@ make help
 # Run pipeline
 make dev          # Development mode (5 papers)
 make prod         # Production mode
+make download     # Download papers only (no processing)
+make process      # Process already downloaded PDFs
 
 # Cleanup
 make clean        # Remove output files (keeps model cache)
@@ -248,6 +250,70 @@ output/
 ```bash
 ./run.sh prod
 ```
+
+### Download-Only Mode (No Processing)
+
+Download papers from arXiv without processing them:
+
+```bash
+./run.sh download
+# or
+make download
+# or
+python3 main.py --download-only
+```
+
+This mode will:
+- Discover papers matching the query
+- Download PDFs to `arxiv_output/downloads/`
+- Update cache with download status
+- Skip all processing and chunking steps
+
+Useful for:
+- Bulk downloading papers for later processing
+- Separating download and processing phases
+- Minimizing processing time when bandwidth is available
+
+### Process-Only Mode
+
+Process already downloaded PDFs without discovering/downloading new ones:
+
+```bash
+./run.sh process
+# or
+make process
+# or
+python3 main.py --process-only
+```
+
+This mode will:
+- Scan `arxiv_output/downloads/` for unprocessed PDFs
+- Process and chunk each PDF
+- Skip papers already processed (with existing chunks)
+- Generate catalog and metadata files
+
+Useful for:
+- Processing papers downloaded earlier
+- Retrying failed processing jobs
+- Processing PDFs obtained through other means
+
+### Combined Workflow
+
+For large-scale operations, you can separate download and processing:
+
+```bash
+# Step 1: Download all papers (fast, network-intensive)
+./run.sh download
+
+# Step 2: Process downloaded papers (slow, CPU-intensive)
+./run.sh process
+```
+
+This allows you to:
+- Download papers on a fast network connection
+- Process them later on a powerful machine
+- Resume processing if interrupted
+- Parallelize across multiple machines
 
 ### Custom Python Invocation
 
