@@ -1,9 +1,9 @@
 # HEPilot Embedding Layer Implementation Plan
 
-**Version:** 1.2.1  
+**Version:** 1.3.0  
 **Date:** October 20, 2025  
 **Branch:** `embedding-dev`  
-**Status:** 🚀 Steps 1-2 Complete - DocStore Implementation Next  
+**Status:** 🚀 Steps 1-3 Complete - Decoder Implementation Next  
 **Note:** Migration infrastructure moved to `src/embedding/` for better modularity
 
 ---
@@ -29,16 +29,17 @@ src/embedding/
 ├── config.py                 # ✅ Configuration system
 ├── ports.py                  # ✅ Protocol interfaces defined
 ├── registry.py               # ✅ Adapter discovery system  
-├── exceptions.py             # ✅ Custom exceptions
+├── exceptions.py             # ✅ Custom exceptions (with DocStoreError)
 ├── README.md                 # ✅ Configuration documentation
-├── alembic.ini               # ✅ Database migration config (NEW)
-├── alembic/                  # ✅ Database migrations (NEW)
+├── alembic.ini               # ✅ Database migration config
+├── alembic/                  # ✅ Database migrations
 │   ├── env.py                # ✅ Migration environment
 │   ├── README.md             # ✅ Migration documentation
 │   └── versions/
 │       └── 67906781f81e_*.py # ✅ Initial schema migration
 ├── adapters/
-│   ├── db_models.py          # ✅ SQLAlchemy models (NEW)
+│   ├── db_models.py          # ✅ SQLAlchemy models
+│   ├── postgres_docstore.py  # ✅ PostgreSQL DocStore (NEW)
 │   └── __init__.py
 └── examples/
     └── load_config.py        # ✅ Config usage example
@@ -58,6 +59,15 @@ src/embedding/
 - Alembic migrations with async support
 - Self-contained in `src/embedding/alembic/`
 - Complete upgrade/downgrade paths
+
+**PostgreSQL DocStore:** ✅ COMPLETED
+- Async PostgreSQL connection pooling with asyncpg
+- Document CRUD operations with UPSERT support
+- Chunk CRUD operations with batch insertion
+- Transaction support for batch operations
+- Health check and connection management
+- Async context manager support
+- 25 passing unit tests with comprehensive coverage
 
 **Port Interfaces Defined:**
 - `Encoder` - Text → Vector transformation
@@ -80,14 +90,14 @@ src/embedding/
 |------|-----------|---------|------------|--------|
 | 1 | **Configuration System** | Load/validate settings from TOML | Low | ✅ **DONE** |
 | 2 | **Database Schema** | PostgreSQL tables for chunks/docs | Medium | ✅ **DONE** |
-| 3 | **PostgreSQL DocStore** | Store original text chunks | Medium | ⏭️ Next |
-| 4 | **PostgreSQL Decoder** | Retrieve chunks by ID | Medium | 📋 Pending |
+| 3 | **PostgreSQL DocStore** | Store original text chunks | Medium | ✅ **DONE** |
+| 4 | **PostgreSQL Decoder** | Retrieve chunks by ID | Medium | ⏭️ Next |
 | 5 | **ONNX BGE Encoder** | Convert text to vectors | High | 📋 Pending |
 | 6 | **ChromaDB Adapter** | Store and search vectors | Medium | 📋 Pending |
 | 7 | **Pipeline Orchestrator** | Coordinate ingestion/retrieval | High | 📋 Pending |
 
-**Completed:** 2/7 steps (29%)  
-**Estimated Remaining:** ~6 days
+**Completed:** 3/7 steps (43%)  
+**Estimated Remaining:** ~5 days
 
 ### Architecture Overview
 
@@ -424,7 +434,122 @@ CREATE INDEX idx_documents_source ON documents(source_type, source_id);
 
 ---
 
-### Step 3: PostgreSQL DocStore 💾 ⏭️ NEXT
+### Step 3: PostgreSQL DocStore 💾 ✅ COMPLETED
+
+**Goal:** Implement document and chunk storage
+
+**Status:** ✅ **COMPLETED** (October 20, 2025)
+
+**Files Created:**
+- ✅ `src/embedding/adapters/postgres_docstore.py` - PostgreSQL DocStore implementation
+- ✅ `tests/unit/embedding/test_docstore.py` - 25 passing unit tests
+- ✅ `src/embedding/exceptions.py` - Updated with DocStoreError exception
+
+**What Was Implemented:**
+- `PostgresDocStore` class with async connection pooling using asyncpg
+- Document operations:
+  - `add_document()` - UPSERT document with optional metadata
+  - `get_document()` - Retrieve document by ID with JSON parsing
+  - `delete_document()` - Delete document and cascading chunks
+  - `count_documents()` - Get total document count
+- Chunk operations:
+  - `add_chunk()` - Insert single chunk with position tracking
+  - `add_chunks_batch()` - Batch insert with transactions
+  - `get_chunk()` - Retrieve chunk by ID
+  - `get_document_chunks()` - Get all chunks for a document
+  - `count_chunks()` - Get total chunk count
+- Connection management:
+  - `connect()` - Initialize connection pool
+  - `close()` - Close connection pool
+  - `health_check()` - Verify database connectivity
+  - Async context manager support (`async with`)
+
+**Test Results:**
+```
+25 passed in 0.18s
+```
+
+**Test Coverage:**
+- Initialization and configuration
+- Connection lifecycle management
+- Document CRUD operations (add, get, delete)
+- Chunk CRUD operations (add, batch add, get, get all)
+- Error handling (not connected, database errors)
+- Health checks (healthy, unhealthy, not connected)
+- Async context manager protocol
+- Count operations (documents and chunks)
+
+**✅ Validation Checklist:**
+- [x] PostgresDocStore class implemented
+- [x] All CRUD methods working
+- [x] Batch operations with transactions
+- [x] Connection pooling configured
+- [x] Health check functionality
+- [x] Async context manager support
+- [x] Unit tests pass (25/25)
+- [x] No linting errors
+- [x] Comprehensive error handling
+
+---
+
+### Step 3 Implementation Reference (COMPLETED)
+
+<details>
+<summary><b>Key Implementation Details</b> (click to view)</summary>
+
+**Connection Management:**
+```python
+async def connect(self) -> None:
+    """Initialize connection pool."""
+    if self.pool:
+        return
+    self.pool = await asyncpg.create_pool(
+        dsn=self.database_url,
+        min_size=self.pool_size // 2,
+        max_size=self.pool_size
+    )
+```
+
+**UPSERT Document:**
+```python
+async def add_document(self, doc_id: UUID, source_type: str, source_id: str, ...) -> UUID:
+    """Add or update document with ON CONFLICT DO UPDATE."""
+    query = """
+    INSERT INTO documents (id, source_type, source_id, ...)
+    VALUES ($1, $2, $3, ...)
+    ON CONFLICT (source_type, source_id)
+    DO UPDATE SET ...
+    RETURNING id
+    """
+    return await conn.fetchval(query, ...)
+```
+
+**Batch Insert with Transaction:**
+```python
+async def add_chunks_batch(self, chunks: List[Dict[str, Any]]) -> int:
+    """Insert multiple chunks in a transaction."""
+    async with self.pool.acquire() as conn:
+        async with conn.transaction():
+            for chunk in chunks:
+                await conn.execute(query, ...)
+    return len(chunks)
+```
+
+**Async Context Manager:**
+```python
+async def __aenter__(self):
+    await self.connect()
+    return self
+
+async def __aexit__(self, exc_type, exc_val, exc_tb):
+    await self.close()
+```
+
+</details>
+
+---
+
+### Step 3: PostgreSQL DocStore 💾 (OLD - FOR REFERENCE)
 
 **Goal:** Implement document and chunk storage
 
@@ -1397,8 +1522,14 @@ pytest tests/integration/embedding/ -v
   - [x] Generated initial migration script
   - [x] Validated migration syntax and structure
   - [x] Created migration documentation
-- [ ] **Step 3: PostgreSQL DocStore** ⏭️ NEXT
-- [ ] Step 4: PostgreSQL Decoder
+- [x] **Step 3: PostgreSQL DocStore** ✅ COMPLETED (Oct 20, 2025)
+  - [x] Implemented `PostgresDocStore` with async connection pooling
+  - [x] Created document CRUD operations (add, get, delete, count)
+  - [x] Created chunk CRUD operations (add, batch add, get, get all, count)
+  - [x] Implemented connection management and health checks
+  - [x] Added async context manager support
+  - [x] Wrote 25 passing unit tests with comprehensive coverage
+- [ ] Step 4: PostgreSQL Decoder ⏭️ NEXT
 
 **Phase 2: ML Components** 📋 PENDING (Next Week)
 - [ ] Step 5: ONNX BGE Encoder
@@ -1479,16 +1610,23 @@ This plan provides:
 - ✅ **Progress tracking** to stay on schedule
 
 **Current Progress:**
-- ✅ **Step 1 COMPLETED** - Configuration system fully implemented and tested
-- ⏭️ **Step 2 NEXT** - Database schema and migrations
+- ✅ **Step 1 COMPLETED** - Configuration system fully implemented and tested (21 tests passing)
+- ✅ **Step 2 COMPLETED** - Database schema and migrations with async support
+- ✅ **Step 3 COMPLETED** - PostgreSQL DocStore with async operations (25 tests passing)
+- ⏭️ **Step 4 NEXT** - PostgreSQL Decoder for chunk retrieval
 
 **Recent Updates (Oct 20, 2025):**
 - ✅ Implemented configuration system with Pydantic validation
 - ✅ Created 21 passing unit tests for configuration
 - ✅ Set up Alembic database migrations with async support
 - ✅ Created database schema (documents and doc_segments tables)
-- ✅ Validated migration structure and syntax
-- ✅ Ready to proceed with DocStore implementation
+- ✅ Implemented PostgresDocStore with async connection pooling
+- ✅ Created comprehensive CRUD operations for documents and chunks
+- ✅ Wrote 25 passing unit tests for DocStore
+- ✅ Added async context manager support
+- ✅ Ready to proceed with Decoder implementation
+
+**Ready to continue?** → **Proceed to Step 4: PostgreSQL Decoder**
 
 ---
 

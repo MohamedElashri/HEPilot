@@ -25,6 +25,11 @@ class DecoderError(EmbeddingError):
     pass
 
 
+class DocStoreError(EmbeddingError):
+    """Error during document storage operations."""
+    pass
+
+
 class ConfigurationError(EmbeddingError):
     """Error in configuration or setup."""
     pass
