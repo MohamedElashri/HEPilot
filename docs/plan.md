@@ -1,9 +1,9 @@
 # HEPilot Embedding Layer Implementation Plan
 
-**Version:** 1.6.0  
+**Version:** 2.0.0  
 **Date:** October 21, 2025  
 **Branch:** `embedding-dev`  
-**Status:** 🚀 Steps 1-6 Complete - Pipeline Orchestrator Implementation Next  
+**Status:** 🎉 **COMPLETE** - All 7 Steps Implemented (156 Tests Passing)  
 **Note:** Migration infrastructure moved to `src/embedding/` for better modularity
 
 ---
@@ -42,8 +42,9 @@ src/embedding/
 │   ├── postgres_docstore.py  # ✅ PostgreSQL DocStore
 │   ├── postgres_decoder.py   # ✅ PostgreSQL Decoder
 │   ├── onnx_bge_encoder.py   # ✅ ONNX BGE Encoder
-│   ├── chroma_vectordb.py    # ✅ ChromaDB Adapter (NEW)
+│   ├── chroma_vectordb.py    # ✅ ChromaDB Adapter
 │   └── __init__.py
+├── pipeline.py               # ✅ Pipeline Orchestrators (NEW)
 └── examples/
     └── load_config.py        # ✅ Config usage example
 ```
@@ -104,7 +105,25 @@ src/embedding/
 - Async context manager support
 - 36 passing unit tests with comprehensive coverage
 
-**Port Interfaces Defined:**
+**Pipeline Orchestrators:** ✅ COMPLETED
+- **IngestionPipeline** - End-to-end document ingestion workflow
+  - Stores documents and chunks in PostgreSQL
+  - Generates embeddings using encoder
+  - Stores vectors in ChromaDB with metadata
+  - Batch processing with configurable batch sizes
+  - Error handling and result reporting
+- **RetrievalPipeline** - End-to-end query processing workflow
+  - Encodes queries to vectors
+  - Searches similar vectors in ChromaDB
+  - Decodes chunk IDs to full content from PostgreSQL
+  - Returns ranked results with scores
+  - Filters out missing chunks
+- Configuration-driven with factory functions
+- Health checks for all components
+- Async context manager support
+- 24 passing unit tests with comprehensive coverage
+
+**Port Interfaces:** ✅ ALL IMPLEMENTED
 - `Encoder` - Text → Vector transformation ✅ IMPLEMENTED
 - `VectorDB` - Vector storage and similarity search ✅ IMPLEMENTED
 - `Decoder` - Vector ID → Original text retrieval ✅ IMPLEMENTED
@@ -129,10 +148,11 @@ src/embedding/
 | 4 | **PostgreSQL Decoder** | Retrieve chunks by ID | Medium | ✅ **DONE** |
 | 5 | **ONNX BGE Encoder** | Convert text to vectors | High | ✅ **DONE** |
 | 6 | **ChromaDB Adapter** | Store and search vectors | Medium | ✅ **DONE** |
-| 7 | **Pipeline Orchestrator** | Coordinate ingestion/retrieval | High | ⏭️ Next |
+| 7 | **Pipeline Orchestrator** | Coordinate ingestion/retrieval | High | ✅ **DONE** |
 
-**Completed:** 6/7 steps (86%)  
-**Estimated Remaining:** ~1 day
+**Completed:** 7/7 steps (100%) 🎉  
+**Total Tests:** 156 passing
+**Status:** Ready for production integration!
 
 ### Architecture Overview
 

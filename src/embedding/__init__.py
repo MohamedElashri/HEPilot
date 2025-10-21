@@ -13,11 +13,28 @@ from src.embedding.config import (
     load_config,
 )
 
+from src.embedding.pipeline import (
+    IngestionPipeline,
+    RetrievalPipeline,
+    IngestionResult,
+    RetrievalResult,
+    create_ingestion_pipeline,
+    create_retrieval_pipeline,
+)
+
 __all__ = [
+    # Configuration
     "EncoderConfig",
     "VectorDBConfig",
     "DocStoreConfig",
     "PipelineConfig",
     "EmbeddingConfig",
     "load_config",
+    # Pipelines
+    "IngestionPipeline",
+    "RetrievalPipeline",
+    "IngestionResult",
+    "RetrievalResult",
+    "create_ingestion_pipeline",
+    "create_retrieval_pipeline",
 ]
