@@ -1,9 +1,9 @@
 # HEPilot Embedding Layer Implementation Plan
 
-**Version:** 1.5.0  
-**Date:** October 20, 2025  
+**Version:** 1.6.0  
+**Date:** October 21, 2025  
 **Branch:** `embedding-dev`  
-**Status:** 🚀 Steps 1-5 Complete - ChromaDB Adapter Implementation Next  
+**Status:** 🚀 Steps 1-6 Complete - Pipeline Orchestrator Implementation Next  
 **Note:** Migration infrastructure moved to `src/embedding/` for better modularity
 
 ---
@@ -41,7 +41,8 @@ src/embedding/
 │   ├── db_models.py          # ✅ SQLAlchemy models
 │   ├── postgres_docstore.py  # ✅ PostgreSQL DocStore
 │   ├── postgres_decoder.py   # ✅ PostgreSQL Decoder
-│   ├── onnx_bge_encoder.py   # ✅ ONNX BGE Encoder (NEW)
+│   ├── onnx_bge_encoder.py   # ✅ ONNX BGE Encoder
+│   ├── chroma_vectordb.py    # ✅ ChromaDB Adapter (NEW)
 │   └── __init__.py
 └── examples/
     └── load_config.py        # ✅ Config usage example
@@ -92,9 +93,20 @@ src/embedding/
 - Health check and lifecycle management
 - 26 passing unit tests with comprehensive coverage
 
+**ChromaDB Adapter:** ✅ COMPLETED
+- Vector storage using ChromaDB persistent client
+- Batch upsert operations with metadata
+- Similarity search with configurable distance metrics
+- Metadata filtering support
+- Collection management (count, clear, delete)
+- Automatic metadata sanitization for ChromaDB
+- Health check and connection management
+- Async context manager support
+- 36 passing unit tests with comprehensive coverage
+
 **Port Interfaces Defined:**
 - `Encoder` - Text → Vector transformation ✅ IMPLEMENTED
-- `VectorDB` - Vector storage and similarity search
+- `VectorDB` - Vector storage and similarity search ✅ IMPLEMENTED
 - `Decoder` - Vector ID → Original text retrieval ✅ IMPLEMENTED
 
 **Prerequisites Ready:**
@@ -116,11 +128,11 @@ src/embedding/
 | 3 | **PostgreSQL DocStore** | Store original text chunks | Medium | ✅ **DONE** |
 | 4 | **PostgreSQL Decoder** | Retrieve chunks by ID | Medium | ✅ **DONE** |
 | 5 | **ONNX BGE Encoder** | Convert text to vectors | High | ✅ **DONE** |
-| 6 | **ChromaDB Adapter** | Store and search vectors | Medium | ⏭️ Next |
-| 7 | **Pipeline Orchestrator** | Coordinate ingestion/retrieval | High | 📋 Pending |
+| 6 | **ChromaDB Adapter** | Store and search vectors | Medium | ✅ **DONE** |
+| 7 | **Pipeline Orchestrator** | Coordinate ingestion/retrieval | High | ⏭️ Next |
 
-**Completed:** 5/7 steps (71%)  
-**Estimated Remaining:** ~2 days
+**Completed:** 6/7 steps (86%)  
+**Estimated Remaining:** ~1 day
 
 ### Architecture Overview
 
@@ -1110,6 +1122,194 @@ encoder = ONNXBGEEncoder(
     batch_size=config.encoder.batch_size,
     normalize=config.encoder.normalize,
     cache_dir=Path(config.encoder.cache_dir)
+)
+```
+
+</details>
+
+---
+
+### Step 6: ChromaDB Adapter 🗂️ ✅ COMPLETED
+
+**Goal:** Vector storage and similarity search
+
+**Status:** ✅ **COMPLETED** (October 21, 2025)
+
+**Files Created:**
+- ✅ `src/embedding/adapters/chroma_vectordb.py` - ChromaDB vector database adapter
+- ✅ `tests/unit/embedding/test_vectordb.py` - 36 passing unit tests
+
+**What Was Implemented:**
+- `ChromaVectorDB` class implementing VectorDB protocol
+- Setup and initialization:
+  - `setup()` - Async ChromaDB client and collection initialization
+  - PersistentClient with configurable storage directory
+  - Configurable distance metric (cosine, l2, ip) from config.toml
+  - Automatic directory creation
+- Vector operations:
+  - `upsert(ids, vectors, metadata)` - Batch insert/update with metadata
+  - `query(vector, top_k, filter_dict)` - Similarity search with filtering
+  - `delete(ids)` - Batch vector removal
+  - `count()` - Get total vector count
+  - `clear()` - Remove all vectors from collection
+- Metadata handling:
+  - Automatic metadata sanitization for ChromaDB compatibility
+  - Support for JSON-serializable types (str, int, float, bool)
+  - Complex types converted to strings
+- Lifecycle management:
+  - `health_check()` - Verify operational status
+  - `close()` - Resource cleanup
+  - Async context manager support
+  - All blocking operations run in executors to avoid blocking event loop
+
+**Configuration-Driven Design:**
+- Settings in `config/embedding.toml`:
+  - `vectordb.type = "chroma"`
+  - `vectordb.persist_directory = ".data/chroma"`
+  - `vectordb.collection_name = "hepilot"`
+  - `vectordb.distance_metric = "cosine"`
+- No hardcoded paths or collection names
+
+**Test Results:**
+```
+36 passed in 4.76s
+
+Test Coverage:
+- Initialization (default/custom config)
+- Setup (success, directory creation, failure)
+- Upsert (success, with metadata, empty list, auto-setup, mismatches, sanitization, exceptions)
+- Query (success, with filter, empty results, auto-setup, wrong dimensions, exceptions)
+- Delete (success, empty list, auto-setup, exceptions)
+- Count (success, empty collection, auto-setup, exceptions)
+- Clear (success, empty collection, auto-setup, exceptions)
+- Health checks (success, auto-setup, failure)
+- Cleanup and context manager
+```
+
+**✅ Validation Checklist:**
+- [x] ChromaDB persistent client initialized
+- [x] Collection management with configurable distance metric
+- [x] Batch upsert operations
+- [x] Similarity search with top-k results
+- [x] Metadata filtering support
+- [x] Automatic metadata sanitization
+- [x] Delete operations (single/batch)
+- [x] Count and clear operations
+- [x] Health check verification
+- [x] Async operations using executors
+- [x] Context manager support
+- [x] Comprehensive error handling
+- [x] 36 unit tests all passing
+
+---
+
+### Step 6 Implementation Reference (COMPLETED)
+
+<details>
+<summary><b>Key Implementation Details</b> (click to view)</summary>
+
+**Async Setup with ChromaDB:**
+```python
+async def setup(self) -> None:
+    """Initialize ChromaDB client and collection."""
+    # Run in executor to avoid blocking
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, self._setup_sync)
+
+def _setup_sync(self) -> None:
+    """Synchronous setup (runs in executor)."""
+    self.persist_directory.mkdir(parents=True, exist_ok=True)
+    
+    self.client = chromadb.PersistentClient(
+        path=str(self.persist_directory),
+        settings=Settings(
+            anonymized_telemetry=False,
+            allow_reset=False
+        )
+    )
+    
+    self.collection = self.client.get_or_create_collection(
+        name=self.collection_name,
+        metadata={"hnsw:space": self.distance_metric}
+    )
+```
+
+**Batch Upsert with Metadata Sanitization:**
+```python
+async def upsert(self, ids, vectors, metadata=None):
+    """Insert or update vectors with metadata."""
+    if not self.collection:
+        await self.setup()
+    
+    # Convert numpy array to list for ChromaDB
+    embeddings_list = vectors.tolist()
+    
+    # Sanitize metadata (ChromaDB requires str/int/float/bool)
+    metadatas = None
+    if metadata:
+        metadatas = [self._sanitize_metadata(m) for m in metadata]
+    
+    # Run in executor
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(
+        None,
+        lambda: self.collection.upsert(
+            ids=ids,
+            embeddings=embeddings_list,
+            metadatas=metadatas
+        )
+    )
+```
+
+**Similarity Search with Filtering:**
+```python
+async def query(self, vector, top_k=10, filter_dict=None):
+    """Find most similar vectors."""
+    if not self.collection:
+        await self.setup()
+    
+    query_embedding = vector.tolist()
+    
+    # Run query in executor
+    loop = asyncio.get_running_loop()
+    results = await loop.run_in_executor(
+        None,
+        lambda: self.collection.query(
+            query_embeddings=[query_embedding],
+            n_results=top_k,
+            where=filter_dict  # Metadata filter
+        )
+    )
+    
+    # Parse results into QueryResult objects
+    query_results = []
+    if results['ids'] and len(results['ids'][0]) > 0:
+        for i, chunk_id in enumerate(results['ids'][0]):
+            query_results.append(QueryResult(
+                chunk_id=chunk_id,
+                score=float(results['distances'][0][i]),
+                metadata=results['metadatas'][0][i]
+            ))
+    
+    return query_results
+```
+
+**Configuration Integration:**
+```python
+# config/embedding.toml
+[vectordb]
+type = "chroma"
+persist_directory = ".data/chroma"
+collection_name = "hepilot"
+distance_metric = "cosine"  # Options: "cosine", "l2", "ip"
+
+# Usage in code
+from src.embedding.config import load_config
+config = load_config()
+vectordb = ChromaVectorDB(
+    persist_directory=Path(config.vectordb.persist_directory),
+    collection_name=config.vectordb.collection_name,
+    distance_metric=config.vectordb.distance_metric
 )
 ```
 
