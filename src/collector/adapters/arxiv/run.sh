@@ -48,8 +48,9 @@ if command -v uv &> /dev/null; then
     echo "Using uv (fast Python package manager)..."
     
     if [ ! -d ".venv" ]; then
-        echo "Creating virtual environment with uv..."
-        uv venv .venv
+        echo "Creating virtual environment with uv (Python 3.11+)..."
+        # Use python3.11 explicitly to avoid conda's Python 3.7
+        uv venv --python python3.11 .venv
     fi
     
     echo "Activating virtual environment..."
