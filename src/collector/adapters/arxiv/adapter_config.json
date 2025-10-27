@@ -7,16 +7,20 @@
       "chunk_size": 512,
       "chunk_overlap": 0.1,
       "preserve_tables": true,
-      "preserve_equations": true,
-      "enrich_formulas": true,
-      "table_mode": "fast",
-      "exclude_references": true,
-      "exclude_acknowledgments": true,
-      "exclude_author_lists": true,
-      "include_authors_metadata": false,
-      "processing_timeout": 30
+      "preserve_equations": true
     },
     "profile": "core",
-    "config_hash": "08e944f75870772107584e3dafa2767f269d6c46c8d3fd5bc881540136bb58b1"
+    "x_extension": {
+      "processing": {
+        "enrich_formulas": true,
+        "table_mode": "fast",
+        "exclude_references": true,
+        "exclude_acknowledgments": true,
+        "exclude_author_lists": true,
+        "include_authors_metadata": false,
+        "processing_timeout": 30
+      }
+    },
+    "config_hash": "0000000000000000000000000000000000000000000000000000000000000000"
   }
 }

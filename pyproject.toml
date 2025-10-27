@@ -24,26 +24,14 @@ dependencies = [
     "rich>=13.7.0",
     "typer>=0.9.0",
     "tqdm>=4.66.0",
+    "jsonschema>=4.21.0",
+    "requests>=2.31.0",
 ]
 
 [project.urls]
 Repository = "https://github.com/MohamedElashri/HEPilot"
 Documentation = "https://github.com/MohamedElashri/HEPilot/tree/main/docs"
 
-[tool.ruff]
-line-length = 100
-target-version = "py311"
-
-[tool.ruff.lint]
-select = ["E", "F", "I", "N", "W", "UP"]
-ignore = ["E501"]  # Line length handled by formatter
-
-[tool.mypy]
-python_version = "3.11"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = false  # Enable gradually
-strict_optional = true
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -59,19 +47,4 @@ markers = [
     "unit: Unit tests",
     "integration: Integration tests",
     "contract: Contract tests",
-]
-
-[tool.coverage.run]
-source = ["src"]
-omit = ["tests/*", "src/**/__pycache__/*"]
-
-[tool.coverage.report]
-exclude_lines = [
-    "pragma: no cover",
-    "def __repr__",
-    "raise AssertionError",
-    "raise NotImplementedError",
-    "if __name__ == .__main__.:",
-    "if TYPE_CHECKING:",
-    "@abstractmethod",
 ]

@@ -13,6 +13,8 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "$SCRIPT_DIR/../../../../" && pwd)"
+
 cd "$SCRIPT_DIR"
 
 MODE="${1:-dev}"
@@ -80,38 +82,41 @@ echo "Starting pipeline..."
 echo "=========================================="
 echo ""
 
-if [ "$MODE" = "dev" ]; then
-    echo "Running in DEVELOPMENT mode (5 papers max)"
-    python3 main.py \
-        --config adapter_config.json \
-        --output arxiv_output \
-        --query "all:lhcb" \
-        --dev
-elif [ "$MODE" = "prod" ]; then
-    echo "Running in PRODUCTION mode (All papers)"
-    python3 main.py \
-        --config adapter_config.json \
-        --output arxiv_output \
-        --query "all:lhcb"
-elif [ "$MODE" = "download" ]; then
-    echo "Running in DOWNLOAD-ONLY mode (All papers, no processing)"
-    python3 main.py \
-        --config adapter_config.json \
-        --output arxiv_output \
-        --query "all:lhcb" \
-        --download-only
-elif [ "$MODE" = "process" ]; then
-    echo "Running in PROCESS-ONLY mode (Process downloaded PDFs)"
-    python3 main.py \
-        --config adapter_config.json \
-        --output arxiv_output \
-        --process-only
-else
-    echo "ERROR: Invalid mode '$MODE'. Use 'dev', 'prod', 'download', or 'process'"
-    exit 1
-fi
+RUN_ARGS=(
+    "collect"
+    "--config" "$SCRIPT_DIR/adapter_config.json"
+    "--output-dir" "$SCRIPT_DIR/arxiv_output"
+    "--query" "all:lhcb"
+    "--persist"
+)
 
+case "$MODE" in
+    dev)
+        echo "Running in DEVELOPMENT mode (5 papers max)"
+        RUN_ARGS+=("--limit" "5")
+        ;;
+    prod)
+        echo "Running in PRODUCTION mode (All papers)"
+        ;;
+    download)
+        echo "Running in DOWNLOAD-ONLY mode is no longer supported; performing standard collection instead."
+        RUN_ARGS+=("--limit" "5")
+        ;;
+    process)
+        echo "PROCESS-ONLY mode not available; performing standard collection instead."
+        RUN_ARGS+=("--limit" "5")
+        ;;
+    *)
+        echo "ERROR: Invalid mode '$MODE'. Use 'dev', 'prod', 'download', or 'process'"
+        exit 1
+        ;;
+esac
+
+cd "$ROOT_DIR"
+python3 -m src.collector.adapters.arxiv.run "${RUN_ARGS[@]}"
 EXIT_CODE=$?
+
+cd "$SCRIPT_DIR"
 
 echo ""
 echo "=========================================="

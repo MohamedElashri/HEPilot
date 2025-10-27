@@ -18,7 +18,7 @@ from pathlib import Path
 from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import PdfPipelineOptions, TableFormerMode
-from models import AcquiredDocument, ProcessingMetadata
+from .models import AcquiredDocument, ProcessingMetadata
 
 
 class TimeoutException(Exception):

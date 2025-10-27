@@ -25,6 +25,14 @@ class AdapterRegistry:
             raise KeyError(f"Adapter '{name}' not registered")
         return self._adapters[name]
     
+    def list(self) -> list[str]:
+        """List all registered adapter names."""
+        return list(self._adapters.keys())
+    
+    def contains(self, name: str) -> bool:
+        """Check if an adapter is registered."""
+        return name in self._adapters
+    
     def discover(self, entry_point_group: str) -> None:
         """
         Discover adapters via entry points.

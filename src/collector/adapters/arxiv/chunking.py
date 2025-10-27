@@ -12,7 +12,7 @@ import uuid
 from typing import List, Tuple, Optional, Dict, Any
 from pathlib import Path
 from uuid import UUID
-from models import ChunkContent
+from .models import ChunkContent
 
 try:
     from sentence_transformers import SentenceTransformer
