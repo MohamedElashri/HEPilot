@@ -22,6 +22,20 @@ from src.embedding.pipeline import (
     create_retrieval_pipeline,
 )
 
+from src.embedding.factory import (
+    create_encoder,
+    create_vectordb,
+    create_decoder,
+    create_docstore,
+    create_all_adapters,
+)
+
+from src.embedding.registry import (
+    encoder_registry,
+    vectordb_registry,
+    decoder_registry,
+)
+
 __all__ = [
     # Configuration
     "EncoderConfig",
@@ -37,4 +51,14 @@ __all__ = [
     "RetrievalResult",
     "create_ingestion_pipeline",
     "create_retrieval_pipeline",
+    # Factory
+    "create_encoder",
+    "create_vectordb",
+    "create_decoder",
+    "create_docstore",
+    "create_all_adapters",
+    # Registries
+    "encoder_registry",
+    "vectordb_registry",
+    "decoder_registry",
 ]

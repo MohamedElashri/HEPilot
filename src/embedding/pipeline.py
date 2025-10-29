@@ -15,37 +15,15 @@ from dataclasses import dataclass
 import json
 
 from src.embedding.config import EmbeddingConfig, load_config
-from src.embedding.adapters import (
-    PostgresDocStore,
-    PostgresDecoder,
-    ONNXBGEEncoder,
-    ChromaVectorDB
-)
-from src.embedding.ports import QueryResult, ChunkContent
+from src.embedding.factory import create_all_adapters
+from src.embedding.ports import Encoder, VectorDB, Decoder, QueryResult, ChunkContent
+from src.embedding.adapters.postgres_docstore import PostgresDocStore
 from src.embedding.exceptions import (
     DocStoreError,
     EncoderError,
     VectorDBError,
     DecoderError
 )
-
-
-def _normalize_db_url(url: str) -> str:
-    """
-    Normalize database URL for asyncpg.
-    
-    asyncpg expects 'postgresql://' but SQLAlchemy uses 'postgresql+asyncpg://'.
-    This function converts between the formats.
-    
-    Args:
-        url: Database URL (can be postgresql:// or postgresql+asyncpg://)
-    
-    Returns:
-        Normalized URL for asyncpg
-    """
-    if url.startswith('postgresql+asyncpg://'):
-        return url.replace('postgresql+asyncpg://', 'postgresql://')
-    return url
 
 
 @dataclass
@@ -89,8 +67,8 @@ class IngestionPipeline:
         
         # Initialize components (will be set up later)
         self.docstore: Optional[PostgresDocStore] = None
-        self.encoder: Optional[ONNXBGEEncoder] = None
-        self.vectordb: Optional[ChromaVectorDB] = None
+        self.encoder: Optional[Encoder] = None
+        self.vectordb: Optional[VectorDB] = None
         
         # Pipeline settings from config
         self.batch_size = config.pipeline.batch_size
@@ -98,33 +76,13 @@ class IngestionPipeline:
         self.checkpoint_interval = config.pipeline.checkpoint_interval
     
     async def setup(self) -> None:
-        """Initialize all pipeline components."""
-        # Normalize database URL for asyncpg
-        db_url = _normalize_db_url(self.config.docstore.database_url)
+        """Initialize all pipeline components using factory."""
+        # Create all adapters from config via factory
+        self.encoder, self.vectordb, _, self.docstore = create_all_adapters(self.config)
         
-        # Initialize DocStore from config
-        self.docstore = PostgresDocStore(
-            database_url=db_url,
-            pool_size=self.config.docstore.pool_size
-        )
+        # Connect/initialize each component
         await self.docstore.connect()
-        
-        # Initialize Encoder from config
-        self.encoder = ONNXBGEEncoder(
-            model_name=self.config.encoder.model_name,
-            cache_dir=Path(self.config.encoder.cache_dir),
-            batch_size=self.config.encoder.batch_size,
-            normalize=self.config.encoder.normalize,
-            device=self.config.encoder.device
-        )
         await self.encoder.load_model()
-        
-        # Initialize VectorDB from config
-        self.vectordb = ChromaVectorDB(
-            persist_directory=Path(self.config.vectordb.persist_directory),
-            collection_name=self.config.vectordb.collection_name,
-            distance_metric=self.config.vectordb.distance_metric
-        )
         await self.vectordb.setup()
     
     async def ingest_document(
@@ -323,38 +281,18 @@ class RetrievalPipeline:
         self.config = config
         
         # Initialize components (will be set up later)
-        self.encoder: Optional[ONNXBGEEncoder] = None
-        self.vectordb: Optional[ChromaVectorDB] = None
-        self.decoder: Optional[PostgresDecoder] = None
+        self.encoder: Optional[Encoder] = None
+        self.vectordb: Optional[VectorDB] = None
+        self.decoder: Optional[Decoder] = None
     
     async def setup(self) -> None:
-        """Initialize all pipeline components."""
-        # Initialize Encoder from config
-        self.encoder = ONNXBGEEncoder(
-            model_name=self.config.encoder.model_name,
-            cache_dir=Path(self.config.encoder.cache_dir),
-            batch_size=self.config.encoder.batch_size,
-            normalize=self.config.encoder.normalize,
-            device=self.config.encoder.device
-        )
+        """Initialize all pipeline components using factory."""
+        # Create all adapters from config via factory
+        self.encoder, self.vectordb, self.decoder, _ = create_all_adapters(self.config)
+        
+        # Connect/initialize each component
         await self.encoder.load_model()
-        
-        # Initialize VectorDB from config
-        self.vectordb = ChromaVectorDB(
-            persist_directory=Path(self.config.vectordb.persist_directory),
-            collection_name=self.config.vectordb.collection_name,
-            distance_metric=self.config.vectordb.distance_metric
-        )
         await self.vectordb.setup()
-        
-        # Normalize database URL for asyncpg
-        db_url = _normalize_db_url(self.config.docstore.database_url)
-        
-        # Initialize Decoder from config
-        self.decoder = PostgresDecoder(
-            database_url=db_url,
-            pool_size=self.config.docstore.pool_size
-        )
         await self.decoder.connect()
     
     async def retrieve(
