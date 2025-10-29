@@ -1,0 +1,137 @@
+LHCb-Facts
+Papers
+Integrated luminosity
+Cross-Sections
+LHCb event characteristics
+Magnetic field and track definition
+Performance
+Beam Conditions
+Trigger
+LHCb Storage Overview
+Papers
+The LHCb Detector at the LHC
+LHCb Detector Performance
+Integrated luminosity
+pp-collisions
+Year
+2010
+2011
+2012
+2015
+2016
+2017
+SUM
+0.038
+1.107
+2.082
+0.328
+1.665
+1.609
+6.829
+3.5
+3.5
+4
+6.5
+6.5
+6.5
+-
+pA-collisions
+Year
+2013
+SUM
+L_int/pb-1
+35?
+Ecm/GeV
+8000
+-
+LHCb efficiency breakdown in pp collisions in 2010-2012
+93.05%
+(Instantaneous) luminosity :
+Reference:
+LHCb Operations Plots Webpage
+Cross-Sections
+Process
+E(pp)
+σ
+Source
+Paper
+Paper
+LHCb event characteristics
+ν (nu) : The average number of pp interactions per bunch crossing
+Only used in MC
+μ (mu): The average number of visible pp interactions per bunch crossing
+The only thing we can measure at LHCb
+We measure
+, assuming L0 selects ALL visible interactions, i.e.
+(at 7 TeV, a bit less at 8 TeV)
+Pile-up: the average number of pp interactions in visible events
+The relevant quantity for the Hlt processing time
+Pile-up
+The average pile-up is not what we see in the Hlt if we have a biasing L0
+Reference:
+LHCb event characteristics
+Magnetic field and track definition
+Detector
+VELO
+TT
+T1-3
+Ca. 72 tracks in bbar events
+Long Track
+X
+(X)
+X
+26 (36%)
+Upstream Track
+X
+X
+-
+11 (15%)
+Down Track
+-
+X
+X
+4 (6%)
+VELO Track
+X
+-
+-
+26 (36%)
+T Track
+-
+-
+X
+5 (7%)
+Successfully reconstructed
+: a track must have at least
+70%
+of its associated hits originating from a single MonteCarlo particle
+Ghost tracks
+: reconstructed tracks that are not matched to a true MonteCarlo particle
+Cloned tracks
+: several reconstructed tracks that origin from the same particle
+Track Types
+:
+-- 0 = Unknown
+-- 1 = Velo track
+-- 2 = 2D Velo track
+-- 3 = Long (or forward) track
+-- 4 = Upstream track
+-- 5 = Downstream track
+-- 6 = seed track
+-- 7 = muon track
+-- 8 = calorimeter cosmic track
+-- 9 = TT track
+Reference:
+The LHCb detector at the LHC, p178-179
+Performance
+Reference:
+Standard set of performance numbers
+Beam Conditions
+Trigger
+LHCb Trigger 2012
+LHCb Trigger 2015
+Reference:
+Trigger Schemes
+LHCb Storage Overview
+Reference:
+Talk of Silvia Amerio on 10.09.2013 at LHCb week in Krakow, slide 24
