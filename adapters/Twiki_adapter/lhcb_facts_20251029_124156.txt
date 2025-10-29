@@ -1,0 +1,76 @@
+LHCb Facts from CERN TWiki
+========================================
+Scraped: 2025-10-29T12:41:56.629745
+URL: https://twiki.cern.ch/twiki/bin/view/Main/LHCb-Facts
+
+SECTIONS
+----------------------------------------
+
+LHCb-Facts
+PapersIntegrated luminosityCross-SectionsLHCb event characteristicsMagnetic field and track definitionPerformanceBeam ConditionsTriggerLHCb Storage Overview
+
+Papers
+The LHCb Detector at the LHC
+LHCb Detector Performance
+
+Integrated luminosity
+pp-collisionsYear201020112012201520162017SUM0.0381.1072.0820.3281.6651.6096.8293.53.546.56.56.5-pA-collisionsYear2013SUML_int/pb-135?Ecm/GeV8000-LHCb efficiency breakdown in pp collisions in 2010-201293.05%
+(Instantaneous) luminosity :
+LHCb Operations Plots Webpage
+
+Cross-Sections
+ProcessE(pp)σSourcePaperPaper
+
+LHCb event characteristics
+ν (nu) : The average number of pp interactions per bunch crossing
+Only used in MC
+μ (mu): The average number of visible pp interactions per bunch crossing
+The only thing we can measure at LHCb
+We measure, assuming L0 selects ALL visible interactions, i.e.
+(at 7 TeV, a bit less at 8 TeV)
+Pile-up: the average number of pp interactions in visible events
+The relevant quantity for the Hlt processing time
+Pile-up
+The average pile-up is not what we see in the Hlt if we have a biasing L0
+LHCb event characteristics
+
+Magnetic field and track definition
+DetectorVELOTTT1-3Ca. 72 tracks in bbar eventsLong TrackX(X)X26 (36%)Upstream TrackXX-11 (15%)Down Track-XX4 (6%)VELO TrackX--26 (36%)T Track--X5 (7%)Successfully reconstructed: a track must have at least70%of its associated hits originating from a single MonteCarlo particleGhost tracks: reconstructed tracks that are not matched to a true MonteCarlo particleCloned tracks: several reconstructed tracks that origin from the same particleTrack Types:-- 0 = Unknown-- 1 = Velo track-- 2 = 2D Velo track-- 3 = Long (or forward) track-- 4 = Upstream track-- 5 = Downstream track-- 6 = seed track-- 7 = muon track-- 8 = calorimeter cosmic track-- 9 = TT track
+The LHCb detector at the LHC, p178-179
+
+Performance
+Standard set of performance numbers
+
+Trigger
+LHCb Trigger 2012LHCb Trigger 2015
+Trigger Schemes
+
+LHCb Storage Overview
+Talk of Silvia Amerio on 10.09.2013 at LHCb week in Krakow, slide 24
+
+
+FACTS
+----------------------------------------
+1. Papers
+2. Integrated luminosity
+3. Cross-Sections
+4. LHCb event characteristics
+5. Magnetic field and track definition
+6. Performance
+7. Beam Conditions
+8. Trigger
+9. LHCb Storage Overview
+10. The LHCb Detector at the LHC
+11. LHCb Detector Performance
+12. (Instantaneous) luminosity :
+13. Only used in MC
+14. The only thing we can measure at LHCb
+15. We measure, assuming L0 selects ALL visible interactions, i.e.
+16. (at 7 TeV, a bit less at 8 TeV)
+17. The relevant quantity for the Hlt processing time
+18. Pile-up
+19. The average pile-up is not what we see in the Hlt if we have a biasing L0
+20. Successfully reconstructed: a track must have at least70%of its associated hits originating from a single MonteCarlo particle
+21. Ghost tracks: reconstructed tracks that are not matched to a true MonteCarlo particle
+22. Cloned tracks: several reconstructed tracks that origin from the same particle
+23. Track Types:-- 0 = Unknown-- 1 = Velo track-- 2 = 2D Velo track-- 3 = Long (or forward) track-- 4 = Upstream track-- 5 = Downstream track-- 6 = seed track-- 7 = muon track-- 8 = calorimeter cosmic track-- 9 = TT track

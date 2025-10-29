@@ -1,0 +1,6 @@
+Detector,VELO,TT,T1-3,Ca. 72 tracks in bbar events
+Long Track,X,(X),X,26 (36%)
+Upstream Track,X,X,-,11 (15%)
+Down Track,-,X,X,4 (6%)
+VELO Track,X,-,-,26 (36%)
+T Track,-,-,X,5 (7%)
