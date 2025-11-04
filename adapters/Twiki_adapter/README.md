@@ -1,1 +1,2 @@
-This file is for the Twiki adaprter. 
+This is for the Twiki Adapter
+
