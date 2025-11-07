@@ -1,0 +1,34 @@
+# HEPilot Embedding Layer Configuration - LOCAL MODE
+# ===================================================
+# This configuration runs entirely locally without external services
+# No PostgreSQL required - uses local file storage instead
+
+[encoder]
+# Text encoder settings
+type = "onnx_bge"
+model_name = "BAAI/bge-base-en-v1.5"
+batch_size = 8  # Smaller batch for local testing
+device = "cpu"
+normalize = true
+cache_dir = ".cache/models"
+
+[vectordb]
+# Vector database settings - ChromaDB runs locally
+type = "chroma"
+persist_directory = ".data/chroma"
+collection_name = "hepilot_local"
+distance_metric = "cosine"
+
+[docstore]
+# Document storage - Disabled for local testing (dummy URL required for validation)
+# We only use ChromaDB for local testing, not PostgreSQL
+type = "postgres"
+database_url = "postgresql://localhost:5432/dummy"  # Not used in local mode
+pool_size = 1
+max_overflow = 0
+
+[pipeline]
+# Ingestion pipeline settings - smaller batches for local
+batch_size = 10
+max_workers = 2
+checkpoint_interval = 100

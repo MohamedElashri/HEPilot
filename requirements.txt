@@ -1,0 +1,28 @@
+# Core dependencies
+numpy>=1.26.0
+pydantic>=2.6.0
+pydantic-settings>=2.2.0
+rich>=13.7.0
+typer>=0.9.0
+tqdm>=4.66.0
+jsonschema>=4.21.0
+requests>=2.31.0
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+pytest-cov>=4.1.0
+
+
+# Database dependencies for embedding layer
+asyncpg>=0.29.0
+psycopg2-binary>=2.9.9
+alembic>=1.13.0
+
+# Embedding and Vector Store
+chromadb>=0.4.24
+onnxruntime>=1.17.0
+transformers>=4.38.0
+sentence-transformers>=2.5.0
+
+# API Layer (future)
+fastapi>=0.109.0
+uvicorn>=0.27.0

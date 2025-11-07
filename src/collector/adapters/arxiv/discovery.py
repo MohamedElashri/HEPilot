@@ -13,8 +13,8 @@ import time
 from typing import List, Optional, Dict, Any, Tuple
 from datetime import datetime, timezone
 from pathlib import Path
-from models import DiscoveredDocument
-from cache_manager import CacheManager
+from .models import DiscoveredDocument
+from .cache_manager import CacheManager
 
 
 class ArxivDiscovery:

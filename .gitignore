@@ -1,9 +1,9 @@
-## md planning
-Agent.md
-Adapter.md
-Adapter_config.md
-Adapter_plan.md
-plan.md
+## md planning (exclude from root, but allow in docs/)
+/Agent.md
+/Adapter.md
+/Adapter_config.md
+/Adapter_plan.md
+/plan.md
 
 ## logs
 logs
@@ -11,3 +11,18 @@ logs
 
 ## output
 *_output
+
+
+## python cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ipynb_checkpoints
+.cache/
+
+## data
+.data/
+
+# .test
+.test*

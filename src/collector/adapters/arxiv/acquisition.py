@@ -13,7 +13,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import UUID
-from models import DiscoveredDocument, AcquiredDocument
+from .models import DiscoveredDocument, AcquiredDocument
 
 
 class ArxivAcquisition:
