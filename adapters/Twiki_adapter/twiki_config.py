@@ -9,7 +9,7 @@ import json
 import hashlib
 from pathlib import Path
 from typing import Dict, Any
-from models import AdapterConfig
+from adapters.Twiki_adapter.models import AdapterConfig
 
 class TwikiConfigManager:
     # manages twiki adapter configuration with validation and hash tracking.

@@ -1,16 +1,21 @@
 import json
 import re
 import uuid 
-import tiktoken # this is an OPENAI tokenizer - using for accurate token counts
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
+from sentence_transformers import SentenceTransformer
 
 
 class TwikiChunker:
     # Chunking engine for Twiki Markdown documents. 
 
-    def __init__(self, chunk_size: int = 512, chunk_overlap: float = 0.1, verbose: bool = False):
+    def __init__(self,
+                chunk_size: int = 512,
+                chunk_overlap: float = 0.1,
+                model_name: str = "BAAI/bge-large-en-v1.5",
+                cache_dir: str = ".model_cache",
+                verbose: bool = False):
 
         """
         Initialize chunker
@@ -23,20 +28,33 @@ class TwikiChunker:
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         self.verbose = verbose
+        self.model_name = model_name
+        self.cache_dir = cache_dir
 
         try:
-            self.tokenizer = tiktoken.get_encoding("cl100k_base")
-        except Exception:
-            self.tokenizer = None
+            if self.verbose:
+                print(f"[INFO] Loading tokenizer from {model_name}")
+            self.model = SentenceTransformer(model_name, cache_folder=cache_dir)
+            self.tokenizer = self.model.tokenizer
+            self.max_seq_length = self.model.get_max_seq_length()
             if self.verbose:
                 print("[WARNING] Tokenizer not found; fallback to character counts only.")
+        except Exception as e:
+            print(f"[ERROR] Could not load tokenizer: {e}")
+            self.model = None
+            self.tokenizer = None
+            self.max_seq_length = chunk_size
 
     def _count_tokens(self, text: str) -> int:
-        # Return token count using tiktoken if available, else rough estimate.
+        # Return token count using SentenceTransformers tokenizer.
 
         if self.tokenizer:
-            return len(self.tokenizer.encode(text))
-        return max(1, len(text) // 4) # approximating 1 tokens as 4 characters.
+            try:
+                tokens = self.tokenizer.encode(text, add_special_tokens=False)
+                return len(tokens)
+            except Exception:
+                pass
+        return len(text.split())
 
     def _extract_section_heirarchy(self, text: str) -> List[str]:
         # Extract Markdown headers as section hierarchy.
@@ -134,14 +152,13 @@ class TwikiChunker:
             # Optionally save chunk text
             ext = markdown_path.suffix or ".md"
             chunk_file = output_dir / f"chunk_{idx:04d}{ext}"
+            meta_file = output_dir / f"chunk_{idx:04d}_metadata.json"
+
             with open(chunk_file, "w", encoding="utf-8") as cf:
                 cf.write(chunk_text)
-
-            # Save chunk metadata
-            meta_file = output_dir / f"chunk_{idx:04d}_metadata.json"
             with open(meta_file, "w", encoding="utf-8") as mf:
-                json.dump(metadata, mf, indent=2)
-
+                json.dump(metadata,  mf, indent=2)
+                
             if self.verbose:
                 print(f"[INFO] Created chunk {idx+1}/{total_chunks}: {chunk_file.name}")
 

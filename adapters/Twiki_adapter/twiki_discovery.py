@@ -8,75 +8,77 @@ It collects metadata such as title, URL and estimated size
 
 import uuid
 import json
-import time
-import requests
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 from pathlib import Path
-from bs4 import BeautifulSoup
-from models import DiscoveredDocument
+from adapters.Twiki_adapter.models import DiscoveredDocument
 
 class TwikiDiscovery:
     # Discovers candidates Twiki pages from CERN LHCb twiki.
 
     def __init__(
             self, 
-            base_url: str = "https://twiki.cern.ch/twiki/bin/view/LHCb",
-            max_pages: Optional[int] = None,
-            include_authors: bool = False,
-            delay_seconds: float = 1.5
+            data_dir: Path = Path("data_twiki"),
+            max_pages: Optional[int] = None
     ) -> None:
-        """
-        Initializing the twiki discovery module
-        """
-        self.base_url = base_url.rstrip("/")
+        # Initializing the Twiki discovery model
+
+        self.data_dir = Path(data_dir)
         self.max_pages = max_pages
-        self.include_authors = include_authors
-        self.delay_seconds = delay_seconds
-        self.session = requests.Session()
-        self.session.headers.update({"User-Agent": "HEPilot-TWiki-Adapter/1.0"})
-        self.visited = set()
+    
+    def _extract_title(self, md_path: Path) -> str:
+        try: 
+            with open(md_path, "r", encoding="utf-8") as f:
+                for line in f: 
+                    if line.strip().startswith("#"):
+                        return line.strip().lstrip("#").strip()
+        except Exception:
+            pass
+        return md_path.stem
+    
+    def discover(self) -> List[DiscoveredDocument]: # type: ignore
+        # Discover Twiki Markdown files from the local directory
 
-    def discovry(self) -> List[DiscoveredDocument]:
+        if not self.data_dir.exists():
+            raise FileNotFoundError(f"[TwikiDiscovery] Data directory not found: {self.data_dir}")
+        
+        md_files = sorted(self.data_dir.glob("*.md"))
         discovered: List[DiscoveredDocument] = []
-        local_dir = Path("data_twiki")
 
-        for txt_path in sorted(local_dir.glob("*.txt")):
-            title = txt_path.stem
-            source_url = f"file://{txt_path.resolve()}"
-            document_id = uuid.uuid5(uuid.NAMESPACE_URL, source_url)
-            estimated_size = txt_path.stat().st_size
+        for md_path in md_files: 
+            if self.max_pages and len(discovered) >= self.max_pages:
+                break
+
+            document_id = uuid.uuid5(uuid.NAMESPACE_OID, str(md_path.resolve()))
+            title = self._extract_title(md_path)
+            estimated_size = md_path.stat().st_size
 
             doc = DiscoveredDocument(
-                document_id=document_id,
+                document_id=document_id, 
                 source_type="twiki",
-                source_url=source_url,                 # key: file:// URL
+                source_url=str(md_path.resolve()),  
                 title=title,
                 authors=None,
                 discovery_timestamp=datetime.now(timezone.utc),
                 estimated_size=estimated_size,
-                content_type="text/plain",            # local txt
+                content_type="text/markdown",
                 priority_score=None
             )
-        print(f"[INFO] Local discovery complete: {len(discovered)} Twiki pages found.")
+            discovered.append(doc)
+
+        print(f"[INFO] Local discovery complete: {len(discovered)} Twiki Markdown pages found in '{self.data_dir}'")
         return discovered
     
-    def save_discovery_output(self, documents: List[DiscoveredDocument], output_path: Path) -> None:
-        """
-        Save discovery results to JSON file compliant with HEPilot schema.
+    def save_directory_output(self, documents: List[DiscoveredDocument], output_path: Path) -> None:
 
-        Args:
-            documents: List of discovered DiscoveredDocument objects
-            output_path: Path to output file
-        """
         output_data: Dict[str, Any] = {
-            "discovered_documents": [
+            "discovered_documents":[
                 {
                     k: v
                     for k, v in {
                         "document_id": str(doc.document_id),
                         "source_type": doc.source_type,
-                        "source_url": doc.source_url,
+                        "source_path": doc.source_url,  # renamed to reflect local path
                         "title": doc.title,
                         "authors": doc.authors,
                         "discovery_timestamp": doc.discovery_timestamp.isoformat(),
@@ -86,7 +88,7 @@ class TwikiDiscovery:
                     }.items()
                     if v is not None
                 }
-                for doc in documents
+                for doc in documents 
             ]
         }
 
@@ -94,4 +96,5 @@ class TwikiDiscovery:
         with open(output_path, "w", encoding="utf-8") as f:
             json.dump(output_data, f, indent=2)
 
-        print(f"[INFO] Saved TWiki discovery output → {output_path}")
+        print(f"[INFO] Saved Twiki discovery output to {output_path}")
+

@@ -9,7 +9,10 @@ import time
 from typing import List, Dict, Any, Tuple 
 from datetime import datetime, timezone
 from pathlib import Path
-from models import AcquiredDocument, ProcessingMetadata
+from adapters.Twiki_adapter.models import AcquiredDocument, ProcessingMetadata
+
+__version__ = "1.0.0"
+PROCESSOR_NAME = f"twiki-cleaner/{__version__}"
 
 class TwikiProcessor: 
     # Processes pre-downloaded twiki markdown files.
@@ -54,7 +57,7 @@ class TwikiProcessor:
         
         duration = (datetime.now(timezone.utc) - start_time).total_seconds()
         metadata = ProcessingMetadata(
-            processor_used="twiki-cleaner/1.0.0",
+            processor_used=PROCESSOR_NAME,
             processing_timestamp=start_time,
             processing_duration=duration,
             conversion_warnings=warnings

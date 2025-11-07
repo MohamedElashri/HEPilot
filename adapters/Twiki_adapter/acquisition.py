@@ -14,7 +14,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import UUID, uuid4
-from models import DiscoveredDocument, AcquiredDocument
+from adapters.Twiki_adapter.models import DiscoveredDocument, AcquiredDocument
 from urllib.parse import urlparse
 
 class TwikiAcquisition:

@@ -15,7 +15,7 @@ from acquisition import TwikiAcquisition
 from twiki_processing import TwikiProcessor
 from twiki_chunker import TWikiChunker
 from metadata import TwikiMetadataManager
-from models import DiscoveredDocument, AcquiredDocument, ChunkContent, DocumentMetadata
+from adapters.Twiki_adapter.models import DiscoveredDocument, AcquiredDocument, ChunkContent, DocumentMetadata
 
 class TwikiAdapterPipeline:
 
@@ -83,7 +83,7 @@ class TwikiAdapterPipeline:
             )
             discovered.append(doc)
 
-        self.discovery.save_discovery_output(discovered, self.output_dir / "discovery_output.json")
+        self.discovery.save_discovery_output(discovered, self.output_dir / "discovery_output.json") # type: ignore
         print(f"[INFO] Discovered {len(discovered)} TWiki files.")
         return discovered
     

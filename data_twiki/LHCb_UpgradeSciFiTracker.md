@@ -1,0 +1,1144 @@
+UpgradeSciFiTracker \< LHCb \< TWiki \@import
+url(\'/twiki/pub/TWiki/TWikiTemplates/base.css\'); #patternTopBar,
+#patternClearHeaderCenter, #patternClearHeaderLeft,
+#patternClearHeaderRight, #patternTopBarContentsOuter,
+#patternTopBarContents { height:64px; /\\\* top bar height; make room
+for header columns \\\*/ overflow:hidden; } #patternOuter {
+margin-left:14em; } #patternLeftBar { width:14em; margin-left:-14em; }
+\@import url(\'/twiki/pub/TWiki/PatternSkin/layout.css\'); \@import
+url(\'/twiki/pub/TWiki/PatternSkin/style.css\'); \@import
+url(\'/twiki/pub/TWiki/PatternSkin/colors.css\'); /\\\* Styles that are
+set using variables \\\*/ .patternBookView .twikiTopRow,
+.patternWebIndicator a img, .patternWebIndicator a:hover img {
+background-color:#99FF99; } #patternTopBarContents {
+background-image:url(/twiki/pub/TWiki/PatternSkin/TWiki\\\_header.gif);
+background-repeat:no-repeat;} .patternBookView { border-color:#99FF99; }
+.patternPreviewPage #patternMain { /\\\* uncomment to set the preview
+image \\\*/
+/\\\*background-image:url(\"/twiki/pub/TWiki/PreviewBackground/preview2bg.gif\");\\\*/
+} \@import url(\"/twiki/pub/TWiki/PatternSkin/print.css\");
+.twikiMakeVisible{display:inline;}.twikiMakeVisibleInline{display:inline;}.twikiMakeVisibleBlock{display:block;}.twikiMakeHidden{display:none;}
+.twDashboardOuter { margin: 0; padding: 0; width: 1040px; /\\\* = 1024 +
+2\\\*7 margin + 2 extra \\\*/ } .twDashboardOuter div div div ul {
+padding-left: 1.7em; } .twDashboardBanner { position: relative; margin:
+7px; padding: 0; width: 1024px; /\\\* = 3 \\\* (300w+2\\\*15p+2\\\*1b) +
+2\\\*2\\\*7m \\\*/ height: 150px; -moz-box-shadow: 2px 2px 3px #e8e8e8;
+-webkit-box-shadow: 2px 2px 3px #e8e8e8; box-shadow: 2px 2px 3px
+#e8e8e8; -moz-border-radius: 4px; border-radius: 4px; background-color:
+#dddddd; background-image:
+url(/twiki/pub/TWiki/TWikiDashboardImages/golden-gate-sunset.jpg); }
+.twDashboardBannerTitle { position: absolute; margin: 10px 15px;
+padding: 0; font-size: 18pt; font-weight: 600; color: #333333; }
+.twDashboardBannerButtonRow { position: absolute; bottom: 0; right: 0;
+margin: 0; padding: 10px 10px; color: #333333; }
+.twDashboardBannerButton { float:right; } .twDashboardBannerButton a {
+display: inline-block; margin: 5px 10px; padding: 3px 8px; } .ui-dialog
+.ui-dialog-content { text-align: left; } .twDashboardBox { float: left;
+padding: 7px; } // inspired by
+www.dhtmlgoodies.com/index.html?whichScript=scrolling\\\_content var
+scrollData = new Array(); function doScrollCanvas( containerID ) { var
+vPos = scrollData\\\[containerID\\\]\\\[\'canvasObj\'\\\].style.top; if(
+scrollData\\\[containerID\\\]\\\[\'doScroll\'\\\] ) { vPos =
+vPos.replace(/\\\[\^\\\\-0-9\\\]/g,\'\') -
+scrollData\\\[containerID\\\]\\\[\'verticalStep\'\\\]; if( vPos/1 +
+scrollData\\\[containerID\\\]\\\[\'canvasHeight\'\\\]/1 \< 1 ) { vPos =
+0 }; scrollData\\\[containerID\\\]\\\[\'canvasObj\'\\\].style.top =
+vPos + \'px\'; } setTimeout(\'doScrollCanvas(\"\' + containerID +
+\'\")\', scrollData\\\[containerID\\\]\\\[\'delay\'\\\]); } function
+doStopScroll() { var containerID = this.id;
+scrollData\\\[containerID\\\]\\\[\'doScroll\'\\\] = false; } function
+doStartScroll() { var containerID = this.id;
+scrollData\\\[containerID\\\]\\\[\'doScroll\'\\\] = true; } function
+initScrollBox( containerID, delay, vstep, width, height ) { var
+scrollContainer = document.getElementById( containerID ); var
+scrollCanvas = scrollContainer.getElementsByTagName( \'DIV\' )\\\[0\\\];
+if( ! delay ) { delay = 1000; } if( ! vstep ) { vstep =
+scrollContainer.clientHeight; } if( width ) {
+scrollContainer.parentNode.style.width = width + \'px\'; } if( height )
+{ scrollContainer.style.height = height + \'px\'; }
+scrollContainer.onmouseover = doStopScroll; scrollContainer.onmouseout =
+doStartScroll; scrollData\\\[containerID\\\] = new Array();
+scrollData\\\[containerID\\\]\\\[\'canvasObj\'\\\] = scrollCanvas;
+scrollData\\\[containerID\\\]\\\[\'canvasHeight\'\\\] =
+scrollCanvas.offsetHeight;
+scrollData\\\[containerID\\\]\\\[\'verticalStep\'\\\] = vstep;
+scrollData\\\[containerID\\\]\\\[\'delay\'\\\] = delay;
+scrollData\\\[containerID\\\]\\\[\'doScroll\'\\\] = true;
+scrollCanvas.style.top =
+scrollData\\\[containerID\\\]\\\[\'verticalStep\'\\\] + \'px\';
+doScrollCanvas( containerID ); } .scrollBoxOuter { border: solid #d0d0d0
+1px; -moz-box-shadow: 2px 2px 3px #e8e8e8; -webkit-box-shadow: 2px 2px
+3px #e8e8e8; box-shadow: 2px 2px 3px #e8e8e8; -moz-border-radius: 4px;
+border-radius: 4px; width: 300px; padding: 15px; background-image:
+url(/twiki/pub/TWiki/ScrollBoxAddOn/gradient-title.png);
+background-repeat: repeat-x; background-color: #ffffff; }
+.scrollBoxTitle { text-align:center; font-size:19px; font-weight:bold;
+color: #333335; margin: -5px 0 0 0; padding: 0 0 12px 0; white-space:
+nowrap; overflow: hidden; } .scrollBoxTitle a:link, .scrollBoxTitle
+a:visited { color: #333335; } .scrollBoxContainer { overflow: hidden;
+height: 40px; padding: 0px; position: relative; } .scrollBoxContent {
+position: relative; top: 0px; padding: 0px; text-align: justify; }
+.scrollBoxContent img { padding: 0px; vertical-align: middle; } \@import
+url(\"https://twiki.cern.ch/twiki/pub/TWiki/TwistyContrib/twist.css\");
+// \<!\\\[CDATA\\\[ var styleText = \'\<style type=\"text/css\"
+media=\"all\"\>.twikiMakeVisible{display:inline;}.twikiMakeVisibleInline{display:inline;}.twikiMakeVisibleBlock{display:block;}.twikiMakeHidden{display:none;}\</style\>\';
+document.write(styleText); // \\\]\\\]\>
+.twikiMakeVisible{display:inline;}.twikiMakeVisibleInline{display:inline;}.twikiMakeVisibleBlock{display:block;}.twikiMakeHidden{display:none;}
+
+\[TWiki\](https://twiki.cern.ch/twiki/bin/view/Main/WebHome)\\\>\![\](./UpgradeSciFiTracker
+\_ LHCb \_ TWiki_files/web-bg-small.gif) \[LHCb
+Web\](https://twiki.cern.ch/twiki/bin/view/LHCb/WebHome)\\\>\[LHCbUpgrade\](https://twiki.cern.ch/twiki/bin/view/LHCb/LHCbUpgrade)\\\>\[UpgradeSciFiTracker\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker
+\"Topic revision: 168 (2024-12-13 - 10:56:26)\") (2024-12-13,
+\[XiaoxueHan\](https://twiki.cern.ch/twiki/bin/edit/Main/XiaoxueHan?topicparent=LHCb.UpgradeSciFiTracker;nowysiwyg=1
+\"this topic does not yet exist; you can create it.\"))
+\[\![\](./UpgradeSciFiTracker \_ LHCb \_ TWiki_files/uweb-o14.gif)
+Edit\](https://twiki.cern.ch/twiki/bin/edit/LHCb/UpgradeSciFiTracker?t=1762216263;nowysiwyg=1
+\"Edit this topic
+text\")\[Attach\](https://twiki.cern.ch/twiki/bin/attach/LHCb/UpgradeSciFiTracker
+\"Attach an image or document to this
+topic\")\[PDF\](https://twiki.cern.ch/twiki/bin/genpdf/LHCb/UpgradeSciFiTracker
+\"Create a PDF file for the topic\")
+
+The Scintillating Fibre Tracker TWiKi
+=====================================
+
+\![scifilogo_MicheldeCian.png\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/scifilogo_MicheldeCian.png)
+
+\* \[Quick
+Links\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Quick_Links)
+\*
+\[Introduction\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Introduction)
+\* \[Project Organisation and
+Management\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Project_Organisation_and_Managem)
+\* \[Naming
+Conventions\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Naming_Conventions)
+\*
+\[Labeling\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Labeling)
+\* \[Pit
+Installation\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Pit_Installation)
+\* \[Detector channel/FEB/Cable/fibre
+ordering\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Detector_channel_FEB_Cable_fibre)
+\* \[Online Controls and
+Monitoring\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Online_Controls_and_Monitoring)
+\* \[Detector
+Commissioning\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Detector_Commissioning)
+\* \[Detector
+Components\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Detector_Components)
+\* \[Modules and
+ColdBoxes\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Modules_and_ColdBoxes)
+\*
+\[Electronics\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Electronics)
+\* \[Frames &
+Infrastructure\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Frames_Infrastructure)
+\* \[Optical & HV & LV distribution during Cframe
+Assembly\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Optical_HV_LV_distribution_durin)
+\* \[Optical links
+distribution\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Optical_links_distribution)
+\*
+\[SiPMs\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#SiPMs)
+\* \[Point 8 Assembly and
+Installation\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Point_8_Assembly_and_Installatio)
+\*
+\[C-Frames\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#C_Frames)
+\*
+\[Software\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Software)
+\* \[Simulation &
+Reconstruction\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Simulation_Reconstruction)
+\*
+\[Other\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Other)
+\* \[Contact
+Information\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Contact_Information)
+\* \[Phone
+Numbers\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Phone_Numbers)
+\* \[E-Mail
+Lists\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#E_Mail_Lists)
+\* \[Test
+beams\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Test_beams)
+\* \[Photos, Posters, Theses, Conferences,
+Miscellaneous\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#Photos_Posters_Theses_Conference)
+
+Quick Links \-\-\-\-\-\-\-\-\-\--
+
+\[\*\*Online TWiki\*\*
+\![lhcb-online-logo53x50.png\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/lhcb-online-logo53x50.png)\](https://lbtwiki.cern.ch/bin/view/SciFi/WebHome)
+\[\*\*SciFi ELOG\*\*
+\![https://img.icons8.com/dusk/64/000000/read.png\](./UpgradeSciFiTracker
+\_ LHCb \_ TWiki_files/read.png)\](https://lblogbook.cern.ch/SciFi/page)
+\[\*\*TeamUp Calendar\*\*
+\![Teamup_Logo_Vector.png\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/Teamup_Logo_Vector.png)\](https://teamup.com/kssgqc5hwo5tru2xt9)
+\[\*\*EDMS\*\* \![edms6_illustration_image.jpg\](./UpgradeSciFiTracker
+\_ LHCb \_
+TWiki_files/edms6_illustration_image.jpg)\](https://edms.cern.ch/project/LHCB-0581)
+\[\*\*LBEMS\*\* LHCb Equip. Man. System
+\![fence.jpg\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/fence.jpg)\](https://lbfence.cern.ch/lhcb/lbems)
+\[\*\*ProdDB\*\* Production Database \![\](./UpgradeSciFiTracker \_ LHCb
+\_
+TWiki_files/logo-pi-bunt.jpg)\](https://scifi.physi.uni-heidelberg.de/db/prod/)
+
+Introduction \-\-\-\-\-\-\-\-\-\-\--
+
+Important!
+
+1\. Please upload documents to EDMS or CDS. Not the TWiki. Pictures are
+ok. 2. Topic (Page) names should start with \`SciFi\` (i.e.
+\`SciFiTopic\`) to prevent accidental overlap with other LHCb groups. 3.
+Formatting information can be found \[here\![\](./UpgradeSciFiTracker \_
+LHCb \_
+TWiki_files/external-link.gif)\](http://twiki.org/cgi-bin/view/TWiki/TextFormattingRules)
+and \[here\![\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/external-link.gif)\](http://twiki.org/cgi-bin/view/Plugins/TWikiDashboardAddOn).
+4. Please see
+\[SciFiTopicMap\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiTopicMap)
+for existing pages and links. (Takes a minute to load.)
+
+\### Project Organisation and Management
+
+\![\](./UpgradeSciFiTracker \_ LHCb \_ TWiki_files/training.png)
+
+\[SciFi Indico\![\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/external-link.gif)\](https://indico.cern.ch/category/5833/) -
+SciFi Meetings
+
+\[SciFiReviewsDocuments\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiReviewsDocuments) -
+TDR, EDR, PRR and Other Documents
+
+\[SciFiWorkPackages\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiWorkPackages) -
+The organizational structure and work packages of the SciFi Tracker
+project.
+
+\### Naming Conventions
+
+\![\](./UpgradeSciFiTracker \_ LHCb \_ TWiki_files/place-marker.png)
+
+\![namingconvention.png\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/namingconvention.png)\![module.png\](./UpgradeSciFiTracker
+\_ LHCb \_ TWiki_files/module.png)
+
+\### Labeling
+
+All major items (e.g. mats, modules, cold boxes, etc.) shall be
+identified and labelled using the LHCb and CERN wide convention
+described in this document. These labels serve also as unambiguous
+identifiers of equipment which needs to be entered and removed from the
+point 8 underground area. If, unexpectedly, unlabelled \'minor
+equipment\', like a cable tray, a fibre support plate etc. needs to be
+removed, it will receive a label in an ad-hoc way. Further details
+regarding special rules for cables and specific part naming and Labeling
+can be found here:
+\[SciFiLabeling\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiLabeling)
+
+\### Pit Installation
+
+\*\*C-Frame Naming Convention\*\* (click to enlarge)
+
+\[ \![C-FrameLayout.png\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/C-FrameLayout.png) \](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/C-FrameLayout.png)
+
+\### Detector channel/FEB/Cable/fibre ordering
+
+\![\](./UpgradeSciFiTracker \_ LHCb \_ TWiki_files/place-marker.png)
+
+\[\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/detectorOrientation_L0_L2.png)
+
+\[\*\*Link and Channel Ordering L0 L2\*\* (click to enlarge)
+\![detectorOrientation_L0_L2.png\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/detectorOrientation_L0_L2.png)\](./UpgradeSciFiTracker \_
+LHCb \_ TWiki_files/detectorOrientation_L0_L2.png)
+
+\[\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/detectorOrientation_L0_L2.png)
+
+\[\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/detectorOrientation_L1_L3.png)
+
+\[\*\*Link and Channel Ordering L1 L3\*\* (click to enlarge)
+\![detectorOrientation_L1_L3.png\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/detectorOrientation_L1_L3.png)\](./UpgradeSciFiTracker \_
+LHCb \_ TWiki_files/detectorOrientation_L1_L3.png)
+
+\[\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/detectorOrientation_L1_L3.png)
+
+\[\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/FEB_LIS_SiPM_mapping.png)
+
+\[\*\*LIS calibration mapping\*\* (click to enlarge)
+\![FEB_LIS_SiPM_mapping.png\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/FEB_LIS_SiPM_mapping.png)\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/FEB_LIS_SiPM_mapping.png)
+
+\[\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/FEB_LIS_SiPM_mapping.png)
+
+Online Controls and Monitoring
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+\![\](./UpgradeSciFiTracker \_ LHCb \_ TWiki_files/controller.png)
+
+\[SciFiOnline\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline) -
+This work package deals with the development of the software for
+configuration, control and monitoring of the various subsystems of the
+SciFi detector.
+
+\* \[Detector
+Operation\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#Detector_Operation)
+\* \[SciFi Operation: for Piquet and
+Experts\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#SciFi_Operation_for_Piquet_and_E)
+\* \[Piquet
+Tasks\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#Piquet_Tasks)
+\*
+\[Procedures\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#Procedures)
+\* \[Frequent known
+issues\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#Frequent_known_issues)
+\* \[System Pages for
+Piquets\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#System_Pages_for_Piquets)
+\* \[Useful
+tips\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#Useful_tips)
+\*
+\[People\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#People)
+\*
+\[Other\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#Other)
+\* \[Setting up the
+environment\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#Setting_up_the_environment)
+\* \[bash
+configuration\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#bash_configuration)
+\* \[Setting proxy for
+firefox\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#Setting_proxy_for_firefox)
+\* \[Controls: Overview of SciFi
+ECS\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#Controls_Overview_of_SciFi_ECS)
+\* \* \[Recipes, Databases and
+Scans\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#Recipes_Databases_and_Scans)
+\* \[General guidelines for WinCC
+developers\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#General_guidelines_for_WinCC_dev)
+\* \[Archiving of WinCC
+DPs\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#Archiving_of_WinCC_DPs)
+\* \[Current WinCC projects under development and control PCs
+architecture at build.
+3852\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#Current_WinCC_projects_under_dev)
+\* \[Envisaged (final) architecture for serial C-Frame commissioning in
+build. 3852 + operation in the
+cavern\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#Envisaged_final_architecture_for)
+\* \[Other Ethernet equipment in build.
+3852\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#Other_Ethernet_equipment_in_buil)
+\*
+\[WinCC-OA\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#WinCC_OA)
+\* \[Power-up procedure for Test
+Racks\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#Power_up_procedure_for_Test_Rack)
+\* \[SciFi documentation and
+communication\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#SciFi_documentation_and_communic)
+\* \[LHCb online
+project\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiOnline#LHCb_online_project)
+
+Detector Commissioning \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+\[SciFiCommissioning\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning) -
+This work package deals with the commissioning of the SciFi detector
+installed in the LHCb experimental cavern.
+
+\* \[Commissioning and
+Operation\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning#Commissioning_and_Operation)
+\* \[Useful
+documents\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning#Useful_documents)
+\* \[Commissioning issues & To-Do
+lists\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning#Commissioning_issues_To_Do_lists)
+\* \[useful commissioning run
+list\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning#useful_commissioning_run_list)
+\* \[a list of known
+problems\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning#a_list_of_known_problems)
+\* \[FEBs replacement on detector
+record\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning#FEBs_replacement_on_detector_rec)
+\* \[action check list after replacing FEB on
+detector\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning#action_check_list_after_replacin)
+\* \[Commissioning
+Checklist\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning#Commissioning_Checklist)
+\* \[Commissioning
+Manual\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning#Commissioning_Manual)
+\* \[LVFEE power
+control\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning#LVFEE_power_control)
+\* \[Check control link
+mapping\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning#Check_control_link_mapping)
+\* \[FEE
+alarms\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning#FEE_alarms)
+\*
+\[Troubleshooting\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning#Troubleshooting)
+\* \[List of known
+issues\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning#List_of_known_issues)
+\* \[Programming FPGAs fails immediately for all
+devices\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning#Programming_FPGAs_fails_immediat)
+\* \[Subscribe HW registers
+(again)\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning#Subscribe_HW_registers_again)
+\* \[Control link lost during
+monitoring\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning#Control_link_lost_during_monitor)
+\* \[Additional
+documentation\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning#Additional_documentation)
+\* \[Contact
+Information\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCommissioning#Contact_Information)
+
+Detector Components \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+\### Modules and
+\[ColdBoxes\](https://twiki.cern.ch/twiki/bin/edit/LHCb/ColdBoxes?topicparent=LHCb.UpgradeSciFiTracker;nowysiwyg=1
+\"this topic does not yet exist; you can create it.\")
+
+\\- module page by Blake (can be link to EDMS) - coldbox page by Antonio
+
+\* \*\*\[Fibre Procurement &
+QA\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiFibreProcurement)\*\*
+\* \*\*\[Fibre Mats &
+Modules\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiFibreMatsModules)\*\*
+\* \*\*\[Modules+Cold box assembly &
+QA\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiFibreModulesQA)\*\*
+
+\### Electronics
+
+\[SciFiElectronics\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiElectronics)
+contains information of the design, assembly, production QA for all the
+sub-components of the SciFi front-end electronics.
+
+\* \[Front-end
+Electronics\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiElectronics#Front_end_Electronics)
+\* \[Front-end Box
+(FEB/ROB)\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiElectronics#Front_end_Box_FEB_ROB)
+\*
+\[FE-Tester\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiElectronics#FE_Tester)
+\* \[Electronics in Assembly &
+Commissioning\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiElectronics#Electronics_in_Assembly_Commissi)
+\* \[Commissioning
+Procedure\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiElectronics#Commissioning_Procedure)
+\* \[List of FEBs replaced during Cframe
+Commissioning\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiElectronics#List_of_FEBs_replaced_during_Cfr)
+\* \[List of bad channels found during Cframe
+Commissioning\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiElectronics#List_of_bad_channels_found_durin)
+\* \[Wishing list for monitoring & archiving parameters on FEE during
+detector
+operation\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiElectronics#Wishing_list_for_monitoring_arch)
+\* \[Scans used during the commissioning and
+debugging\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiElectronics#Scans_used_during_the_commission)
+\* \[HV Cable
+Test\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiElectronics#HV_Cable_Test)
+\* \[HV monitor circuit calibration
+studies\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiElectronics#HV_monitor_circuit_calibration_s)
+\* \[FEB temperature
+studies\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiElectronics#FEB_temperature_studies)
+\* \[PACIFIC ASIC design : mainly for
+designers\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiElectronics#PACIFIC_ASIC_design_mainly_for_d)
+\* \[Low Voltage and Maraton power
+supplies\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiElectronics#Low_Voltage_and_Maraton_power_su)
+\*
+\[Simulations\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiElectronics#Simulations)
+\* \[Design
+specifications\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiElectronics#Design_specifications)
+\*
+\[Galleries\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiElectronics#Galleries)
+
+\### Frames & Infrastructure
+
+\\- frame page by Blake and Thomas (can be just links to EDMS)
+
+\\- water cooling by Christophe
+
+\\- Novec cooling by Antonio and Sune
+
+\\- vacuum by Sune
+
+\\- dry gas by Sune
+
+\\- etc.
+
+Survey Reports are on EDMS:
+\[https://edms.cern.ch/project/CERN-0000206769\![\](./UpgradeSciFiTracker
+\_ LHCb \_
+TWiki_files/external-link.gif)\](https://edms.cern.ch/project/CERN-0000206769)
+
+\* \*\*\[C-Frames &
+Services\](https://twiki.cern.ch/twiki/bin/view/LHCb/FramesInfrastructure)\*\*
+
+Optical & HV & LV distribution during Cframe Assembly
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+\### Optical links distribution
+
+\* Fibre mapping between Cframe and DAQ used during Assembly illustrated
+in: \[https://edms.cern.ch/document/2355332/1\![\](./UpgradeSciFiTracker
+\_ LHCb \_
+TWiki_files/external-link.gif)\](https://edms.cern.ch/document/2355332/1)
+
+\*\*NOTE\*\*
+
+the A-side fibre mapping is the same between the Cframe and the TELL40,
+however the frontend (ROB) to LC breakout in the Cframe is different (
+kind of inversed), details can be found in the updated document in edms
+above (v2.0). This gives an impact for the Cframe commissioning software
+in the assembly hall, but not much to the fibre cabling task.
+
+\* \\\[ref\\\] optical fibre cabling for the final detector in pit :
+\[https://edms.cern.ch/document/1694354/1\![\](./UpgradeSciFiTracker \_
+LHCb \_
+TWiki_files/external-link.gif)\](https://edms.cern.ch/document/1694354/1)
+\* fibre mapping used for prototype Cframe : \[(download as excel
+file)\](https://twiki.cern.ch/twiki/pub/LHCb/UpgradeSciFiTracker/protoCframe_mapping.xlsx)
+
+\#### \[SiPM\](https://twiki.cern.ch/twiki/bin/view/LHCb/SiPM) bias (HV)
+distribution
+
+\* \_block schematics\_ & \_explanation\_ of bias supply routing from
+\*\*CAEN module\*\* to \*\*Master Boards\*\*:
+\[https://redmine.nikhef.nl/et/documents/144\![\](./UpgradeSciFiTracker
+\_ LHCb \_
+TWiki_files/external-link.gif)\](https://redmine.nikhef.nl/et/documents/144)
+\* \_illustration drawings\_ & \_routing details in excel\_ of bias
+supply routing from \*\*CAEN module\*\* to \*\*Master Boards\*\*:
+\[https://redmine.nikhef.nl/et/documents/148\![\](./UpgradeSciFiTracker
+\_ LHCb \_
+TWiki_files/external-link.gif)\](https://redmine.nikhef.nl/et/documents/148)
+\* 1-to-2 patch panel \*\*schematics\*\* + \*\*label\*\*:
+\[https://redmine.nikhef.nl/et/documents/147\![\](./UpgradeSciFiTracker
+\_ LHCb \_
+TWiki_files/external-link.gif)\](https://redmine.nikhef.nl/et/documents/147)
+\* 1-to-4 patch panel \*\*schematics\*\* + \*\*label\*\*:
+\[https://redmine.nikhef.nl/et/documents/146\![\](./UpgradeSciFiTracker
+\_ LHCb \_
+TWiki_files/external-link.gif)\](https://redmine.nikhef.nl/et/documents/146)
+
+\#### LV distribution
+
+\* Mapping Cframe Assembly : \[(Mapping excel to
+download)\](https://twiki.cern.ch/twiki/pub/LHCb/UpgradeSciFiTracker/LV_mapping_Cframe.xlsx)
+
+\### SiPMs
+
+\[SiPM\](https://twiki.cern.ch/twiki/bin/view/LHCb/SiPM) leading by EPFL
+
+\* \[Project
+Scope\](https://twiki.cern.ch/twiki/bin/view/LHCb/SiPM#Project_Scope) \*
+\[Goals
+(SiPM)\](https://twiki.cern.ch/twiki/bin/view/LHCb/SiPM#Goals_SiPM) \*
+\[Goals (Light injection
+system)\](https://twiki.cern.ch/twiki/bin/view/LHCb/SiPM#Goals_Light_injection_system)
+\* \[Projects\](https://twiki.cern.ch/twiki/bin/view/LHCb/SiPM#Projects)
+\* \[A. Silicon
+optimisation\](https://twiki.cern.ch/twiki/bin/view/LHCb/SiPM#A_Silicon_optimisation)
+\* \[B. Silicon
+Packaging:\](https://twiki.cern.ch/twiki/bin/view/LHCb/SiPM#B_Silicon_Packaging)
+\* \[C. Flex and
+mounting:\](https://twiki.cern.ch/twiki/bin/view/LHCb/SiPM#C_Flex_and_mounting)
+\* \[D. Detector
+characterisation:\](https://twiki.cern.ch/twiki/bin/view/LHCb/SiPM#D_Detector_characterisation)
+\* \[E. Develpoment of light injection
+system:\](https://twiki.cern.ch/twiki/bin/view/LHCb/SiPM#E_Develpoment_of_light_injection)
+\* \[Lab
+Facilities:\](https://twiki.cern.ch/twiki/bin/view/LHCb/SiPM#Lab_Facilities)
+\*
+\[Testbeam:\](https://twiki.cern.ch/twiki/bin/view/LHCb/SiPM#Testbeam)
+\* \[Presentation given in LHCb
+meetings\](https://twiki.cern.ch/twiki/bin/view/LHCb/SiPM#Presentation_given_in_LHCb_meeti)
+\* \[LHCb Internal
+Notes\](https://twiki.cern.ch/twiki/bin/view/LHCb/SiPM#LHCb_Internal_Notes)
+
+Point 8 Assembly and Installation
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+\### C-Frames
+
+\![cframe_48px.png\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/cframe_48px.png)
+
+\* \[Work package: C-Frame
+Assembly\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCFrameAssembly#Work_package_C_Frame_Assembly)
+\* \[Operational
+Information\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCFrameAssembly#Operational_Information)
+\* \[Photographic
+record\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCFrameAssembly#Photographic_record)
+\* \[Schedule, Calendar,
+Spreadsheets\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCFrameAssembly#Schedule_Calendar_Spreadsheets)
+\* \[Parts
+Delivery\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCFrameAssembly#Parts_Delivery)
+\* \[Other Useful
+Information\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCFrameAssembly#Other_Useful_Information)
+\*
+\[Organization\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCFrameAssembly#Organization)
+\*
+\[Scope\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCFrameAssembly#Scope)
+\* \[The prototype
+C-Frame\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCFrameAssembly#The_prototype_C_Frame)
+\* \[Roles and
+responsibilities\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCFrameAssembly#Roles_and_responsibilities)
+\* \* \[Description of
+tasks\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiCFrameAssembly#Description_of_tasks)
+
+\</sticky\>
+
+Software \-\-\-\-\-\-\--
+
+\### Simulation & Reconstruction
+
+\* \[SciFi Simulation and
+Reconstruction\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#SciFi_Simulation_and_Reconstruct)
+\* \[\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#) \*
+\[Component\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Component)
+\*
+\[Monitoring\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Monitoring)
+\* \[Alignment +
+Calibration\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Alignment_Calibration)
+\*
+\[Digitisation\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Digitisation)
+\*
+\[Tracking\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Tracking)
+\* \[Code
+improvement\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Code_improvement)
+\*
+\[Geometry\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Geometry)
+\* \[Details about current
+tasks\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Details_about_current_tasks)
+\* \[Development and software
+status\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Development_and_software_status)
+\* \[Geometry
+versions\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Geometry_versions)
+\* \[Decoding/Encoding
+versions\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Decoding_Encoding_versions)
+\* \[Supporting
+notes\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Supporting_notes)
+\* \[Previous workshops and
+reviews\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Previous_workshops_and_reviews)
+\*
+\[Tutorials\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Tutorials)
+\* \[Compile Boole in the LHCb
+stack\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Compile_Boole_in_the_LHCb_stack)
+\* \[Compile Boole with fully checked-out
+packages\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Compile_Boole_with_fully_checked)
+\* \[Check out only a few
+packages:\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Check_out_only_a_few_packages)
+\* \[Test your commit with nightly
+tests\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Test_your_commit_with_nightly_te)
+\* \[Using a local geometry with the Git-based
+CondDB\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Using_a_local_geometry_with_the)
+\* \[Running the Boole
+digitisation\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Running_the_Boole_digitisation)
+\* \[Adding effective noise
+parameters\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiSimulation#Adding_effective_noise_parameter)
+
+\### Other
+
+Contact Information \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+\### Phone Numbers
+
+\![\](./UpgradeSciFiTracker \_ LHCb \_ TWiki_files/ringer-volume.png)
+
+\*\*Name\*\*
+
+\*\*Tel. Nr.\*\*
+
+\*\*Ext./Mobile\*\*
+
+Assembly Hall 1 (3852)
+
++41 22 76 65459
+
+65459
+
+Assembly Hall 2 (3852)
+
++41 22 76 65093
+
+65093
+
+Ulrich Uwer
+
++49 170 8513739
+
+Antonio Pellegrino
+
++41 75 411 2572
+
+16 2572
+
+Blake Leverington
+
++41 22 76 60615
+
+60615
+
+Sune Jakobsen
+
++41 75 411 8853
+
+16 8853
+
+Niels Tuning
+
++31 6 26628355
+
+16 9582
+
+Xiaoxue Han
+
++41 75 411 6121
+
+16 6121
+
+OT Office Pt 8
+
++41 22 76 77868
+
+77868
+
+\### E-Mail Lists
+
+\![\](./UpgradeSciFiTracker \_ LHCb \_ TWiki_files/address-book.png)
+
+General
+
+\[lhcb-upgrade-scifi-tracker@cern.ch\](mailto:lhcb-upgrade-scifi-tracker@cern.ch)
+
+Software
+
+\[lhcb-upgrade-ft-software@cern.ch\](mailto:lhcb-upgrade-ft-software@cern.ch)
+
+Hardware
+
+\[lhcb-scifi-mats-management@cern.ch\](mailto:lhcb-scifi-mats-management@cern.ch)
+
+Electronics (PACIFIC)
+
+\[lhcb-pacific-chip-project@cern.ch\](mailto:lhcb-pacific-chip-project@cern.ch)
+
+Technical Meeting (restricted)
+
+\[lhcb-scifi-technical-meeting@cern.ch\](mailto:lhcb-scifi-technical-meeting@cern.ch)
+
+Test beam
+
+\[lhcb-scifi-tracker-testbeam@cern.ch\](mailto:lhcb-scifi-tracker-testbeam@cern.ch)
+
+Engineering and Integration
+
+\[lhcb-scifi-EngInt@cern.ch\](mailto:lhcb-scifi-EngInt@cern.ch)
+
+C-frame assembly & testing
+
+\[lhcb-scifi-C-frame-AT@cern.ch\](mailto:lhcb-scifi-C-frame-AT@cern.ch)
+
+Controls and Online
+
+\[lhcb-scifi-online@cern.ch\](mailto:lhcb-scifi-online@cern.ch)
+
+Add yourself via:
+\[https://e-groups.cern.ch/e-groups/EgroupsSearchMember.do\![\](./UpgradeSciFiTracker
+\_ LHCb \_
+TWiki_files/external-link.gif)\](https://e-groups.cern.ch/e-groups/EgroupsSearchMember.do)
+
+Test beams \-\-\-\-\-\-\-\-\--
+
+\*
+\[Organisation\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiTrackerTestBeam#Organisation)
+\*
+\[Documents\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiTrackerTestBeam#Documents)
+\* \[Mailing
+list\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiTrackerTestBeam#Mailing_list)
+\* \[Analysis and
+Simulation\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiTrackerTestBeam#Analysis_and_Simulation)
+\*
+\[Logbook\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiTrackerTestBeam#Logbook)
+
+\[2014 CERN
+SPS\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiTrackerTestBeam2014)
+
+\[2015 CERN
+SPS\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiTrackerTestBeam2015)
+
+\[2016 CERN
+SPS\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiTrackerTestBeam2016)
+
+\[Feb. 2017 DESY
+T22\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiTrackerTestBeamFeb2017)
+
+\[Aug. 2017 DESY
+T22\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiTrackerTestBeamAug2017)
+
+\[2018 CERN
+SPS\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiTrackerTestBeamJul2018)
+
+Photos, Posters, Theses, Conferences, Miscellaneous
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+\[UpgradeSciFiTrackerold\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTrackerold) -
+The old SciFi Twiki homepage
+
+\[SciFiStudentTheses\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiStudentTheses) -
+The theses from students in the SciFi Tracker Project
+
+\[SciFiConference\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiConference) -
+Conference Contributions
+
+\[SciFiTopicMap\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiTopicMap) -
+Shows the links from this page to other pages
+
+\[SciFiImageGallery\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiImageGallery) -
+Links to non-conference posters, photos, sketches, and other nice
+things.
+
+\* \[SciFi Image
+Gallery\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiImageGallery#SciFi_Image_Gallery)
+\* \* \[Data Plots Approved for External
+Conferences/Presentations\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiImageGallery#Data_Plots_Approved_for_External)
+\*
+\[Photos\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiImageGallery#Photos)
+\*
+\[Posters\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiImageGallery#Posters)
+\*
+\[Plots\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiImageGallery#Plots)
+\* \[Diagrams and
+Sketches\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiImageGallery#Diagrams_and_Sketches)
+
+\[Icons by Icons8\![\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/external-link.gif)\](https://icons8.com/)
+
+\[SciFiWhiteBoard\](https://twiki.cern.ch/twiki/bin/view/LHCb/SciFiWhiteBoard)
+
+\[\![\](./UpgradeSciFiTracker \_ LHCb \_ TWiki_files/uweb-o14.gif)
+Edit\](https://twiki.cern.ch/twiki/bin/edit/LHCb/UpgradeSciFiTracker?t=1762216264;nowysiwyg=1
+\"Edit this topic
+text\") \| \[Attach\](https://twiki.cern.ch/twiki/bin/attach/LHCb/UpgradeSciFiTracker
+\"Attach an image or document to this topic\") \| \[Print
+version\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker?cover=print
+\"Printable version of this
+topic\") \| \[History\](https://twiki.cern.ch/twiki/bin/oops/LHCb/UpgradeSciFiTracker?template=oopshistory
+\"View total topic history\"):
+r168 \[\<\](https://twiki.cern.ch/twiki/bin/rdiff/LHCb/UpgradeSciFiTracker?rev1=168;rev2=167) \[r167\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker?rev=167) \[\<\](https://twiki.cern.ch/twiki/bin/rdiff/LHCb/UpgradeSciFiTracker?rev1=167;rev2=166) \[r166\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker?rev=166) \[\<\](https://twiki.cern.ch/twiki/bin/rdiff/LHCb/UpgradeSciFiTracker?rev1=166;rev2=165) \[r165\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker?rev=165) \[\<\](https://twiki.cern.ch/twiki/bin/rdiff/LHCb/UpgradeSciFiTracker?rev1=165;rev2=164) \[r164\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker?rev=164) \| \[Backlinks\](https://twiki.cern.ch/twiki/bin/oops/LHCb/UpgradeSciFiTracker?template=backlinksweb
+\"Search the LHCb Web for topics that link to here\") \| \[Raw
+View\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker?raw=on
+\"View raw text without
+formatting\") \| \[WYSIWYG\](https://twiki.cern.ch/twiki/bin/edit/LHCb/UpgradeSciFiTracker?t=1762216264;nowysiwyg=0
+\"WYSIWYG editor\") \| \[More topic
+actions\](https://twiki.cern.ch/twiki/bin/oops/LHCb/UpgradeSciFiTracker?template=oopsmore&param1=168&param2=168
+\"Delete or rename this topic; set parent topic; view and compare
+revisions\")
+
+Topic revision: r168 - 2024-12-13
+\[\\-\](https://twiki.cern.ch/twiki/bin/edit/LHCb/UpgradeSciFiTracker?t=1762216264;nowysiwyg=1)
+\[XiaoxueHan\](https://twiki.cern.ch/twiki/bin/edit/Main/XiaoxueHan?topicparent=LHCb.UpgradeSciFiTracker;nowysiwyg=1
+\"this topic does not yet exist; you can create it.\")
+
+\![\](./UpgradeSciFiTracker \_ LHCb \_ TWiki_files/person.gif)
+\[YagnaSwaroopDhurbhakula\](https://twiki.cern.ch/twiki/bin/edit/Main/YagnaSwaroopDhurbhakula?topicparent=LHCb.UpgradeSciFiTracker;nowysiwyg=1
+\"this topic does not yet exist; you can create it.\")
+\![Lock\](./UpgradeSciFiTracker \_ LHCb \_ TWiki_files/lock.gif
+\"Lock\") \[Log
+Out\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker?logout=1)
+
+\* \[\![Web background\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/web-bg-small.gif \"Web background\")
+LHCb\](https://twiki.cern.ch/twiki/bin/view/LHCb/WebHome)
+
+\* \*\*LHCb Web\*\* \* \[LHCb Web
+Home\](https://twiki.cern.ch/twiki/bin/view/LHCb/WebHome) \*
+\[Changes\](https://twiki.cern.ch/twiki/bin/view/LHCb/WebChanges) \*
+\[Index\](https://twiki.cern.ch/twiki/bin/view/LHCb/WebIndex) \*
+\[Search\](https://twiki.cern.ch/twiki/bin/view/LHCb/WebSearch)
+
+\* \* \*
+
+\* \*\*LHCb webs\*\* \*
+\[LHCbComputing\](https://twiki.cern.ch/twiki/bin/view/LHCb/LHCbComputing)
+\* \[LHCb FAQs\](https://twiki.cern.ch/twiki/bin/view/LHCb/FAQ/WebHome)
+\* \[LHCbOnline\](https://twiki.cern.ch/twiki/bin/view/LHCb/LHCbOnline)
+\*
+\[LHCbPhysics\](https://twiki.cern.ch/twiki/bin/view/LHCbPhysics/LHCbPhysics)
+\* \[LHCbVELO\](https://twiki.cern.ch/twiki/bin/view/LHCb/LHCbVELO) \*
+\[LHCbST\](https://twiki.cern.ch/twiki/bin/view/LHCb/LHCbST) \*
+\[LHCbOT\](https://twiki.cern.ch/twiki/bin/view/LHCb/LHCbOT) \*
+\[LHCbPlume\](https://twiki.cern.ch/twiki/bin/view/LHCb/LHCbPlume) \*
+\[LHCbRICH\](https://twiki.cern.ch/twiki/bin/view/LHCb/LHCbRICH) \*
+\[LHCbMuon\](https://twiki.cern.ch/twiki/bin/view/LHCb/LHCbMuon) \*
+\[LHCbTrigger\](https://twiki.cern.ch/twiki/bin/view/LHCb/LHCbTrigger)
+\*
+\[LHCbDetectorAlignment\](https://twiki.cern.ch/twiki/bin/view/LHCb/LHCbDetectorAlignment)
+\*
+\[LHCbTechnicalCoordination\](https://twiki.cern.ch/twiki/bin/view/LHCb/LHCbTechnicalCoordination)
+\*
+\[LHCbUpgrade\](https://twiki.cern.ch/twiki/bin/view/LHCb/LHCbUpgrade)
+
+\* \* \*
+
+\[\![\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/toggleopen.gif)Public
+webs\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#)
+\[\![\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/toggleclose.gif)Public
+webs\](https://twiki.cern.ch/twiki/bin/view/LHCb/UpgradeSciFiTracker#)
+
+\* \[ABATBEA\](https://twiki.cern.ch/twiki/bin/view/ABATBEA/WebHome) \*
+\[ACPP\](https://twiki.cern.ch/twiki/bin/view/ACPP/WebHome) \*
+\[ADCgroup\](https://twiki.cern.ch/twiki/bin/view/ADCgroup/WebHome) \*
+\[AEGIS\](https://twiki.cern.ch/twiki/bin/view/AEGIS/WebHome) \*
+\[AfricaMap\](https://twiki.cern.ch/twiki/bin/view/AfricaMap/WebHome) \*
+\[AgileInfrastructure\](https://twiki.cern.ch/twiki/bin/view/AgileInfrastructure/WebHome)
+\* \[ALICE\](https://twiki.cern.ch/twiki/bin/view/ALICE/WebHome) \*
+\[AliceEbyE\](https://twiki.cern.ch/twiki/bin/edit/AliceEbyE/WebHome?topicparent=LHCb.UpgradeSciFiTracker;nowysiwyg=1
+\"this topic does not yet exist; you can create it.\") \*
+\[AliceSPD\](https://twiki.cern.ch/twiki/bin/view/AliceSPD/WebHome) \*
+\[AliceSSD\](https://twiki.cern.ch/twiki/bin/view/AliceSSD/WebHome) \*
+\[AliceTOF\](https://twiki.cern.ch/twiki/bin/view/AliceTOF/WebHome) \*
+\[AliFemto\](https://twiki.cern.ch/twiki/bin/view/AliFemto/WebHome) \*
+\[ALPHA\](https://twiki.cern.ch/twiki/bin/view/ALPHA/WebHome) \*
+\[Altair\](https://twiki.cern.ch/twiki/bin/view/Altair/WebHome) \*
+\[ArdaGrid\](https://twiki.cern.ch/twiki/bin/view/ArdaGrid/WebHome) \*
+\[ASACUSA\](https://twiki.cern.ch/twiki/bin/view/ASACUSA/WebHome) \*
+\[AthenaFCalTBAna\](https://twiki.cern.ch/twiki/bin/view/AthenaFCalTBAna/WebHome)
+\* \[Atlas\](https://twiki.cern.ch/twiki/bin/view/Atlas/WebHome) \*
+\[AtlasLBNL\](https://twiki.cern.ch/twiki/bin/view/AtlasLBNL/WebHome) \*
+\[AXIALPET\](https://twiki.cern.ch/twiki/bin/view/AXIALPET/WebHome) \*
+\[CAE\](https://twiki.cern.ch/twiki/bin/view/CAE/WebHome) \*
+\[CALICE\](https://twiki.cern.ch/twiki/bin/view/CALICE/WebHome) \*
+\[CDS\](https://twiki.cern.ch/twiki/bin/view/CDS/WebHome) \*
+\[CENF\](https://twiki.cern.ch/twiki/bin/view/CENF/WebHome) \*
+\[CERNSearch\](https://twiki.cern.ch/twiki/bin/view/CERNSearch/WebHome)
+\* \[CLIC\](https://twiki.cern.ch/twiki/bin/view/CLIC/WebHome) \*
+\[Cloud\](https://twiki.cern.ch/twiki/bin/view/Cloud/WebHome) \*
+\[CloudServices\](https://twiki.cern.ch/twiki/bin/view/CloudServices/WebHome)
+\* \[CMS\](https://twiki.cern.ch/twiki/bin/view/CMS/WebHome) \*
+\[Controls\](https://twiki.cern.ch/twiki/bin/view/Controls/WebHome) \*
+\[CTA\](https://twiki.cern.ch/twiki/bin/view/CTA/WebHome) \*
+\[CvmFS\](https://twiki.cern.ch/twiki/bin/view/CvmFS/WebHome) \*
+\[DB\](https://twiki.cern.ch/twiki/bin/view/DB/WebHome) \*
+\[DefaultWeb\](https://twiki.cern.ch/twiki/bin/view/DefaultWeb/WebHome)
+\* \[DESgroup\](https://twiki.cern.ch/twiki/bin/view/DESgroup/WebHome)
+\* \[DPHEP\](https://twiki.cern.ch/twiki/bin/view/DPHEP/WebHome) \*
+\[DM-LHC\](https://twiki.cern.ch/twiki/bin/view/DMLHC/WebHome) \*
+\[DSSGroup\](https://twiki.cern.ch/twiki/bin/view/DSSGroup/WebHome) \*
+\[EGEE\](https://twiki.cern.ch/twiki/bin/view/EGEE/WebHome) \*
+\[EgeePtf\](https://twiki.cern.ch/twiki/bin/view/EgeePtf/WebHome) \*
+\[ELFms\](https://twiki.cern.ch/twiki/bin/view/ELFms/WebHome) \*
+\[EMI\](https://twiki.cern.ch/twiki/bin/view/EMI/WebHome) \*
+\[ETICS\](https://twiki.cern.ch/twiki/bin/view/ETICS/WebHome) \*
+\[FIOgroup\](https://twiki.cern.ch/twiki/bin/view/FIOgroup/WebHome) \*
+\[FlukaTeam\](https://twiki.cern.ch/twiki/bin/view/FlukaTeam/WebHome) \*
+\[Frontier\](https://twiki.cern.ch/twiki/bin/view/Frontier/WebHome) \*
+\[Gaudi\](https://twiki.cern.ch/twiki/bin/view/Gaudi/WebHome) \*
+\[GeneratorServices\](https://twiki.cern.ch/twiki/bin/view/GeneratorServices/WebHome)
+\*
+\[GuidesInfo\](https://twiki.cern.ch/twiki/bin/view/GuidesInfo/WebHome)
+\*
+\[HardwareLabs\](https://twiki.cern.ch/twiki/bin/view/HardwareLabs/WebHome)
+\* \[HCC\](https://twiki.cern.ch/twiki/bin/view/HCC/WebHome) \*
+\[HEPIX\](https://twiki.cern.ch/twiki/bin/view/HEPIX/WebHome) \*
+\[ILCBDSColl\](https://twiki.cern.ch/twiki/bin/view/ILCBDSColl/WebHome)
+\* \[ILCTPC\](https://twiki.cern.ch/twiki/bin/view/ILCTPC/WebHome) \*
+\[IMWG\](https://twiki.cern.ch/twiki/bin/view/IMWG/WebHome) \*
+\[Inspire\](https://twiki.cern.ch/twiki/bin/view/Inspire/WebHome) \*
+\[IPv6\](https://twiki.cern.ch/twiki/bin/view/IPv6/WebHome) \*
+\[IT\](https://twiki.cern.ch/twiki/bin/view/IT/WebHome) \*
+\[ItCommTeam\](https://twiki.cern.ch/twiki/bin/view/ItCommTeam/WebHome)
+\* \[ITCoord\](https://twiki.cern.ch/twiki/bin/view/ITCoord/WebHome) \*
+\[ITdeptTechForum\](https://twiki.cern.ch/twiki/bin/view/ITdeptTechForum/WebHome)
+\* \[ITDRP\](https://twiki.cern.ch/twiki/bin/view/ITDRP/WebHome) \*
+\[ITGT\](https://twiki.cern.ch/twiki/bin/view/ITGT/WebHome) \*
+\[ITSDC\](https://twiki.cern.ch/twiki/bin/view/ITSDC/WebHome) \*
+\[LAr\](https://twiki.cern.ch/twiki/bin/view/LAr/WebHome) \*
+\[LCG\](https://twiki.cern.ch/twiki/bin/view/LCG/WebHome) \*
+\[LCGAAWorkbook\](https://twiki.cern.ch/twiki/bin/view/LCGAAWorkbook/WebHome)
+\* \[Leade\](https://twiki.cern.ch/twiki/bin/view/Leade/WebHome) \*
+\[LHCAccess\](https://twiki.cern.ch/twiki/bin/view/LHCAccess/WebHome) \*
+\[LHCAtHome\](https://twiki.cern.ch/twiki/bin/view/LHCAtHome/WebHome) \*
+\[LHCb\](https://twiki.cern.ch/twiki/bin/view/LHCb/WebHome) \*
+\[LHCgas\](https://twiki.cern.ch/twiki/bin/view/LHCgas/WebHome) \*
+\[LHCONE\](https://twiki.cern.ch/twiki/bin/view/LHCONE/WebHome) \*
+\[LHCOPN\](https://twiki.cern.ch/twiki/bin/view/LHCOPN/WebHome) \*
+\[LinuxSupport\](https://twiki.cern.ch/twiki/bin/view/LinuxSupport/WebHome)
+\* \[Main\](https://twiki.cern.ch/twiki/bin/view/Main/WebHome) \*
+\[Medipix\](https://twiki.cern.ch/twiki/bin/view/Medipix/WebHome) \*
+\[Messaging\](https://twiki.cern.ch/twiki/bin/view/Messaging/WebHome) \*
+\[MPGD\](https://twiki.cern.ch/twiki/bin/view/MPGD/WebHome) \*
+\[NA49\](https://twiki.cern.ch/twiki/bin/view/NA49/WebHome) \*
+\[NA61\](https://twiki.cern.ch/twiki/bin/view/NA61/WebHome) \*
+\[NA62\](https://twiki.cern.ch/twiki/bin/view/NA62/WebHome) \*
+\[NTOF\](https://twiki.cern.ch/twiki/bin/view/NTOF/WebHome) \*
+\[Openlab\](https://twiki.cern.ch/twiki/bin/view/Openlab/WebHome) \*
+\[PDBService\](https://twiki.cern.ch/twiki/bin/view/PDBService/WebHome)
+\*
+\[Persistency\](https://twiki.cern.ch/twiki/bin/view/Persistency/WebHome)
+\* \[PESgroup\](https://twiki.cern.ch/twiki/bin/view/PESgroup/WebHome)
+\* \[Plugins\](https://twiki.cern.ch/twiki/bin/view/Plugins/WebHome) \*
+\[PSAccess\](https://twiki.cern.ch/twiki/bin/view/PSAccess/WebHome) \*
+\[PSBUpgrade\](https://twiki.cern.ch/twiki/bin/view/PSBUpgrade/WebHome)
+\*
+\[R2Eproject\](https://twiki.cern.ch/twiki/bin/view/R2Eproject/WebHome)
+\* \[RCTF\](https://twiki.cern.ch/twiki/bin/view/RCTF/WebHome) \*
+\[RD42\](https://twiki.cern.ch/twiki/bin/view/RD42/WebHome) \*
+\[RFCond12\](https://twiki.cern.ch/twiki/bin/view/RFCond12/WebHome) \*
+\[RFLowLevel\](https://twiki.cern.ch/twiki/bin/view/RFLowLevel/WebHome)
+\* \[ROXIE\](https://twiki.cern.ch/twiki/bin/view/ROXIE/WebHome) \*
+\[Sandbox\](https://twiki.cern.ch/twiki/bin/view/Sandbox/WebHome) \*
+\[SocialActivities\](https://twiki.cern.ch/twiki/bin/view/SocialActivities/WebHome)
+\* \[SPI\](https://twiki.cern.ch/twiki/bin/view/SPI/WebHome) \*
+\[SRMDev\](https://twiki.cern.ch/twiki/bin/view/SRMDev/WebHome) \*
+\[SSM\](https://twiki.cern.ch/twiki/bin/view/SSM/WebHome) \*
+\[Student\](https://twiki.cern.ch/twiki/bin/view/Student/WebHome) \*
+\[SuperComputing\](https://twiki.cern.ch/twiki/bin/view/SuperComputing/WebHome)
+\* \[Support\](https://twiki.cern.ch/twiki/bin/view/Support/WebHome) \*
+\[SwfCatalogue\](https://twiki.cern.ch/twiki/bin/view/SwfCatalogue/WebHome)
+\* \[TMVA\](https://twiki.cern.ch/twiki/bin/view/TMVA/WebHome) \*
+\[TOTEM\](https://twiki.cern.ch/twiki/bin/view/TOTEM/WebHome) \*
+\[TWiki\](https://twiki.cern.ch/twiki/bin/view/TWiki/WebHome) \*
+\[UNOSAT\](https://twiki.cern.ch/twiki/bin/view/UNOSAT/WebHome) \*
+\[Virtualization\](https://twiki.cern.ch/twiki/bin/view/Virtualization/WebHome)
+\* \[VOBox\](https://twiki.cern.ch/twiki/bin/view/VOBox/WebHome) \*
+\[WITCH\](https://twiki.cern.ch/twiki/bin/view/WITCH/WebHome) \*
+\[XTCA\](https://twiki.cern.ch/twiki/bin/view/XTCA/WebHome)
+
+\[Create\](https://twiki.cern.ch/twiki/bin/edit/Main/YagnaSwaroopDhurbhakulaLeftBar?templatetopic=TWiki.WebLeftBarPersonalTemplate)
+personal sidebar
+
+\[\![CERN\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/logo_lhcb.png)\](https://twiki.cern.ch/twiki/bin/view/LHCb/WebHome)
+
+\*   
+
+\* \* \![TWiki Search Icon\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/twikisearchicon.gif) TWiki Search \* \![Google Search
+Icon\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/googlesearchicon.png) Google Search
+
+LHCb All webs
+
+   
+
+\<!\-- \$(function() { // We use the current web name to form the
+redirect in the TWiki search var currentWeb = undefined; // If the web
+starts with alice\\\* atlas\\\* cms\\\* or lhcb\\\* (case-insensitive),
+// the \"Web search\" should be altered so that AtlasFoo =\> Atlas var
+specialWeb = undefined; // Remembering what the user have entered into
+the searchbox to after // he has selected a new search engine from the
+dropdown var searchPhrase = \'\'; // \-\-- BEGIN: CONFIGURABLE LIST FOR
+SUBWEB SEARCH \-\-- // List of webs for which sub-web searching should
+be enabled var subWebSearchWebs = \\\[\'AtlasProtected\',
+\'AtlasComputing\', \'Atlas\'\\\]; // \-\-- END: CONFIGURABLE LIST FOR
+SUBWEB SEARCH \-\-- // \-\-- ORIGINAL WEB DETECTION LOGIC \-\-- // We
+want to store the current web for later use. var currentWebSearch =
+window.location.pathname.match(/\\\\/(\\\[A-Z\\\]\\\[\^\\\\/\\\]+)/); if
+(currentWebSearch != null) { currentWeb = currentWebSearch\\\[1\\\]; //
+Do we have a special kind of web? If so, the web search should be
+altered a little to fetch more broader results. var specialWebSearch =
+currentWeb.match(/\^(alice\|atlas\|cms\|lhcb)/i); if (specialWebSearch
+!= null) { var lowercaseToCorrect = { \'alice\' : \'Alice\', \'atlas\' :
+\'Atlas\', \'cms\' : \'CMS\', \'lhcb\' : \'LHCb\' }; specialWeb =
+lowercaseToCorrect\\\[specialWebSearch\\\[1\\\].toLowerCase()\\\];
+\$(\'span.webScopeDescription\').text(specialWeb); } } else { currentWeb
+= \'DefaultWeb\'; } // \-\-- BEGIN: SUBWEB LOGIC TO EXTRACT SUBWEB PATH
+(EXCLUDING TOPIC) \-\-- var subWebSearchWebs = \\\[\'AtlasProtected\',
+\'AtlasComputing\', \'Atlas\'\\\]; // Build regex to match web/subweb
+path and topic var subWebsPattern = new RegExp( \'/((\' +
+subWebSearchWebs.join(\'\|\') +
+\')(?=(?:/\|\$))(?:/\\\[A-Za-z0-9\\\_\\\]+)\\\*)/(\\\[A-Za-z0-9\\\_\\\]+)\$\'
+); var subWebMatch = window.location.pathname.match(subWebsPattern); if
+(subWebMatch) { // subWebMatch\\\[1\\\] is the full web/subweb path
+(e.g. \"AtlasComputing/AtlasComputingArchive\") // subWebMatch\\\[3\\\]
+is the topic (e.g. \"WebHome\") currentWeb = subWebMatch\\\[1\\\];
+specialWeb = currentWeb;
+\$(\'span.webScopeDescription\').text(specialWeb); } // \-\-- END:
+SUBWEB LOGIC TO EXTRACT SUBWEB PATH (EXCLUDING TOPIC) \-\-- // Do we
+have a favourite search engine in localStorage? We set Twiki search as
+default anyways if (window.localStorage) { // var storedEngine =
+localStorage.getItem(\'defaultSearchEngine\'); // console.log(\'stored
+engine preference: \' + storedEngine); var storedEngine =
+\'twikisearch\'; var storedEngineLi = \$(\'.cernTWikiSearch li#\' +
+storedEngine); if (!storedEngineLi.hasClass(\'active\')) {
+changeActiveSearchEngine(storedEngineLi); } if (storedEngine ==
+\'twikisearch\') {
+\$(\'input\\\[name=scope\\\]\\\[value=AllWebs\\\]\').attr(\'disabled\',\'disabled\');
+\$(\'.allWebsScopeDescription\').addClass(\'disabled\'); } } // Toggle
+the searchEngines list on and off on click \$(\'.cernTWikiSearch
+ul.engineList\').click(function(e) { e.stopPropagation(); if
+(\$(this).hasClass(\'open\')) { \$(this).removeClass(\'open\'); } else {
+\$(this).addClass(\'open\'); } }); // Stupid IE8 hack because the click
+handler on ul.engineList does not work properly there. if
+(\$.browser.msie && document.documentMode && document.documentMode \< 9)
+{ \$(\'.cernTWikiSearch #quickSearchBox\').focus(function(e) {
+\$(\'.cernTWikiSearch ul.engineList\').removeClass(\'open\'); }); } //
+Handle clicks on one of the search engines \$(\'.cernTWikiSearch
+ul.engineList li\').click(function(e) { // If we clicked on a \<li\>
+that does not has class \'active\', it means this should become active
+and swap places with this. if (!\$(this).hasClass(\'active\')) {
+changeActiveSearchEngine(\$(this)); } if
+(\$(this).parent().hasClass(\'open\')) { \$(\'.cernTWikiSearch
+#quickSearchBox\').val(searchPhrase); \$(\'.cernTWikiSearch
+#quickSearchBox\').focus(); } if (\$(this).attr(\'id\') ==
+\'twikisearch\') { var allWebsRadio =
+\$(\'input\\\[name=scope\\\]\\\[value=AllWebs\\\]\');
+allWebsRadio.attr(\'disabled\',\'disabled\');
+allWebsRadio.siblings(\'input\\\[type=radio\\\]\').attr(\'checked\',true)
+\$(\'.allWebsScopeDescription\').addClass(\'disabled\'); } else {
+\$(\'input\\\[name=scope\\\]\\\[value=AllWebs\\\]\').attr(\'disabled\',\'\');
+\$(\'.allWebsScopeDescription\').removeClass(\'disabled\'); } }); //
+Show the engine description text on hover \$(\'.engineList.open
+li\').live(\'hover\',function() { var displayText =
+\$(this).find(\'span.engineDescription\').text(); \$(\'.cernTWikiSearch
+#quickSearchBox\').val(displayText); }); // The form is submitted, now
+let\'s do the search. \$(\'.cernTWikiSearch\').submit(function(e) {
+e.preventDefault(); var scope = \$(\'input\\\[name=scope\\\]:checked\',
+\$(this)).val(); if (scope != \'AllWebs\' && specialWeb !== undefined) {
+scope = specialWeb; } var val = \$(\'.cernTWikiSearch
+#quickSearchBox\').val(); var engine = \$(\'.engineList
+li.active\').attr(\'id\') switch (engine) { case \'googlesearch\':
+window.open(\'https://google.com/search?q=site:\' +
+encodeURIComponent(\'https://twiki.cern.ch\') + (scope != \'AllWebs\' ?
+\' \' + scope : \'\') + \' \' + val); break; case \'cernsearch\':
+window.open(\'https://search.cern.ch/Pages/TwikiResults.aspx?k=\' +
+val + (scope != \'AllWebs\' ? \' cernscope:\' + scope : \'\') +
+\'&autologin=1\'); break; case \'twikisearch\':
+window.open(window.location.pathname.replace(/\\\\/\\\[A-Z\\\].+\$/,\'\') +
+\'/\' + currentWeb + \'/WebSearch?search=\' + val + \'&scope=all\');
+break; default: break; } // Save the search engine. If the user reloads
+the page he should get the last one used. if (window.localStorage) {
+console.log(\'store engine preference: \' + engine);
+localStorage.setItem(\'defaultSearchEngine\',engine); } }); // Save the
+search phrase on every key up \$(\'.cernTWikiSearch
+#quickSearchBox\').keyup(function() { searchPhrase = \$(this).val(); });
+// If a user clicks outside the search engine list, the search engine
+list should be closed. \$(\'html\').click(function() { if
+(\$(\'.engineList\').hasClass(\'open\')) {
+\$(\'.engineList\').removeClass(\'open\'); \$(\'.cernTWikiSearch
+#quickSearchBox\').val(searchPhrase); } }); }); // We want to change the
+active search engine function changeActiveSearchEngine(engineLi) { var
+activeEngine = engineLi.siblings(\':first\');
+engineLi.detach().insertBefore(activeEngine);
+activeEngine.removeClass(\'active\'); engineLi.addClass(\'active\'); if
+(engineLi.attr(\'id\') == \'twikiSearch\') { deactivateAllWebsOption();
+} } // The user has chosen twiki search (or the preference was stored in
+localStorage). // We will then disable the \'All Webs\' option since
+this will time out. function deactivateAllWebsOption() { } // Helper
+method to check input attribute browser compability function
+checkInputAttributeSupport(attribute) { var i =
+document.createElement(\"input\"); return typeof i.placeholder !==
+\'undefined\'; } //\--\>
+
+\[\![This site is powered by the TWiki collaboration
+platform\](./UpgradeSciFiTracker \_ LHCb \_
+TWiki_files/T-badge-88x31.gif \"This site is powered by the TWiki
+collaboration platform\")\](http://twiki.org/) \[\![Powered by
+Perl\](./UpgradeSciFiTracker \_ LHCb \_ TWiki_files/perl-logo-88x31.gif
+\"Powered by Perl\")\](http://www.perl.org/)Copyright &� 2008-2025 by
+the contributing authors. All material on this collaboration platform is
+the property of the contributing authors. or Ideas, requests, problems
+regarding TWiki? use
+\[Discourse\](https://discourse.web.cern.ch/c/collaborative-editing/wikis/12)
+or \[Send
+feedback\](https://twiki.cern.ch/twiki/bin/view/Main/ServiceNow)
+
+var \\\_paq = window.\\\_paq = window.\\\_paq \|\| \\\[\\\]; /\\\*
+tracker methods like \"setCustomDimension\" should be called before
+\"trackPageView\" \\\*/ \\\_paq.push(\\\[\'trackPageView\'\\\]);
+\\\_paq.push(\\\[\'enableLinkTracking\'\\\]); (function() { var
+u=\"https://webanalytics.web.cern.ch/\";
+\\\_paq.push(\\\[\'setTrackerUrl\', u+\'matomo.php\'\\\]);
+\\\_paq.push(\\\[\'setSiteId\', \'5\'\\\]); var d=document,
+g=d.createElement(\'script\'),
+s=d.getElementsByTagName(\'script\')\\\[0\\\]; g.async=true;
+g.src=u+\'matomo.js\'; s.parentNode.insertBefore(g,s); })();

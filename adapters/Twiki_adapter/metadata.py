@@ -10,7 +10,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime, timezone
 from pathlib import Path
 from uuid import UUID 
-from models import DiscoveredDocument, AcquiredDocument, DocumentMetadata, LogEntry
+from adapters.Twiki_adapter.models import DiscoveredDocument, AcquiredDocument, DocumentMetadata, LogEntry
 
 
 class TwikiMetadataManager:
