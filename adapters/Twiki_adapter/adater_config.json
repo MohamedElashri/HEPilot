@@ -1,0 +1,32 @@
+{
+  "adapter_config": {
+    "name": "HEPilot-TWiki-Adapter",
+    "version": "1.0.0",
+    "source_type": "twiki",
+    "credential_id": null,
+    "profile": "core+figures+citations",
+    "config_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+
+    "processing_config": {
+      "chunk_size": 512,
+      "chunk_overlap": 0.1,
+      "preserve_tables": true,
+      "preserve_equations": true,
+      "exclude_edit_metadata": true,
+      "exclude_raw_macros": true,
+      "enrich_formulas": false,
+      "table_mode": "fast",
+      "exclude_references": false,
+      "exclude_acknowledgments": false,
+      "exclude_author_lists": false,
+      "include_authors_metadata": false,
+      "processing_timeout": 30
+    },
+
+    "embedding_config": {
+      "model_name": "BAAI/bge-large-en-v1.5",
+      "use_model_tokenizer": false,
+      "cache_dir": ".model_cache"
+    }
+  }
+}

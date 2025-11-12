@@ -1,0 +1,391 @@
+{
+  "url": "https://twiki.cern.ch/twiki/bin/view/Main/LHCb-Facts",
+  "scrape_date": "2025-10-29T12:41:56.629745",
+  "title": "LHCb-Facts < Main < TWiki",
+  "sections": {
+    "LHCb-Facts": "PapersIntegrated luminosityCross-SectionsLHCb event characteristicsMagnetic field and track definitionPerformanceBeam ConditionsTriggerLHCb Storage Overview",
+    "Papers": "The LHCb Detector at the LHC\nLHCb Detector Performance",
+    "Integrated luminosity": "pp-collisionsYear201020112012201520162017SUM0.0381.1072.0820.3281.6651.6096.8293.53.546.56.56.5-pA-collisionsYear2013SUML_int/pb-135?Ecm/GeV8000-LHCb efficiency breakdown in pp collisions in 2010-201293.05%\n(Instantaneous) luminosity :\nLHCb Operations Plots Webpage",
+    "Cross-Sections": "ProcessE(pp)σSourcePaperPaper",
+    "LHCb event characteristics": "ν (nu) : The average number of pp interactions per bunch crossing\nOnly used in MC\nμ (mu): The average number of visible pp interactions per bunch crossing\nThe only thing we can measure at LHCb\nWe measure, assuming L0 selects ALL visible interactions, i.e.\n(at 7 TeV, a bit less at 8 TeV)\nPile-up: the average number of pp interactions in visible events\nThe relevant quantity for the Hlt processing time\nPile-up\nThe average pile-up is not what we see in the Hlt if we have a biasing L0\nLHCb event characteristics",
+    "Magnetic field and track definition": "DetectorVELOTTT1-3Ca. 72 tracks in bbar eventsLong TrackX(X)X26 (36%)Upstream TrackXX-11 (15%)Down Track-XX4 (6%)VELO TrackX--26 (36%)T Track--X5 (7%)Successfully reconstructed: a track must have at least70%of its associated hits originating from a single MonteCarlo particleGhost tracks: reconstructed tracks that are not matched to a true MonteCarlo particleCloned tracks: several reconstructed tracks that origin from the same particleTrack Types:-- 0 = Unknown-- 1 = Velo track-- 2 = 2D Velo track-- 3 = Long (or forward) track-- 4 = Upstream track-- 5 = Downstream track-- 6 = seed track-- 7 = muon track-- 8 = calorimeter cosmic track-- 9 = TT track\nThe LHCb detector at the LHC, p178-179",
+    "Performance": "Standard set of performance numbers",
+    "Trigger": "LHCb Trigger 2012LHCb Trigger 2015\nTrigger Schemes",
+    "LHCb Storage Overview": "Talk of Silvia Amerio on 10.09.2013 at LHCb week in Krakow, slide 24"
+  },
+  "facts": [
+    "Papers",
+    "Integrated luminosity",
+    "Cross-Sections",
+    "LHCb event characteristics",
+    "Magnetic field and track definition",
+    "Performance",
+    "Beam Conditions",
+    "Trigger",
+    "LHCb Storage Overview",
+    "The LHCb Detector at the LHC",
+    "LHCb Detector Performance",
+    "(Instantaneous) luminosity :",
+    "Only used in MC",
+    "The only thing we can measure at LHCb",
+    "We measure, assuming L0 selects ALL visible interactions, i.e.",
+    "(at 7 TeV, a bit less at 8 TeV)",
+    "The relevant quantity for the Hlt processing time",
+    "Pile-up",
+    "The average pile-up is not what we see in the Hlt if we have a biasing L0",
+    "Successfully reconstructed: a track must have at least70%of its associated hits originating from a single MonteCarlo particle",
+    "Ghost tracks: reconstructed tracks that are not matched to a true MonteCarlo particle",
+    "Cloned tracks: several reconstructed tracks that origin from the same particle",
+    "Track Types:-- 0 = Unknown-- 1 = Velo track-- 2 = 2D Velo track-- 3 = Long (or forward) track-- 4 = Upstream track-- 5 = Downstream track-- 6 = seed track-- 7 = muon track-- 8 = calorimeter cosmic track-- 9 = TT track"
+  ],
+  "tables": [
+    {
+      "id": 0,
+      "data": [
+        [
+          "pp-collisionsYear201020112012201520162017SUM0.0381.1072.0820.3281.6651.6096.8293.53.546.56.56.5-",
+          "pp-collisions",
+          "Year",
+          "2010",
+          "2011",
+          "2012",
+          "2015",
+          "2016",
+          "2017",
+          "SUM",
+          "",
+          "0.038",
+          "1.107",
+          "2.082",
+          "0.328",
+          "1.665",
+          "1.609",
+          "6.829",
+          "",
+          "3.5",
+          "3.5",
+          "4",
+          "6.5",
+          "6.5",
+          "6.5",
+          "-",
+          "",
+          "pA-collisionsYear2013SUML_int/pb-135?Ecm/GeV8000-",
+          "pA-collisions",
+          "Year",
+          "2013",
+          "SUM",
+          "L_int/pb-1",
+          "35?",
+          "Ecm/GeV",
+          "8000",
+          "-",
+          "",
+          "LHCb efficiency breakdown in pp collisions in 2010-201293.05%",
+          "LHCb efficiency breakdown in pp collisions in 2010-2012",
+          "93.05%"
+        ],
+        [
+          "pp-collisions"
+        ],
+        [
+          "Year",
+          "2010",
+          "2011",
+          "2012",
+          "2015",
+          "2016",
+          "2017",
+          "SUM"
+        ],
+        [
+          "",
+          "0.038",
+          "1.107",
+          "2.082",
+          "0.328",
+          "1.665",
+          "1.609",
+          "6.829"
+        ],
+        [
+          "",
+          "3.5",
+          "3.5",
+          "4",
+          "6.5",
+          "6.5",
+          "6.5",
+          "-"
+        ],
+        [
+          "pA-collisions"
+        ],
+        [
+          "Year",
+          "2013",
+          "SUM"
+        ],
+        [
+          "L_int/pb-1",
+          "35?"
+        ],
+        [
+          "Ecm/GeV",
+          "8000",
+          "-"
+        ],
+        [
+          "LHCb efficiency breakdown in pp collisions in 2010-2012"
+        ],
+        [
+          "93.05%"
+        ]
+      ]
+    },
+    {
+      "id": 1,
+      "data": [
+        [
+          "pp-collisions"
+        ],
+        [
+          "Year",
+          "2010",
+          "2011",
+          "2012",
+          "2015",
+          "2016",
+          "2017",
+          "SUM"
+        ],
+        [
+          "",
+          "0.038",
+          "1.107",
+          "2.082",
+          "0.328",
+          "1.665",
+          "1.609",
+          "6.829"
+        ],
+        [
+          "",
+          "3.5",
+          "3.5",
+          "4",
+          "6.5",
+          "6.5",
+          "6.5",
+          "-"
+        ]
+      ]
+    },
+    {
+      "id": 2,
+      "data": [
+        [
+          "pA-collisions"
+        ],
+        [
+          "Year",
+          "2013",
+          "SUM"
+        ],
+        [
+          "L_int/pb-1",
+          "35?"
+        ],
+        [
+          "Ecm/GeV",
+          "8000",
+          "-"
+        ]
+      ]
+    },
+    {
+      "id": 3,
+      "data": [
+        [
+          "LHCb efficiency breakdown in pp collisions in 2010-2012"
+        ],
+        [
+          "93.05%"
+        ]
+      ]
+    },
+    {
+      "id": 4,
+      "data": [
+        [
+          "Process",
+          "",
+          "",
+          "",
+          ""
+        ],
+        [
+          "E(pp)",
+          "",
+          "",
+          "",
+          ""
+        ],
+        [
+          "σ",
+          "",
+          "",
+          "",
+          ""
+        ],
+        [
+          "Source",
+          "Paper",
+          "Paper"
+        ]
+      ]
+    },
+    {
+      "id": 5,
+      "data": [
+        [
+          "",
+          "DetectorVELOTTT1-3Ca. 72 tracks in bbar eventsLong TrackX(X)X26 (36%)Upstream TrackXX-11 (15%)Down Track-XX4 (6%)VELO TrackX--26 (36%)T Track--X5 (7%)Successfully reconstructed: a track must have at least70%of its associated hits originating from a single MonteCarlo particleGhost tracks: reconstructed tracks that are not matched to a true MonteCarlo particleCloned tracks: several reconstructed tracks that origin from the same particleTrack Types:-- 0 = Unknown-- 1 = Velo track-- 2 = 2D Velo track-- 3 = Long (or forward) track-- 4 = Upstream track-- 5 = Downstream track-- 6 = seed track-- 7 = muon track-- 8 = calorimeter cosmic track-- 9 = TT track",
+          "Detector",
+          "VELO",
+          "TT",
+          "T1-3",
+          "Ca. 72 tracks in bbar events",
+          "Long Track",
+          "X",
+          "(X)",
+          "X",
+          "26 (36%)",
+          "Upstream Track",
+          "X",
+          "X",
+          "-",
+          "11 (15%)",
+          "Down Track",
+          "-",
+          "X",
+          "X",
+          "4 (6%)",
+          "VELO Track",
+          "X",
+          "-",
+          "-",
+          "26 (36%)",
+          "T Track",
+          "-",
+          "-",
+          "X",
+          "5 (7%)"
+        ],
+        [
+          "Detector",
+          "VELO",
+          "TT",
+          "T1-3",
+          "Ca. 72 tracks in bbar events"
+        ],
+        [
+          "Long Track",
+          "X",
+          "(X)",
+          "X",
+          "26 (36%)"
+        ],
+        [
+          "Upstream Track",
+          "X",
+          "X",
+          "-",
+          "11 (15%)"
+        ],
+        [
+          "Down Track",
+          "-",
+          "X",
+          "X",
+          "4 (6%)"
+        ],
+        [
+          "VELO Track",
+          "X",
+          "-",
+          "-",
+          "26 (36%)"
+        ],
+        [
+          "T Track",
+          "-",
+          "-",
+          "X",
+          "5 (7%)"
+        ]
+      ]
+    },
+    {
+      "id": 6,
+      "data": [
+        [
+          "Detector",
+          "VELO",
+          "TT",
+          "T1-3",
+          "Ca. 72 tracks in bbar events"
+        ],
+        [
+          "Long Track",
+          "X",
+          "(X)",
+          "X",
+          "26 (36%)"
+        ],
+        [
+          "Upstream Track",
+          "X",
+          "X",
+          "-",
+          "11 (15%)"
+        ],
+        [
+          "Down Track",
+          "-",
+          "X",
+          "X",
+          "4 (6%)"
+        ],
+        [
+          "VELO Track",
+          "X",
+          "-",
+          "-",
+          "26 (36%)"
+        ],
+        [
+          "T Track",
+          "-",
+          "-",
+          "X",
+          "5 (7%)"
+        ]
+      ]
+    },
+    {
+      "id": 7,
+      "data": [
+        [
+          "LHCb Trigger 2012",
+          "LHCb Trigger 2015"
+        ],
+        [
+          "",
+          ""
+        ]
+      ]
+    }
+  ],
+  "raw_text": "LHCb-Facts\nPapers\nIntegrated luminosity\nCross-Sections\nLHCb event characteristics\nMagnetic field and track definition\nPerformance\nBeam Conditions\nTrigger\nLHCb Storage Overview\nPapers\nThe LHCb Detector at the LHC\nLHCb Detector Performance\nIntegrated luminosity\npp-collisions\nYear\n2010\n2011\n2012\n2015\n2016\n2017\nSUM\n0.038\n1.107\n2.082\n0.328\n1.665\n1.609\n6.829\n3.5\n3.5\n4\n6.5\n6.5\n6.5\n-\npA-collisions\nYear\n2013\nSUM\nL_int/pb-1\n35?\nEcm/GeV\n8000\n-\nLHCb efficiency breakdown in pp collisions in 2010-2012\n93.05%\n(Instantaneous) luminosity :\nReference:\nLHCb Operations Plots Webpage\nCross-Sections\nProcess\nE(pp)\nσ\nSource\nPaper\nPaper\nLHCb event characteristics\nν (nu) : The average number of pp interactions per bunch crossing\nOnly used in MC\nμ (mu): The average number of visible pp interactions per bunch crossing\nThe only thing we can measure at LHCb\nWe measure\n, assuming L0 selects ALL visible interactions, i.e.\n(at 7 TeV, a bit less at 8 TeV)\nPile-up: the average number of pp interactions in visible events\nThe relevant quantity for the Hlt processing time\nPile-up\nThe average pile-up is not what we see in the Hlt if we have a biasing L0\nReference:\nLHCb event characteristics\nMagnetic field and track definition\nDetector\nVELO\nTT\nT1-3\nCa. 72 tracks in bbar events\nLong Track\nX\n(X)\nX\n26 (36%)\nUpstream Track\nX\nX\n-\n11 (15%)\nDown Track\n-\nX\nX\n4 (6%)\nVELO Track\nX\n-\n-\n26 (36%)\nT Track\n-\n-\nX\n5 (7%)\nSuccessfully reconstructed\n: a track must have at least\n70%\nof its associated hits originating from a single MonteCarlo particle\nGhost tracks\n: reconstructed tracks that are not matched to a true MonteCarlo particle\nCloned tracks\n: several reconstructed tracks that origin from the same particle\nTrack Types\n:\n-- 0 = Unknown\n-- 1 = Velo track\n-- 2 = 2D Velo track\n-- 3 = Long (or forward) track\n-- 4 = Upstream track\n-- 5 = Downstream track\n-- 6 = seed track\n-- 7 = muon track\n-- 8 = calorimeter cosmic track\n-- 9 = TT track\nReference:\nThe LHCb detector at the LHC, p178-179\nPerformance\nReference:\nStandard set of performance numbers\nBeam Conditions\nTrigger\nLHCb Trigger 2012\nLHCb Trigger 2015\nReference:\nTrigger Schemes\nLHCb Storage Overview\nReference:\nTalk of Silvia Amerio on 10.09.2013 at LHCb week in Krakow, slide 24"
+}

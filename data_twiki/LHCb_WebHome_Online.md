@@ -1,0 +1,390 @@
+WebHome \< Online \< TWiki \@import
+url(\'https://lbtwiki.cern.ch/pub/TWiki/TWikiTemplates/base.css\');
+#patternTopBar, #patternClearHeaderCenter, #patternClearHeaderLeft,
+#patternClearHeaderRight, #patternTopBarContentsOuter,
+#patternTopBarContents { height:64px; /\\\* top bar height; make room
+for header columns \\\*/ overflow:hidden; } #patternOuter {
+margin-left:14em; } #patternLeftBar { width:14em; margin-left:-14em; }
+\@import
+url(\'https://lbtwiki.cern.ch/pub/TWiki/PatternSkin/layout.css\');
+\@import
+url(\'https://lbtwiki.cern.ch/pub/TWiki/PatternSkin/style.css\');
+\@import
+url(\'https://lbtwiki.cern.ch/pub/TWiki/PatternSkin/colors.css\'); /\\\*
+Styles that are set using variables \\\*/ .patternBookView .twikiTopRow,
+.patternWebIndicator a img, .patternWebIndicator a:hover img {
+background-color:#D0D0D0 ; } #patternTopBarContents {
+background-image:url(https://lbtwiki.cern.ch/pub/TWiki/PatternSkin/TWiki\\\_header.gif);
+background-repeat:no-repeat;} .patternBookView { border-color:#D0D0D0 ;
+} .patternPreviewPage #patternMain { /\\\* uncomment to set the preview
+image \\\*/
+/\\\*background-image:url(\"https://lbtwiki.cern.ch/pub/TWiki/PreviewBackground/preview2bg.gif\");\\\*/
+} \@import
+url(\"https://lbtwiki.cern.ch/pub/TWiki/PatternSkin/print.css\");
+.twikiMakeVisible{display:inline;}.twikiMakeVisibleInline{display:inline;}.twikiMakeVisibleBlock{display:block;}.twikiMakeHidden{display:none;}
+\@import
+url(\"https://lbtwiki.cern.ch/pub/TWiki/TagMePlugin/tagme.css\");
+
+\[TWiki\](https://lbtwiki.cern.ch/bin/view/Main/WebHome)\\\>\![\](./WebHome
+\_ Online \_ TWiki_files/web-bg-small.gif) \[Online
+Web\](https://lbtwiki.cern.ch/bin/view/Online/WebHome)\\\>\[WebHome\](https://lbtwiki.cern.ch/bin/view/Online/WebHome
+\"Topic revision: 189 (2025-10-15 - 07:51:20)\") (2025-10-15,
+\[lbrarda\](https://lbtwiki.cern.ch/bin/view/Main/Lbrarda))
+\[\![\](./WebHome \_ Online \_ TWiki_files/uweb-o14.gif)
+Edit\](https://lbtwiki.cern.ch/bin/edit/Online/WebHome?t=1762215566;nowysiwyg=0
+\"Edit this topic
+text\")\[Attach\](https://lbtwiki.cern.ch/bin/attach/Online/WebHome
+\"Attach an image or document to this topic\")
+
+Tags:
+
+LinuxModification November
+2014networkOnlineOfflineInstallMoverSoftwQuattorRunDatabaseServersVELOequalizationVirtualisation
+//\<!\\\[CDATA\\\[ function createSelectBox(inText, inElemId) { var
+selectBox = document.createElement(\'SELECT\'); selectBox.name =
+\"tag\"; selectBox.className = \"twikiSelect\";
+document.getElementById(inElemId).appendChild(selectBox); var items =
+inText.split(\"#\"); var i, ilen = items.length; for (i=0; i\<ilen; ++i)
+{ selectBox.options\\\[i\\\] = new Option(items\\\[i\\\],
+items\\\[i\\\]); } } var text=\"#Linux#Modification November
+2014#network#OnlineOfflineInstallMoverSoftw#Quattor#RunDatabaseServers#VELOequalization#Virtualisation\";
+if (text.length \> 0) {createSelectBox(text, \"tagMeSelect445\");
+document.getElementById(\"tagmeAddNewButton\").style.display=\"inline\";}
+//\\\]\\\]\>
+
+\[tag this
+topic\](https://lbtwiki.cern.ch/bin/viewauth/Online/WebHome?tagmode=nojavascript)
+
+\[create new
+tag\](https://lbtwiki.cern.ch/bin/viewauth/TWiki/TagMeCreateNewTag?from=Online.WebHome)
+
+\[view all
+tags\](https://lbtwiki.cern.ch/bin/view/TWiki/TagMeViewAllTags)
+
+Welcome to the LHCb Online web ==============================
+
+This web-site collects information for the operation of the LHCb Online
+system. More specifically for the central and shared Online services,
+which are used by all sub-detectors and which are required to run the
+entire experiment. If you are a new user in LHCb, a shifter or a piquet,
+this one is (should be) a good starting point.
+
+The material on this top-page is of interest for any user of the Online
+system. In addition you will find here specialised sub-webs dedicated to
+\[System
+Administration\](https://lbtwiki.cern.ch/bin/view/Online/AdminGuide) the
+Online on-call shifter:
+\[OnlinePiquet\](https://lbtwiki.cern.ch/bin/view/Online/OnlinePiquet)
+and \[R&D
+projects\](https://lbtwiki.cern.ch/bin/view/Online/OnlineProjects) in
+Online computing by members of the Online team.
+
+Working from outside Point 8
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+The LHCb experiment network is not directly accessible from the Internet
+or from the rest of CERN. \[Here we explain the recommended way to
+access LHCb systems from
+outside\](https://lbtwiki.cern.ch/bin/view/Online/ConnectingFromOutside).
+
+Understanding the system \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+The LHCb Online system consists of several large systems, which are
+intimately connected: the
+\[DataAcquisition\](https://lbtwiki.cern.ch/bin/edit/Online/DataAcquisition?topicparent=Online.WebHome;nowysiwyg=0
+\"DataAcquisition (this topic does not yet exist; you can create it)\")
+(DAQ) with its private network, the
+\[ExperimentControlSystem\](https://lbtwiki.cern.ch/bin/view/Online/ExperimentControlSystem),
+the HLTFarm, the
+\[OnlineMonitoring\](https://lbtwiki.cern.ch/bin/view/Online/OnlineMonitoring)
+
+Working with the raw-data
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+\* Monitoring applications \* \[Presenter (Monet) User
+Guide\](https://lbtwiki.cern.ch/bin/view/Online/MonetUserGuide) \*
+\[EventDisplay\](https://lbtwiki.cern.ch/bin/view/Online/StartingTheEventDisplayAtThePit
+\"Event Display\")
+
+Shared storage areas (/hist, /group, /home, /scratch \...)
+\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+#SharedAreasOnline
+
+Shared storage areas are typically mounted on all (most) servers in the
+Online cluster. \[Such storage areas are described
+here\](https://lbtwiki.cern.ch/bin/view/Online/OnlineStorage).
+
+Internet access \-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+From online systems, you should be able to access servers on the CERN
+network.
+
+If one of your services need to access some servers outside CERN, we can
+add them to our proxy if you justify it and give us from which Online
+server(s) to which outside server we should accept.
+
+For python pip access, you will have to use our \[pip
+mirror\](https://lbtwiki.cern.ch/bin/view/Online/PythonDev).
+
+More Stuff \-\-\-\-\-\-\-\-\--
+
+\* \[Backup\](https://lbtwiki.cern.ch/bin/view/Online/BackupAutomatic)
+\* \[Databases\](https://lbtwiki.cern.ch/bin/view/Online/DataBases) \*
+Explanation of \[File and Run
+states\](https://lbtwiki.cern.ch/bin/view/Online/DataMover#FileAndRunStates)
+\* Data Transfers to Offline (Run 3) \* \[Raw Data Transfers in
+LHCb\](https://lbtwiki.cern.ch/bin/view/Online/OnlineOfflineMovement) \*
+\[The MDF raw data
+Format\](https://lbtwiki.cern.ch/bin/view/Online/OnlineOfflineMDFFormat)
+\* \[DIRAC bookkeeping and File
+catalog\](https://lbtwiki.cern.ch/bin/view/Online/OnlineOfflineBookkeeping)
+\* \[Registering runs in
+Dirac\](https://lbtwiki.cern.ch/bin/view/Online/OnlineOffilneDiracRegistration)
+\* \[Transfers and the
+RunDB\](https://lbtwiki.cern.ch/bin/view/Online/OnlineOfflineRunDB) \*
+EOS point8 data transfers \* Data movers \* \[Quick Survival
+Guide\](https://lbtwiki.cern.ch/bin/view/Online/OnlineOfflineMoverQuickOps)
+\* \[Data Movers
+operations\](https://lbtwiki.cern.ch/bin/view/Online/OnlineOfflineDatamoverOperations)
+\*
+\[Monitoring\](https://lbtwiki.cern.ch/bin/view/Online/OnlineOfflineMonitoring)
+\* Troubleshooting \* \[\"Late\" HLT2 files
+\](https://lbtwiki.cern.ch/bin/view/Online/OnlineOffLineLateFiles) \*
+\[CEPH
+issues\](https://lbtwiki.cern.ch/bin/view/Online/OnlineOfflineCEPHIssues)
+\* \[HLT2 runs DEFERRED
+forever\](https://lbtwiki.cern.ch/bin/view/Online/OnlineOfflineDefferedStuck)
+\* \[EOS
+Point8\](https://lbtwiki.cern.ch/bin/view/Online/OnlineOfflineEosPoint8)
+\* \[Installing the Datamover
+software\](https://lbtwiki.cern.ch/bin/view/Online/OnlineOfflineInstallMoverSoftware)
+\* \[Installing the datamover software interacting with
+DIRAC\](https://lbtwiki.cern.ch/bin/view/Online/OnlineOfflineInstallMoverSoftware4Dirac)
+\* \[Developing the datamover software with
+DIRAC\](https://lbtwiki.cern.ch/bin/view/Online/OnlineOfflineMoverDirac)
+\* \[Transferring data to and from
+Tape\](https://lbtwiki.cern.ch/bin/view/Online/OnlineOfflineEOSCTA) \*
+The \[RunDB\](https://lbtwiki.cern.ch/bin/view/Online/RunDB) (Run 3) \*
+\[RunDB\](https://lbtwiki.cern.ch/bin/view/Online/RunDB) states \*
+\[RunDB\](https://lbtwiki.cern.ch/bin/view/Online/RunDB) destinations \*
+\[RunDB\](https://lbtwiki.cern.ch/bin/view/Online/RunDB) Run Types (aka
+datatape) \* \[RunDB\](https://lbtwiki.cern.ch/bin/view/Online/RunDB)
+Gateways \* \[The RunDB
+Servers\](https://lbtwiki.cern.ch/bin/view/Online/RunDataBaseServers) \*
+\[Installing the RunDB server
+software\](https://lbtwiki.cern.ch/bin/view/Online/RunDatabaseInstallGateways)
+\* \[RunDB Web
+API\](https://lbtwiki.cern.ch/bin/view/Online/RunDBWebAPI) \* ECS, PVSS,
+DSS, DIP and all that\... \* \[List PVSS Windows Process ID
+remotely\](https://lbtwiki.cern.ch/bin/view/Online/PVSSListWindowsPIDRemotely)
+\* \[Automatic startup on
+Windows\](https://lbtwiki.cern.ch/bin/view/Online/PVSSAutomaticStartupWindows)
+\[Automatic startup on
+Linux\](https://lbtwiki.cern.ch/bin/view/Online/PVSSAutomaticStartupLinux)
+\* \[DIP\](https://lbtwiki.cern.ch/bin/view/Online/UserDIP) \* \[Reset
+your remote desktop session from another
+server\](https://lbtwiki.cern.ch/bin/view/Online/ResetTerminalServerSession)
+\* \[Farm Management and Control (FMC)\![\](./WebHome \_ Online \_
+TWiki_files/external-link.gif)\](https://lhcbweb.bo.infn.it/twiki/bin/view.cgi/LHCbBologna/FmcLinux) \![External
+link mark\](./WebHome \_ Online \_ TWiki_files/external.gif) (Bologna
+pages) \* \[DSS User
+Interface\](https://lbtwiki.cern.ch/bin/view/Online/UserDSSUI) \*
+\[EventBuilder\](https://lbtwiki.cern.ch/bin/view/Online/EventBuilder)
+\* \[Pydim
+exporter\](https://lbtwiki.cern.ch/bin/view/Online/Pydim-exporter) \*
+\[Python
+development\](https://lbtwiki.cern.ch/bin/view/Online/PythonDev) \*
+\[Mail\](https://lbtwiki.cern.ch/bin/view/Online/Pydim-exporter) \*
+\[MailSendToCern\](https://lbtwiki.cern.ch/bin/view/Online/Pydim-exporter)
+\* \[Manager on Duty\](https://lbtwiki.cern.ch/bin/view/Online/MoD):
+your friendly sysadmin \*
+\[DataMover\](https://lbtwiki.cern.ch/bin/view/Online/DataMover) and
+information sent to
+\[BookKeeping\](https://lbtwiki.cern.ch/bin/view/Online/BookKeeping)
+Database (BKK) \* User accounts \* \[Getting an Online account and
+setting it
+up\](https://lbtwiki.cern.ch/bin/view/Online/ConnectingFromOutside) \*
+\[List of groups\](https://lbtwiki.cern.ch/bin/view/Online/UserGroups)
+\![Gear\](./WebHome \_ Online \_ TWiki_files/gear.gif \"Gear\") \[List
+Gas groups +
+members\](https://lbtwiki.cern.ch/bin/view/Online/UserGasGroups)
+\![Gear\](./WebHome \_ Online \_ TWiki_files/gear.gif \"Gear\") \*
+\[Generic
+accounts\](https://lbtwiki.cern.ch/bin/view/Online/UserGenericAccount)
+(operator accounts) \* \[User
+Privileges\](https://lbtwiki.cern.ch/bin/view/Online/UserPrivileges)
+(a.k.a. \"sudo rights\") \* \[Printing in Control
+Room\](https://lbtwiki.cern.ch/bin/view/Online/UserOnlinePrinting) \*
+\[HTCondor User Job Submission
+Guide\](https://lbtwiki.cern.ch/bin/view/Online/HTCondorTestCluster) \*
+\[HTCondor
+Admins\](https://lbtwiki.cern.ch/bin/view/Online/HTCondorAdmins) \*
+\[Operator
+accounts\](https://lbtwiki.cern.ch/bin/view/Online/UserOperAccounts) \*
+Web services \*
+\[Helpdesk\](https://lbtwiki.cern.ch/bin/view/Online/WebHelpdesk) \*
+\[TWiki\](https://lbtwiki.cern.ch/bin/view/Online/WebTwiki) \* \[Web
+diskspace for
+groups\](https://lbtwiki.cern.ch/bin/view/Online/WebGroupSpace) \* \[Web
+services
+administration\](https://lbtwiki.cern.ch/bin/view/Online/WebServicesAdministration)
+
+\[Online system in LHCb Upgrade
+2\](https://lbtwiki.cern.ch/bin/view/Online/OnlineUpgrade2)
+
+Online Web Utilities \-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\-\--
+
+\* - \[advanced
+search\](https://lbtwiki.cern.ch/bin/view/Online/WebSearchAdvanced) \*
+\[WebTopicList\](https://lbtwiki.cern.ch/bin/view/Online/WebTopicList) -
+all topics in alphabetical order \*
+\[WebChanges\](https://lbtwiki.cern.ch/bin/view/Online/WebChanges) -
+recent topic changes in this web \*
+\[WebNotify\](https://lbtwiki.cern.ch/bin/view/Online/WebNotify) -
+subscribe to an e-mail alert sent when topics change \*
+\[WebRss\](https://lbtwiki.cern.ch/bin/view/Online/WebRss),
+\[WebAtom\](https://lbtwiki.cern.ch/bin/view/Online/WebAtom) - RSS and
+ATOM news feeds of topic changes \*
+\[WebStatistics\](https://lbtwiki.cern.ch/bin/view/Online/WebStatistics) -
+listing popular topics and top contributors \*
+\[WebPreferences\](https://lbtwiki.cern.ch/bin/view/Online/WebPreferences) -
+preferences of this web
+
+\\\-- .userReportsSig { display: inline-block; white-space: nowrap;
+padding: 0 2px 0 0; border: 1px solid #e8e8eb; background-color:
+#f4f4fa; -moz-box-shadow: 1px 1px 2px #e8e8e8; -webkit-box-shadow: 1px
+1px 2px #e8e8e8; box-shadow: 1px 1px 2px #e8e8e8; -moz-border-radius:
+4px; border-radius: 4px; } .userReportsSig a:link { border: 0 none; }
+.userReportsSig img { vertical-align: middle; } .userReportsBubble {
+position: absolute; background-image: url(\<img alt=\"faded-bubble.png\"
+src=\"https://lbtwiki.cern.ch/pub/TWiki/UserReports/faded-bubble.png\"
+/\>); background-repeat: no-repeat; margin-top: -57px; margin-left:
+-18px; width: 920px; height: 90px; z-index: -1; } \[\![\](./WebHome \_
+Online \_ TWiki_files/default-user-profile.jpg) hemmer -
+2025-01-21\](https://lbtwiki.cern.ch/bin/edit/Main/Hemmer?topicparent=Online.WebHome;nowysiwyg=0
+\"hemmer 2025 01 21 (this topic does not yet exist; you can create
+it)\")
+
+\[\![\](./WebHome \_ Online \_ TWiki_files/uweb-o14.gif)
+Edit\](https://lbtwiki.cern.ch/bin/edit/Online/WebHome?t=1762215566;nowysiwyg=0
+\"Edit this topic
+text\") \| \[Attach\](https://lbtwiki.cern.ch/bin/attach/Online/WebHome
+\"Attach an image or document to this topic\") \| \[Watch\![\](./WebHome
+\_ Online \_
+TWiki_files/external-link.gif)\](https://lbtwiki.cern.ch/bin/viewauth/Online/WebHome?watchlist_action=togglewatch;watchlist_topic=Online.WebHome) \![External
+link mark\](./WebHome \_ Online \_ TWiki_files/external.gif)  \| \[Print
+version\](https://lbtwiki.cern.ch/bin/view/Online/WebHome?cover=print
+\"Printable version of this
+topic\") \| \[History\](https://lbtwiki.cern.ch/bin/rdiff/Online/WebHome?type=history
+\"View total topic history\"):
+r189 \[\<\](https://lbtwiki.cern.ch/bin/rdiff/Online/WebHome?rev1=189;rev2=188) \[r188\](https://lbtwiki.cern.ch/bin/view/Online/WebHome?rev=188) \[\<\](https://lbtwiki.cern.ch/bin/rdiff/Online/WebHome?rev1=188;rev2=187) \[r187\](https://lbtwiki.cern.ch/bin/view/Online/WebHome?rev=187) \[\<\](https://lbtwiki.cern.ch/bin/rdiff/Online/WebHome?rev1=187;rev2=186) \[r186\](https://lbtwiki.cern.ch/bin/view/Online/WebHome?rev=186) \[\<\](https://lbtwiki.cern.ch/bin/rdiff/Online/WebHome?rev1=186;rev2=185) \[r185\](https://lbtwiki.cern.ch/bin/view/Online/WebHome?rev=185) \| \[Backlinks\](https://lbtwiki.cern.ch/bin/oops/Online/WebHome?template=backlinksweb
+\"Search the Online Web for topics that link to here\") \| \[Raw
+View\](https://lbtwiki.cern.ch/bin/view/Online/WebHome?raw=on \"View raw
+text without formatting\") \| \[Raw
+edit\](https://lbtwiki.cern.ch/bin/edit/Online/WebHome?t=1762215566;nowysiwyg=1
+\"Raw Edit this topic text\") \| \[More topic
+actions\](https://lbtwiki.cern.ch/bin/oops/Online/WebHome?template=oopsmore&param1=189&param2=189
+\"Delete or rename this topic; set parent topic; view and compare
+revisions\")
+
+Topic revision: r189 - 2025-10-15 \[\\-\![\](./WebHome \_ Online \_
+TWiki_files/external-link.gif)\](https://lbtwiki.cern.ch/bin/edit/Online/WebHome?t=1762215566;nowysiwyg=1) \![External
+link mark\](./WebHome \_ Online \_ TWiki_files/external.gif)
+\[lbrarda\](https://lbtwiki.cern.ch/bin/view/Main/Lbrarda)
+
+\* \[\![Web background\](./WebHome \_ Online \_
+TWiki_files/web-bg-small.gif \"Web background\")
+Online\](https://lbtwiki.cern.ch/bin/view/Online/WebHome)
+
+Hello
+\[ydhurbha\](https://lbtwiki.cern.ch/bin/edit/Main/Ydhurbha?topicparent=Online.WebHome;nowysiwyg=0
+\"ydhurbha (this topic does not yet exist; you can create it)\")
+
+\* \[Create personal
+sidebar\](https://lbtwiki.cern.ch/bin/edit/Main/ydhurbhaLeftBar?templatetopic=TWiki.WebLeftBarPersonalTemplate&topicparent=ydhurbha)
+
+\* \*\*\[\![Home\](./WebHome \_ Online \_ TWiki_files/home.gif \"Home\")
+Online Web\](https://lbtwiki.cern.ch/bin/view/Online/WebHome)\*\* \*
+\[\![New topic\](./WebHome \_ Online \_ TWiki_files/newtopic.gif \"New
+topic\") Create New Topic\![\](./WebHome \_ Online \_
+TWiki_files/external-link.gif)\](https://lbtwiki.cern.ch/bin/view/Online/WebCreateNewTopic?parent=WebHome) \![External
+link mark\](./WebHome \_ Online \_ TWiki_files/external.gif) \*
+\[\![Index\](./WebHome \_ Online \_ TWiki_files/index.gif \"Index\")
+Index\](https://lbtwiki.cern.ch/bin/view/Online/WebTopicList) \*
+\[\![Search topic\](./WebHome \_ Online \_ TWiki_files/searchtopic.gif
+\"Search topic\")
+Search\](https://lbtwiki.cern.ch/bin/view/Online/WebSearch) \*
+\[\![Changes\](./WebHome \_ Online \_ TWiki_files/changes.gif
+\"Changes\")
+Changes\](https://lbtwiki.cern.ch/bin/view/Online/WebChanges) \*
+\[\![Notify\](./WebHome \_ Online \_ TWiki_files/notify.gif \"Notify\")
+Notifications\](https://lbtwiki.cern.ch/bin/view/Online/WebNotify) \*
+\[\![RSS feed, rounded corners\](./WebHome \_ Online \_
+TWiki_files/feed.gif \"RSS feed, rounded corners\") RSS
+Feed\](https://lbtwiki.cern.ch/bin/view/Online/WebRss) \*
+\[\![Statistics\](./WebHome \_ Online \_ TWiki_files/statistics.gif
+\"Statistics\")
+Statistics\](https://lbtwiki.cern.ch/bin/view/Online/WebStatistics) \*
+\[\![Wrench, tools\](./WebHome \_ Online \_ TWiki_files/wrench.gif
+\"Wrench, tools\")
+Preferences\](https://lbtwiki.cern.ch/bin/view/Online/WebPreferences)
+
+\* \* \*
+
+\* \*\*Webs\*\* \*  \[\![\](./WebHome \_ Online \_
+TWiki_files/web-bg.gif) CALO\](https://lbtwiki.cern.ch/bin/view/CALO/WebHome)
+\*  \[\![\](./WebHome \_ Online \_
+TWiki_files/web-bg.gif) Computing\](https://lbtwiki.cern.ch/bin/view/Computing/WebHome)
+\*  \[\![\](./WebHome \_ Online \_
+TWiki_files/web-bg.gif) DemoWebsite\](https://lbtwiki.cern.ch/bin/view/DemoWebsite/WebHome)
+\*  \[\![\](./WebHome \_ Online \_
+TWiki_files/web-bg.gif) HLT\](https://lbtwiki.cern.ch/bin/view/HLT/WebHome)
+\*  \[\![\](./WebHome \_ Online \_
+TWiki_files/web-bg.gif) L0\](https://lbtwiki.cern.ch/bin/view/L0/WebHome)
+\*  \[\![\](./WebHome \_ Online \_
+TWiki_files/web-bg.gif) MUON\](https://lbtwiki.cern.ch/bin/view/MUON/WebHome)
+\*  \[\![\](./WebHome \_ Online \_
+TWiki_files/web-bg.gif) Main\](https://lbtwiki.cern.ch/bin/view/Main/WebHome)
+\*  \[\![\](./WebHome \_ Online \_
+TWiki_files/web-bg.gif) OT\](https://lbtwiki.cern.ch/bin/view/OT/WebHome)
+\*  \[\![\](./WebHome \_ Online \_
+TWiki_files/web-bg.gif) Online\](https://lbtwiki.cern.ch/bin/view/Online/WebHome)
+\*  \[\![\](./WebHome \_ Online \_
+TWiki_files/web-bg.gif) Operation\](https://lbtwiki.cern.ch/bin/view/Operation/WebHome)
+\*  \[\![\](./WebHome \_ Online \_
+TWiki_files/web-bg.gif) RICH\](https://lbtwiki.cern.ch/bin/view/RICH/WebHome)
+\*  \[\![\](./WebHome \_ Online \_
+TWiki_files/web-bg.gif) RP\](https://lbtwiki.cern.ch/bin/view/RP/WebHome)
+\*  \[\![\](./WebHome \_ Online \_
+TWiki_files/web-bg.gif) ST\](https://lbtwiki.cern.ch/bin/view/ST/WebHome)
+\*  \[\![\](./WebHome \_ Online \_
+TWiki_files/web-bg.gif) Sandbox\](https://lbtwiki.cern.ch/bin/view/Sandbox/WebHome)
+\*  \[\![\](./WebHome \_ Online \_
+TWiki_files/web-bg.gif) SciFi\](https://lbtwiki.cern.ch/bin/view/SciFi/WebHome)
+\*  \[\![\](./WebHome \_ Online \_
+TWiki_files/web-bg.gif) TWiki\](https://lbtwiki.cern.ch/bin/view/TWiki/WebHome)
+\*  \[\![\](./WebHome \_ Online \_
+TWiki_files/web-bg.gif) Testbeam\](https://lbtwiki.cern.ch/bin/view/Testbeam/WebHome)
+\*  \[\![\](./WebHome \_ Online \_
+TWiki_files/web-bg.gif) UT\](https://lbtwiki.cern.ch/bin/view/UT/WebHome)
+\*  \[\![\](./WebHome \_ Online \_
+TWiki_files/web-bg.gif) VELO\](https://lbtwiki.cern.ch/bin/view/VELO/WebHome)
+
+\[\![LHCb Online Group \](./WebHome \_ Online \_
+TWiki_files/lhcb-online-logo53x50.png)\](https://lbtwiki.cern.ch/bin/view/Online)
+
+\*   
+
+\*   
+
+\[\![This site is powered by the TWiki collaboration
+platform\](./WebHome \_ Online \_ TWiki_files/T-badge-88x31.gif \"This
+site is powered by the TWiki collaboration
+platform\")\](https://twiki.org/) \[\![Powered by Perl\](./WebHome \_
+Online \_ TWiki_files/perl-logo-88x31.gif \"Powered by
+Perl\")\](https://www.perl.org/)Copyright � 2008-2025 by the
+contributing authors. All material on this collaboration platform is the
+property of the contributing authors. Ideas, requests, problems
+regarding TWiki? \[Send
+feedback\](mailto:?subject=TWiki%20Feedback%20on%20Online.WebHome)

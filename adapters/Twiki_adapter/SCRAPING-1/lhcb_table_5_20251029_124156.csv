@@ -1,0 +1,7 @@
+,DetectorVELOTTT1-3Ca. 72 tracks in bbar eventsLong TrackX(X)X26 (36%)Upstream TrackXX-11 (15%)Down Track-XX4 (6%)VELO TrackX--26 (36%)T Track--X5 (7%)Successfully reconstructed: a track must have at least70%of its associated hits originating from a single MonteCarlo particleGhost tracks: reconstructed tracks that are not matched to a true MonteCarlo particleCloned tracks: several reconstructed tracks that origin from the same particleTrack Types:-- 0 = Unknown-- 1 = Velo track-- 2 = 2D Velo track-- 3 = Long (or forward) track-- 4 = Upstream track-- 5 = Downstream track-- 6 = seed track-- 7 = muon track-- 8 = calorimeter cosmic track-- 9 = TT track,Detector,VELO,TT,T1-3,Ca. 72 tracks in bbar events,Long Track,X,(X),X,26 (36%),Upstream Track,X,X,-,11 (15%),Down Track,-,X,X,4 (6%),VELO Track,X,-,-,26 (36%),T Track,-,-,X,5 (7%)
+Detector,VELO,TT,T1-3,Ca. 72 tracks in bbar events
+Long Track,X,(X),X,26 (36%)
+Upstream Track,X,X,-,11 (15%)
+Down Track,-,X,X,4 (6%)
+VELO Track,X,-,-,26 (36%)
+T Track,-,-,X,5 (7%)
