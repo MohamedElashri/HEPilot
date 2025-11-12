@@ -31,7 +31,9 @@ class TwikiDiscovery:
             with open(md_path, "r", encoding="utf-8") as f:
                 for line in f: 
                     if line.strip().startswith("#"):
-                        return line.strip().lstrip("#").strip()
+                        title = line.strip().lstrip("#").strip()
+                        if len(title) > 2 and not title.lower().startswith("pattern"):
+                            return title
         except Exception:
             pass
         return md_path.stem
