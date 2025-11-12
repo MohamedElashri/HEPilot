@@ -31,18 +31,19 @@ class TwikiAcquisition:
         acquired: List[AcquiredDocument] =[]
         for doc in discovered:
             acquired_doc = self._register_local(doc)
+            acquired.append(acquired_doc)
         return acquired
     
     def _register_local(self, doc: DiscoveredDocument) -> AcquiredDocument:
         local_path: Path
         parsed = urlparse(doc.source_url)
         if parsed.scheme == "file":
-            local_path = Path(parsed.path)
+            local_path = Path(parsed.path.lstrip("/"))
         else:
-            local_path = (self.download_dir / f"{doc.title}.txt")
+            local_path = self.download_dir / f"{doc.title}.md" # changed this from .txt to .md
 
-        if not local_path.exists():
-            return self._create_failed_acquisition(doc, reason="file not found")
+        if not local_path.is_file():
+            raise FileNotFoundError(f"[ERROR] local path is not a file: {local_path}")
         
         
         sha256 = self._compute_hash(local_path, "sha256")
@@ -51,6 +52,7 @@ class TwikiAcquisition:
 
         return AcquiredDocument(
             document_id=doc.document_id,
+            source_url=doc.source_url,
             local_path=str(local_path),
             file_hash_sha256=sha256,
             file_hash_sha512=sha512,
