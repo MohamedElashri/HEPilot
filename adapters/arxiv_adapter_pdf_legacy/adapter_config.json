@@ -16,11 +16,6 @@
       "include_authors_metadata": false,
       "processing_timeout": 30
     },
-    "embedding_config": {
-      "model_name": "BAAI/bge-large-en-v1.5",
-      "use_model_tokenizer": true,
-      "cache_dir": ".model_cache"
-    },
     "profile": "core",
     "config_hash": "08e944f75870772107584e3dafa2767f269d6c46c8d3fd5bc881540136bb58b1"
   }

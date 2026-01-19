@@ -11,3 +11,13 @@ logs
 
 ## output
 *_output
+
+## model cache
+.model_cache
+
+## output
+output*
+
+
+## pycache
+__pycache__

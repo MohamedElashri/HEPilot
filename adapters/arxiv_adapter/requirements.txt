@@ -1,7 +1,8 @@
-docling
+beautifulsoup4
+markdownify
+requests
+pydantic
+tqdm
 sentence-transformers
 transformers
-pydantic
-requests
 torch
-tqdm

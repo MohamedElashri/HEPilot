@@ -13,19 +13,16 @@ from uuid import UUID
 
 class AdapterConfig(BaseModel):
     """Adapter configuration model."""
-
     name: str
     version: str
     source_type: str
     processing_config: Dict[str, Any]
-    embedding_config: Optional[Dict[str, Any]] = None
     profile: str
     config_hash: str
 
 
 class DiscoveredDocument(BaseModel):
     """Discovered document from arXiv API."""
-
     document_id: UUID
     source_type: str = "arxiv"
     source_url: str
@@ -41,7 +38,6 @@ class DiscoveredDocument(BaseModel):
 
 class AcquiredDocument(BaseModel):
     """Document acquisition result."""
-
     document_id: UUID
     local_path: str
     file_hash_sha256: str
@@ -57,7 +53,6 @@ class AcquiredDocument(BaseModel):
 
 class ProcessingMetadata(BaseModel):
     """Processing execution metadata."""
-
     processor_used: str
     processing_timestamp: datetime
     processing_duration: float
@@ -66,7 +61,6 @@ class ProcessingMetadata(BaseModel):
 
 class ChunkContent(BaseModel):
     """Individual chunk with metadata."""
-
     chunk_id: UUID
     document_id: UUID
     chunk_index: int
@@ -82,7 +76,6 @@ class ChunkContent(BaseModel):
 
 class DocumentMetadata(BaseModel):
     """Comprehensive document metadata."""
-
     document_id: UUID
     source_type: str = "arxiv"
     original_url: str
@@ -105,7 +98,6 @@ class DocumentMetadata(BaseModel):
 
 class LogEntry(BaseModel):
     """Structured log entry."""
-
     timestamp: datetime
     level: str
     component: str

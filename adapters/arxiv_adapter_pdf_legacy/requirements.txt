@@ -1,0 +1,7 @@
+docling
+sentence-transformers
+transformers
+pydantic
+requests
+torch
+tqdm
